@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet-async";
 import { formatDistanceToNow } from "date-fns";
+import { usePostActions } from "@/hooks/usePostActions";
 
 const PostPage = () => {
     const { postId } = useParams<{ postId: string }>();
@@ -20,6 +21,7 @@ const PostPage = () => {
     const [submittingComment, setSubmittingComment] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { toggleLike, toggleBookmark, deletePost } = usePostActions();
 
     const fetchPost = async () => {
         if (!postId) return;
@@ -143,58 +145,32 @@ const PostPage = () => {
             toast.error("Please sign in to like posts");
             return;
         }
-
-        // Optimistic update
+        toggleLike(id, currentlyLiked);
+        // Local state sync for the single post page context
         setPost(prev => prev ? {
             ...prev,
             user_liked: !currentlyLiked,
             likes_count: currentlyLiked ? prev.likes_count - 1 : prev.likes_count + 1
         } : null);
+    };
 
-        try {
-            if (currentlyLiked) {
-                await supabase.from("likes").delete().eq("user_id", user.id).eq("post_id", id);
-            } else {
-                await supabase.from("likes").insert({ user_id: user.id, post_id: id });
-            }
-        } catch (err) {
-            // Revert
-            setPost(prev => prev ? {
-                ...prev,
-                user_liked: currentlyLiked,
-                likes_count: currentlyLiked ? prev.likes_count + 1 : prev.likes_count - 1
-            } : null);
-            toast.error("Failed to update like");
+    const handleBookmark = async (id: string, currentlyBookmarked: boolean) => {
+        if (!user) {
+            toast.error("Please sign in to bookmark posts");
+            return;
         }
+        toggleBookmark(id, currentlyBookmarked);
+        // Local state sync
+        setPost(prev => prev ? { ...prev, user_bookmarked: !currentlyBookmarked } : null);
     };
 
     const handleDelete = async (id: string) => {
         if (!user) return;
         try {
-            await supabase.from("posts").delete().eq("id", id).eq("user_id", user.id);
-            toast.success("Post deleted");
+            await deletePost(id);
             navigate("/");
         } catch (err) {
             toast.error("Failed to delete post");
-        }
-    };
-
-    const handleBookmark = async () => {
-        if (!user || !post) return;
-        const currentlyBookmarked = post.user_bookmarked;
-
-        // Optimistic update
-        setPost(prev => prev ? { ...prev, user_bookmarked: !currentlyBookmarked } : null);
-
-        try {
-            if (currentlyBookmarked) {
-                await supabase.from("bookmarks").delete().eq("user_id", user.id).eq("post_id", post.id);
-            } else {
-                await supabase.from("bookmarks").insert({ user_id: user.id, post_id: post.id });
-            }
-        } catch (err) {
-            setPost(prev => prev ? { ...prev, user_bookmarked: currentlyBookmarked } : null);
-            toast.error("Failed to update bookmark");
         }
     };
 

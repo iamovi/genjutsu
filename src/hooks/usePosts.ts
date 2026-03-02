@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { usePostActions } from "./usePostActions";
 
 export interface PostWithProfile {
   id: string;
@@ -27,6 +28,7 @@ const PAGE_SIZE = 10;
 export function usePosts() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toggleLike, toggleBookmark, deletePost } = usePostActions();
 
   const fetchPosts = async ({ pageParam = 0 }) => {
     const from = pageParam * PAGE_SIZE;
@@ -93,7 +95,7 @@ export function usePosts() {
     status,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ["posts", user?.id],
+    queryKey: ["posts", "infinite", user?.id],
     queryFn: fetchPosts,
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
@@ -116,7 +118,7 @@ export function usePosts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
       toast.success("Post shared!");
     },
     onError: (error) => {
@@ -124,114 +126,14 @@ export function usePosts() {
     }
   });
 
-  const toggleLikeMutation = useMutation({
-    mutationFn: async ({ postId, currentlyLiked }: { postId: string, currentlyLiked: boolean }) => {
-      if (!user) throw new Error("Not authenticated");
-      if (currentlyLiked) {
-        await supabase.from("likes").delete().eq("user_id", user.id).eq("post_id", postId);
-      } else {
-        await supabase.from("likes").insert({ user_id: user.id, post_id: postId });
-      }
-    },
-    onMutate: async ({ postId, currentlyLiked }) => {
-      await queryClient.cancelQueries({ queryKey: ["posts", user?.id] });
-      const previousPosts = queryClient.getQueryData(["posts", user?.id]);
-
-      queryClient.setQueryData(["posts", user?.id], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          pages: old.pages.map((page: any[]) =>
-            page.map((post) =>
-              post.id === postId
-                ? {
-                  ...post,
-                  user_liked: !currentlyLiked,
-                  likes_count: currentlyLiked ? post.likes_count - 1 : post.likes_count + 1,
-                }
-                : post
-            )
-          ),
-        };
-      });
-
-      return { previousPosts };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousPosts) {
-        queryClient.setQueryData(["posts", user?.id], context.previousPosts);
-      }
-      toast.error("Failed to update like");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts", user?.id] });
-    },
-  });
-
-  const toggleBookmarkMutation = useMutation({
-    mutationFn: async ({ postId, currentlyBookmarked }: { postId: string, currentlyBookmarked: boolean }) => {
-      if (!user) throw new Error("Not authenticated");
-      if (currentlyBookmarked) {
-        await supabase.from("bookmarks").delete().eq("user_id", user.id).eq("post_id", postId);
-      } else {
-        await supabase.from("bookmarks").insert({ user_id: user.id, post_id: postId });
-      }
-    },
-    onMutate: async ({ postId, currentlyBookmarked }) => {
-      await queryClient.cancelQueries({ queryKey: ["posts", user?.id] });
-      const previousPosts = queryClient.getQueryData(["posts", user?.id]);
-
-      queryClient.setQueryData(["posts", user?.id], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          pages: old.pages.map((page: any[]) =>
-            page.map((post) =>
-              post.id === postId ? { ...post, user_bookmarked: !currentlyBookmarked } : post
-            )
-          ),
-        };
-      });
-
-      return { previousPosts };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousPosts) {
-        queryClient.setQueryData(["posts", user?.id], context.previousPosts);
-      }
-      toast.error("Failed to update bookmark");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts", user?.id] });
-    },
-  });
-
-  const deletePostMutation = useMutation({
-    mutationFn: async (postId: string) => {
-      if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase
-        .from("posts")
-        .delete()
-        .eq("id", postId)
-        .eq("user_id", user.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts", user?.id] });
-      toast.success("Post deleted");
-    },
-  });
-
   return {
     posts,
     loading: status === "pending",
     createPost: (content: string, code: string, tags: string[], media_url?: string) =>
       createPostMutation.mutateAsync({ content, code, tags, media_url }),
-    toggleLike: (postId: string, currentlyLiked: boolean) =>
-      toggleLikeMutation.mutate({ postId, currentlyLiked }),
-    toggleBookmark: (postId: string, currentlyBookmarked: boolean) =>
-      toggleBookmarkMutation.mutate({ postId, currentlyBookmarked }),
-    deletePost: (postId: string) => deletePostMutation.mutate(postId),
+    toggleLike,
+    toggleBookmark,
+    deletePost,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,

@@ -6,7 +6,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, UserPlus, UserCheck } from "lucide-react";
+import { Loader2, UserPlus, UserCheck, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -167,15 +167,28 @@ const FollowsList = ({ userId, type, isOpen, onOpenChange, onAction }: FollowsLi
                                     </div>
 
                                     {currentUser && currentUser.id !== item.user_id && (
-                                        <button
-                                            onClick={(e) => handleToggleFollow(e, item)}
-                                            className={`gum-btn text-[10px] px-3 py-1.5 transition-colors ${item.is_following
-                                                ? "bg-secondary text-secondary-foreground"
-                                                : "bg-primary text-primary-foreground"
-                                                }`}
-                                        >
-                                            {item.is_following ? "Following" : "Follow"}
-                                        </button>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onOpenChange(false);
+                                                    navigate(`/whisper/${item.username}`);
+                                                }}
+                                                className="p-1.5 rounded-lg bg-secondary hover:bg-primary hover:text-primary-foreground transition-all gum-border"
+                                                title="Whisper"
+                                            >
+                                                <Send size={14} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleToggleFollow(e, item)}
+                                                className={`gum-btn text-[10px] px-3 py-1.5 h-8 transition-colors ${item.is_following
+                                                    ? "bg-secondary text-secondary-foreground"
+                                                    : "bg-primary text-primary-foreground"
+                                                    }`}
+                                            >
+                                                {item.is_following ? "Following" : "Follow"}
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             ))}

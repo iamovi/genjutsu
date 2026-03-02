@@ -10,9 +10,12 @@ import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import PostPage from "./pages/PostPage";
 import ProfilePage from "./pages/ProfilePage";
+import SearchPage from "./pages/SearchPage";
 import AboutPage from "./pages/AboutPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
+import WhispersPage from "./pages/WhispersPage";
+import ChatPage from "./pages/ChatPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,7 +27,12 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
             <AuthProvider>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -33,6 +41,9 @@ const App = () => (
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/post/:postId" element={<PostPage />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/whispers" element={<WhispersPage />} />
+                <Route path="/whisper/:username" element={<ChatPage />} />
                 <Route path="/:username" element={<ProfilePage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

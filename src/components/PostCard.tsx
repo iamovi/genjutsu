@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hash, Heart, MessageSquare, Repeat2, Share, Bookmark, MoreHorizontal, Trash2 } from "lucide-react";
+import { Hash, Heart, MessageSquare, Repeat2, Share, Bookmark, MoreHorizontal, Trash2, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { PostWithProfile } from "@/hooks/usePosts";
 import { useAuth } from "@/hooks/useAuth";
@@ -157,6 +157,15 @@ const PostCard = ({ post, onLike, onBookmark, onDelete }: PostCardProps) => {
               <MessageSquare size={15} />
               {post.comments_count}
             </Link>
+            {!isOwner && (
+              <button
+                onClick={() => navigate(`/whisper/${post.profiles?.username}`)}
+                className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+                title="Whisper to author"
+              >
+                <Send size={15} />
+              </button>
+            )}
             <button
               onClick={() => {
                 navigator.clipboard.writeText(window.location.origin + "/post/" + post.id);

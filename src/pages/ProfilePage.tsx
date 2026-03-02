@@ -5,7 +5,7 @@ import { PostWithProfile } from "@/hooks/usePosts";
 import Navbar from "@/components/Navbar";
 import PostCard from "@/components/PostCard";
 import Sidebar from "@/components/Sidebar";
-import { Edit3, Loader2, ArrowLeft, Calendar, Link as LinkIcon, UserPlus, UserCheck, Trash2, LogOut, MoreHorizontal, ImageIcon } from "lucide-react";
+import { Edit3, Loader2, ArrowLeft, Calendar, Link as LinkIcon, UserPlus, UserCheck, Trash2, LogOut, MoreHorizontal, ImageIcon, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { useFollow } from "@/hooks/useFollow";
+import { usePostActions } from "@/hooks/usePostActions";
 
 interface ProfileData {
     id: string;
@@ -131,13 +132,16 @@ const ProfilePage = () => {
         fetchData();
     }, [username, user]);
 
+    const { toggleLike, toggleBookmark, deletePost } = usePostActions();
+
     const handleLike = async (postId: string, currentlyLiked: boolean) => {
         if (!user) {
             toast.error("Please sign in to like posts");
             return;
         }
 
-        // Optimistic update
+        toggleLike(postId, currentlyLiked);
+        // Local state sync
         setPosts((prev) =>
             prev.map((p) => {
                 if (p.id === postId) {
@@ -150,29 +154,6 @@ const ProfilePage = () => {
                 return p;
             })
         );
-
-        try {
-            if (currentlyLiked) {
-                await supabase.from("likes").delete().eq("user_id", user.id).eq("post_id", postId);
-            } else {
-                await supabase.from("likes").insert({ user_id: user.id, post_id: postId });
-            }
-        } catch (err) {
-            // Revert on error
-            setPosts((prev) =>
-                prev.map((p) => {
-                    if (p.id === postId) {
-                        return {
-                            ...p,
-                            user_liked: currentlyLiked,
-                            likes_count: currentlyLiked ? p.likes_count + 1 : p.likes_count - 1,
-                        };
-                    }
-                    return p;
-                })
-            );
-            toast.error("Failed to update like");
-        }
     };
 
     const handleBookmark = async (postId: string, currentlyBookmarked: boolean) => {
@@ -181,7 +162,8 @@ const ProfilePage = () => {
             return;
         }
 
-        // Optimistic update
+        toggleBookmark(postId, currentlyBookmarked);
+        // Local state sync
         setPosts((prev) =>
             prev.map((p) => {
                 if (p.id === postId) {
@@ -190,45 +172,15 @@ const ProfilePage = () => {
                 return p;
             })
         );
-
-        try {
-            if (currentlyBookmarked) {
-                await supabase.from("bookmarks").delete().eq("user_id", user.id).eq("post_id", postId);
-            } else {
-                await supabase.from("bookmarks").insert({ user_id: user.id, post_id: postId });
-            }
-        } catch (err) {
-            // Revert on error
-            setPosts((prev) =>
-                prev.map((p) => {
-                    if (p.id === postId) {
-                        return { ...p, user_bookmarked: currentlyBookmarked };
-                    }
-                    return p;
-                })
-            );
-            toast.error("Failed to update bookmark");
-        }
     };
 
     const handleDelete = async (postId: string) => {
         if (!user) return;
-
-        // Optimistic update
-        const originalPosts = [...posts];
-        setPosts((prev) => prev.filter((p) => p.id !== postId));
-
         try {
-            const { error } = await supabase
-                .from("posts")
-                .delete()
-                .eq("id", postId)
-                .eq("user_id", user.id);
-
-            if (error) throw error;
-            toast.success("Post deleted");
+            await deletePost(postId);
+            // Local state sync
+            setPosts((prev) => prev.filter((p) => p.id !== postId));
         } catch (err) {
-            setPosts(originalPosts);
             toast.error("Failed to delete post");
         }
     };
@@ -334,12 +286,21 @@ const ProfilePage = () => {
                                             onUpdate={fetchData}
                                         />
                                     ) : (
-                                        <button
-                                            onClick={toggleFollow}
-                                            className={`gum-btn text-sm px-6 ${isFollowing ? 'bg-secondary' : 'bg-primary text-primary-foreground'}`}
-                                        >
-                                            {isFollowing ? 'Following' : 'Follow'}
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => navigate(`/whisper/${profile.username}`)}
+                                                className="p-2.5 rounded-lg bg-secondary hover:bg-primary hover:text-primary-foreground transition-all gum-border"
+                                                title="Whisper"
+                                            >
+                                                <Send size={18} />
+                                            </button>
+                                            <button
+                                                onClick={toggleFollow}
+                                                className={`gum-btn text-sm px-6 ${isFollowing ? 'bg-secondary' : 'bg-primary text-primary-foreground'}`}
+                                            >
+                                                {isFollowing ? 'Following' : 'Follow'}
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
 
