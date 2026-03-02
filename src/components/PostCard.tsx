@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Hash, Heart, MessageCircle, Repeat2, Share, Bookmark, MoreHorizontal, Trash2 } from "lucide-react";
+import { Hash, Heart, MessageSquare, Repeat2, Share, Bookmark, MoreHorizontal, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { PostWithProfile } from "@/hooks/usePosts";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 interface PostCardProps {
   post: PostWithProfile;
@@ -150,6 +150,13 @@ const PostCard = ({ post, onLike, onBookmark, onDelete }: PostCardProps) => {
               <Heart size={15} fill={post.user_liked ? "currentColor" : "none"} className={post.user_liked ? "text-red-500" : ""} />
               {post.likes_count}
             </button>
+            <Link
+              to={`/post/${post.id}`}
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              <MessageSquare size={15} />
+              {post.comments_count}
+            </Link>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(window.location.origin + "/post/" + post.id);

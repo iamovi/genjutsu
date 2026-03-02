@@ -78,26 +78,33 @@ const ProfilePage = () => {
             if (postsData && p) {
                 const postIds = postsData.map(post => post.id);
 
-                // Fetch likes counts
-                const { data: likesData } = await supabase
-                    .from("likes")
-                    .select("post_id")
-                    .in("post_id", postIds);
+                // Fetch counts and user status
+                const [{ data: likesData }, { data: commentsData }] = await Promise.all([
+                    supabase.from("likes").select("post_id").in("post_id", postIds),
+                    supabase.from("comments").select("post_id").in("post_id", postIds),
+                ]);
 
                 const likesCounts: Record<string, number> = {};
                 (likesData || []).forEach((l: any) => {
                     likesCounts[l.post_id] = (likesCounts[l.post_id] || 0) + 1;
                 });
 
-                // Fetch user's likes
+                const commentsCounts: Record<string, number> = {};
+                (commentsData || []).forEach((c: any) => {
+                    commentsCounts[c.post_id] = (commentsCounts[c.post_id] || 0) + 1;
+                });
+
+                // Fetch user's status
                 let userLikes: Set<string> = new Set();
+                let userBookmarks: Set<string> = new Set();
+
                 if (user) {
-                    const { data: myLikes } = await supabase
-                        .from("likes")
-                        .select("post_id")
-                        .eq("user_id", user.id)
-                        .in("post_id", postIds);
+                    const [{ data: myLikes }, { data: myBookmarks }] = await Promise.all([
+                        supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", postIds),
+                        supabase.from("bookmarks").select("post_id").eq("user_id", user.id).in("post_id", postIds),
+                    ]);
                     userLikes = new Set((myLikes || []).map((l: any) => l.post_id));
+                    userBookmarks = new Set((myBookmarks || []).map((b: any) => b.post_id));
                 }
 
                 const enriched = postsData.map(post => ({
@@ -105,8 +112,8 @@ const ProfilePage = () => {
                     profiles: post.profiles as any,
                     likes_count: likesCounts[post.id] || 0,
                     user_liked: userLikes.has(post.id),
-                    user_bookmarked: false,
-                    comments_count: 0
+                    user_bookmarked: userBookmarks.has(post.id),
+                    comments_count: commentsCounts[post.id] || 0
                 } as PostWithProfile));
                 setPosts(enriched);
             }
@@ -165,6 +172,42 @@ const ProfilePage = () => {
                 })
             );
             toast.error("Failed to update like");
+        }
+    };
+
+    const handleBookmark = async (postId: string, currentlyBookmarked: boolean) => {
+        if (!user) {
+            toast.error("Please sign in to bookmark posts");
+            return;
+        }
+
+        // Optimistic update
+        setPosts((prev) =>
+            prev.map((p) => {
+                if (p.id === postId) {
+                    return { ...p, user_bookmarked: !currentlyBookmarked };
+                }
+                return p;
+            })
+        );
+
+        try {
+            if (currentlyBookmarked) {
+                await supabase.from("bookmarks").delete().eq("user_id", user.id).eq("post_id", postId);
+            } else {
+                await supabase.from("bookmarks").insert({ user_id: user.id, post_id: postId });
+            }
+        } catch (err) {
+            // Revert on error
+            setPosts((prev) =>
+                prev.map((p) => {
+                    if (p.id === postId) {
+                        return { ...p, user_bookmarked: currentlyBookmarked };
+                    }
+                    return p;
+                })
+            );
+            toast.error("Failed to update bookmark");
         }
     };
 
@@ -353,7 +396,7 @@ const ProfilePage = () => {
                                         key={post.id}
                                         post={post}
                                         onLike={handleLike}
-                                        onBookmark={() => { }}
+                                        onBookmark={handleBookmark}
                                         onDelete={handleDelete}
                                     />
                                 ))

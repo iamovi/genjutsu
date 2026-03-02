@@ -48,14 +48,19 @@ export function usePosts() {
     const postIds = postsData.map(p => p.id);
 
     // Fetch likes counts
-    const { data: likesData } = await supabase
-      .from("likes")
-      .select("post_id")
-      .in("post_id", postIds);
+    const [{ data: likesData }, { data: commentsData }] = await Promise.all([
+      supabase.from("likes").select("post_id").in("post_id", postIds),
+      supabase.from("comments").select("post_id").in("post_id", postIds),
+    ]);
 
     const likesCounts: Record<string, number> = {};
     (likesData || []).forEach((l: any) => {
       likesCounts[l.post_id] = (likesCounts[l.post_id] || 0) + 1;
+    });
+
+    const commentsCounts: Record<string, number> = {};
+    (commentsData || []).forEach((c: any) => {
+      commentsCounts[c.post_id] = (commentsCounts[c.post_id] || 0) + 1;
     });
 
     // Fetch user's likes & bookmarks
@@ -63,18 +68,11 @@ export function usePosts() {
     let userBookmarks = new Set<string>();
 
     if (user) {
-      const { data: myLikes } = await supabase
-        .from("likes")
-        .select("post_id")
-        .eq("user_id", user.id)
-        .in("post_id", postIds);
+      const [{ data: myLikes }, { data: myBookmarks }] = await Promise.all([
+        supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", postIds),
+        supabase.from("bookmarks").select("post_id").eq("user_id", user.id).in("post_id", postIds),
+      ]);
       userLikes = new Set((myLikes || []).map(l => l.post_id));
-
-      const { data: myBookmarks } = await supabase
-        .from("bookmarks")
-        .select("post_id")
-        .eq("user_id", user.id)
-        .in("post_id", postIds);
       userBookmarks = new Set((myBookmarks || []).map(b => b.post_id));
     }
 
@@ -83,7 +81,7 @@ export function usePosts() {
       likes_count: likesCounts[p.id] || 0,
       user_liked: userLikes.has(p.id),
       user_bookmarked: userBookmarks.has(p.id),
-      comments_count: 0,
+      comments_count: commentsCounts[p.id] || 0,
     })) as PostWithProfile[];
   };
 
@@ -118,7 +116,7 @@ export function usePosts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["posts", user?.id] });
       toast.success("Post shared!");
     },
     onError: (error) => {
@@ -135,8 +133,76 @@ export function usePosts() {
         await supabase.from("likes").insert({ user_id: user.id, post_id: postId });
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    onMutate: async ({ postId, currentlyLiked }) => {
+      await queryClient.cancelQueries({ queryKey: ["posts", user?.id] });
+      const previousPosts = queryClient.getQueryData(["posts", user?.id]);
+
+      queryClient.setQueryData(["posts", user?.id], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any[]) =>
+            page.map((post) =>
+              post.id === postId
+                ? {
+                  ...post,
+                  user_liked: !currentlyLiked,
+                  likes_count: currentlyLiked ? post.likes_count - 1 : post.likes_count + 1,
+                }
+                : post
+            )
+          ),
+        };
+      });
+
+      return { previousPosts };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousPosts) {
+        queryClient.setQueryData(["posts", user?.id], context.previousPosts);
+      }
+      toast.error("Failed to update like");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts", user?.id] });
+    },
+  });
+
+  const toggleBookmarkMutation = useMutation({
+    mutationFn: async ({ postId, currentlyBookmarked }: { postId: string, currentlyBookmarked: boolean }) => {
+      if (!user) throw new Error("Not authenticated");
+      if (currentlyBookmarked) {
+        await supabase.from("bookmarks").delete().eq("user_id", user.id).eq("post_id", postId);
+      } else {
+        await supabase.from("bookmarks").insert({ user_id: user.id, post_id: postId });
+      }
+    },
+    onMutate: async ({ postId, currentlyBookmarked }) => {
+      await queryClient.cancelQueries({ queryKey: ["posts", user?.id] });
+      const previousPosts = queryClient.getQueryData(["posts", user?.id]);
+
+      queryClient.setQueryData(["posts", user?.id], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any[]) =>
+            page.map((post) =>
+              post.id === postId ? { ...post, user_bookmarked: !currentlyBookmarked } : post
+            )
+          ),
+        };
+      });
+
+      return { previousPosts };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousPosts) {
+        queryClient.setQueryData(["posts", user?.id], context.previousPosts);
+      }
+      toast.error("Failed to update bookmark");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts", user?.id] });
     },
   });
 
@@ -151,7 +217,7 @@ export function usePosts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["posts", user?.id] });
       toast.success("Post deleted");
     },
   });
@@ -163,15 +229,8 @@ export function usePosts() {
       createPostMutation.mutateAsync({ content, code, tags, media_url }),
     toggleLike: (postId: string, currentlyLiked: boolean) =>
       toggleLikeMutation.mutate({ postId, currentlyLiked }),
-    toggleBookmark: async (postId: string, currentlyBookmarked: boolean) => {
-      if (!user) return;
-      if (currentlyBookmarked) {
-        await supabase.from("bookmarks").delete().eq("user_id", user.id).eq("post_id", postId);
-      } else {
-        await supabase.from("bookmarks").insert({ user_id: user.id, post_id: postId });
-      }
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
-    },
+    toggleBookmark: (postId: string, currentlyBookmarked: boolean) =>
+      toggleBookmarkMutation.mutate({ postId, currentlyBookmarked }),
     deletePost: (postId: string) => deletePostMutation.mutate(postId),
     fetchNextPage,
     hasNextPage,
