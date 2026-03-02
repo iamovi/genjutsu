@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 import { useNavigate, Link } from "react-router-dom";
+import { getNow, cn } from "@/lib/utils";
 
 interface PostCardProps {
   post: PostWithProfile;
@@ -17,7 +18,7 @@ interface PostCardProps {
 function getTimeRemaining(dateStr: string): string {
   const created = new Date(dateStr);
   const expires = new Date(created.getTime() + 24 * 60 * 60 * 1000);
-  const now = new Date();
+  const now = getNow();
   const diff = expires.getTime() - now.getTime();
 
   if (diff <= 0) return "Expired";
@@ -32,7 +33,7 @@ function getTimeRemaining(dateStr: string): string {
 }
 
 function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  const diff = getNow().getTime() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "now";
   if (mins < 60) return `${mins}m`;

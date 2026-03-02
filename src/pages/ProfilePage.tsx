@@ -14,6 +14,7 @@ import { Helmet } from "react-helmet-async";
 import EditProfileDialog from "@/components/EditProfileDialog";
 import FollowsList from "@/components/FollowsList";
 import { PostSkeleton } from "@/components/ui/skeleton";
+import { getNow } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
@@ -74,7 +75,7 @@ const ProfilePage = () => {
                   id, content, code, media_url, tags, created_at, user_id,
                   profiles ( username, display_name, avatar_url )
                 `)
-                .gt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+                .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
                 .eq("user_id", p.user_id)
                 .order("created_at", { ascending: false });
 
@@ -158,7 +159,7 @@ const ProfilePage = () => {
                     profiles ( username, display_name, avatar_url )
                 `)
                 .in("id", postIds)
-                .gt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+                .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
                 .order("created_at", { ascending: false });
 
             if (!postsData || postsData.length === 0) {

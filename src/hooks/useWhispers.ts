@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import { getNow } from "@/lib/utils";
 
 export interface Whisper {
     id: string;
@@ -40,7 +41,7 @@ export function useWhispers(targetUserId?: string) {
             const { data, error } = await sb.from("messages")
                 .select("sender_id, receiver_id, content, created_at")
                 .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-                .gt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+                .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
                 .order("created_at", { ascending: false });
 
             if (error) throw error;
@@ -87,7 +88,7 @@ export function useWhispers(targetUserId?: string) {
             const { data, error } = await sb.from("messages")
                 .select("id, content, sender_id, receiver_id, created_at")
                 .or(`and(sender_id.eq.${user.id},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${user.id})`)
-                .gt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+                .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
                 .order("created_at", { ascending: true });
 
             if (error) throw error;
@@ -128,7 +129,7 @@ export function useWhispers(targetUserId?: string) {
             if (cancelled) return;
 
             channel = sb
-                .channel(`whispers-rt-${user.id}-${Date.now()}`)
+                .channel(`whispers-rt-${user.id}-${getNow().getTime()}`)
                 .on(
                     "postgres_changes",
                     {

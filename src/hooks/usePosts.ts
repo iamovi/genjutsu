@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { usePostActions } from "./usePostActions";
+import { getNow } from "@/lib/utils";
 
 export interface PostWithProfile {
   id: string;
@@ -40,7 +41,7 @@ export function usePosts() {
         id, content, code, media_url, tags, created_at, user_id,
         profiles ( username, display_name, avatar_url )
       `)
-      .gt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
       .order("created_at", { ascending: false })
       .range(from, to);
 

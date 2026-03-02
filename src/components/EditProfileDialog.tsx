@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Edit3, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getNow } from "@/lib/utils";
 
 interface EditProfileDialogProps {
     currentProfile: {
@@ -60,7 +61,7 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
                     bio: bio,
                     avatar_url: avatarUrl,
                     banner_url: bannerUrl,
-                    updated_at: new Date().toISOString(),
+                    updated_at: getNow().toISOString(),
                 })
                 .eq("user_id", user.id);
 

@@ -11,6 +11,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import { usePostActions } from "@/hooks/usePostActions";
+import { getNow } from "@/lib/utils";
 
 const SearchPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -53,7 +54,7 @@ const SearchPage = () => {
                     profiles ( username, display_name, avatar_url )
                 `)
                 .or(`content.ilike.%${sanitized}%,tags.cs.{${sanitized.replace('#', '')}}`)
-                .gt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+                .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
                 .order("created_at", { ascending: false })
                 .limit(20);
 

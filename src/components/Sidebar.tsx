@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 import { useNavigate, Link } from "react-router-dom";
+import { getNow } from "@/lib/utils";
 
 interface SuggestedProfile {
   id: string;
@@ -74,7 +75,7 @@ const Sidebar = ({ onAction }: SidebarProps) => {
         const { data: posts } = await supabase
           .from("posts")
           .select("tags")
-          .gt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+          .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString());
 
         if (posts) {
           const counts: Record<string, number> = {};
