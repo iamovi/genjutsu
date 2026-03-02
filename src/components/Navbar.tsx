@@ -1,8 +1,16 @@
-import { Eye, Home, Search, Bell, User, LogOut } from "lucide-react";
+import { Eye, Home, Search, Bell, User, LogOut, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useNavigate } from "react-router-dom";
+import { ModeToggle } from "@/components/ModeToggle";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -20,12 +28,12 @@ const Navbar = () => {
     <motion.header
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b-2 border-foreground"
+      className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b-2 border-border"
     >
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <button onClick={() => navigate("/")} className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-[3px] flex items-center justify-center gum-border">
-            <Eye size={18} />
+          <div className="w-8 h-8 rounded-[3px] overflow-hidden gum-border">
+            <img src="/fav.jpg" alt="genjutsu" className="w-full h-full object-cover" />
           </div>
           <span className="font-bold text-lg tracking-tight">genjutsu</span>
         </button>
@@ -49,8 +57,9 @@ const Navbar = () => {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ModeToggle />
           {user ? (
-            <>
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate(`/${profile?.username}`)}
                 className="flex items-center gap-2 group"
@@ -65,14 +74,29 @@ const Navbar = () => {
                   ) : initials}
                 </div>
               </button>
-              <button
-                onClick={signOut}
-                className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
-                title="Sign out"
-              >
-                <LogOut size={16} />
-              </button>
-            </>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground gum-border"
+                    title="Settings"
+                  >
+                    <Settings size={18} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 gum-border">
+                  <DropdownMenuItem onClick={() => navigate(`/${profile?.username}`)} className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-border" />
+                  <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           ) : (
             <button
               onClick={() => navigate("/auth")}

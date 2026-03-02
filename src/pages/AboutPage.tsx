@@ -30,8 +30,8 @@ const AboutPage = () => {
 
                         <div className="gum-card p-8">
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="w-12 h-12 bg-primary text-primary-foreground rounded-[3px] gum-border flex items-center justify-center">
-                                    <Eye size={24} />
+                                <div className="w-12 h-12 rounded-[3px] gum-border overflow-hidden">
+                                    <img src="/fav.jpg" alt="genjutsu" className="w-full h-full object-cover" />
                                 </div>
                                 <h1 className="text-3xl font-bold tracking-tight">About genjutsu</h1>
                             </div>

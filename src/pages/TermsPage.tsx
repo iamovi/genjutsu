@@ -27,8 +27,8 @@ const TermsPage = () => {
                     </Link>
 
                     <div className="text-center">
-                        <div className="w-16 h-16 bg-primary text-primary-foreground rounded-[3px] gum-border flex items-center justify-center mx-auto mb-6">
-                            <Eye size={32} />
+                        <div className="w-16 h-16 rounded-[3px] gum-border overflow-hidden mx-auto mb-6">
+                            <img src="/fav.jpg" alt="genjutsu" className="w-full h-full object-cover" />
                         </div>
                         <h1 className="text-4xl font-bold tracking-tighter">Terms of Service</h1>
                         <p className="text-muted-foreground mt-2">The simple rules of the genjutsu world.</p>

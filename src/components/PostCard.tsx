@@ -109,8 +109,8 @@ const PostCard = ({ post, onLike, onBookmark, onDelete }: PostCardProps) => {
           <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
 
           {post.code && (
-            <div className="mt-3 gum-border rounded-lg bg-primary p-4 overflow-x-auto">
-              <pre className="text-xs font-mono text-primary-foreground">
+            <div className="mt-3 gum-border rounded-lg bg-muted p-4 overflow-x-auto">
+              <pre className="text-xs font-mono text-foreground">
                 <code>{post.code}</code>
               </pre>
             </div>

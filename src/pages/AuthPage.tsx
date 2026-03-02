@@ -97,8 +97,8 @@ const AuthPage = () => {
         </button>
 
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-primary text-primary-foreground rounded-[3px] gum-border mx-auto mb-4 flex items-center justify-center">
-            <Eye size={28} />
+          <div className="w-14 h-14 rounded-[3px] gum-border mx-auto mb-4 overflow-hidden">
+            <img src="/fav.jpg" alt="genjutsu" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight">genjutsu</h1>
           <p className="text-muted-foreground mt-1 text-sm">Everything vanishes. Social media for developers.</p>

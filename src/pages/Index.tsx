@@ -38,8 +38,8 @@ const Index = () => {
               <ComposePost onPost={createPost} />
             ) : (
               <div className="gum-card p-6 mb-6 text-center">
-                <div className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center gum-border mx-auto mb-3">
-                  <Code size={24} />
+                <div className="w-12 h-12 rounded-xl overflow-hidden gum-border mx-auto mb-3">
+                  <img src="/fav.jpg" alt="genjutsu" className="w-full h-full object-cover" />
                 </div>
                 <h2 className="font-bold text-lg mb-1">Join the conversation</h2>
                 <p className="text-sm text-muted-foreground mb-4">Sign in to share what you're building</p>
