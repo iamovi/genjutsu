@@ -2,16 +2,40 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Swords, Plus, LogIn, Sparkles, Zap, Users } from 'lucide-react';
+import { Swords, Plus, LogIn } from 'lucide-react';
 import FloatingParticles from './FloatingParticles';
+import OnlineFriends from './OnlineFriends';
+import { OnlinePlayer } from '@/hooks/usePlayPresence';
 
 interface HomeScreenProps {
   onCreateRoom: (name: string) => void;
   onJoinRoom: (code: string, name: string) => void;
+  // Hybrid props (optional — gracefully degrade if not provided)
+  isLoggedIn?: boolean;
+  displayName?: string;
+  onlineFriends?: OnlinePlayer[];
+  onlineOthers?: OnlinePlayer[];
+  totalOnline?: number;
+  onChallenge?: (player: OnlinePlayer) => void;
+  challengingUserId?: string | null;
 }
 
-const HomeScreen = ({ onCreateRoom, onJoinRoom }: HomeScreenProps) => {
-  const [nickname, setNickname] = useState(() => localStorage.getItem('genjutsu-play-name') || '');
+const HomeScreen = ({
+  onCreateRoom,
+  onJoinRoom,
+  isLoggedIn = false,
+  displayName = '',
+  onlineFriends = [],
+  onlineOthers = [],
+  totalOnline = 0,
+  onChallenge,
+  challengingUserId = null,
+}: HomeScreenProps) => {
+  const [nickname, setNickname] = useState(() => {
+    // If logged in, prefer display name
+    if (isLoggedIn && displayName) return displayName;
+    return localStorage.getItem('genjutsu-play-name') || '';
+  });
   const [roomCode, setRoomCode] = useState('');
   const [mode, setMode] = useState<'home' | 'join'>('home');
 
@@ -26,6 +50,8 @@ const HomeScreen = ({ onCreateRoom, onJoinRoom }: HomeScreenProps) => {
     localStorage.setItem('genjutsu-play-name', nickname.trim());
     onJoinRoom(roomCode.trim(), nickname.trim());
   };
+
+  const hasOnlinePlayers = onlineFriends.length > 0 || onlineOthers.length > 0;
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center bg-background p-4 relative overflow-hidden">
@@ -42,7 +68,7 @@ const HomeScreen = ({ onCreateRoom, onJoinRoom }: HomeScreenProps) => {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-md space-y-10 text-center relative z-10"
+        className="w-full max-w-md space-y-6 text-center relative z-10"
       >
         {/* Logo */}
         <div className="space-y-4">
@@ -73,24 +99,51 @@ const HomeScreen = ({ onCreateRoom, onJoinRoom }: HomeScreenProps) => {
             transition={{ delay: 0.3 }}
             className="text-muted-foreground text-sm"
           >
-            Play mini games with friends, peer-to-peer
+            {isLoggedIn ? 'Challenge your friends or play with anyone' : 'Play mini games with friends, peer-to-peer'}
           </motion.p>
         </div>
 
-        {/* Main card */}
+        {/* Online Friends Section (logged in only) */}
+        {isLoggedIn && onChallenge && (
+          <OnlineFriends
+            friends={onlineFriends}
+            others={onlineOthers}
+            totalOnline={totalOnline}
+            onChallenge={onChallenge}
+            challengingUserId={challengingUserId}
+          />
+        )}
+
+        {/* Divider (when both sections visible) */}
+        {isLoggedIn && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="flex items-center gap-3"
+          >
+            <div className="flex-1 h-px bg-border/50" />
+            <span className="text-xs text-muted-foreground/50 font-medium">or play with room code</span>
+            <div className="flex-1 h-px bg-border/50" />
+          </motion.div>
+        )}
+
+        {/* Room Code Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
+          transition={{ delay: isLoggedIn ? 0.45 : 0.35 }}
           className="glass glass-border rounded-2xl p-6 space-y-5 glow-sm"
         >
-          <Input
-            placeholder="Enter your nickname"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            maxLength={20}
-            className="h-13 text-center text-lg bg-secondary/60 border-border/50 focus:border-foreground/30 focus:glow-sm transition-all placeholder:text-muted-foreground/60"
-          />
+          {!isLoggedIn && (
+            <Input
+              placeholder="Enter your nickname"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              maxLength={20}
+              className="h-13 text-center text-lg bg-secondary/60 border-border/50 focus:border-foreground/30 focus:glow-sm transition-all placeholder:text-muted-foreground/60"
+            />
+          )}
 
           {mode === 'home' && (
             <motion.div
@@ -149,29 +202,6 @@ const HomeScreen = ({ onCreateRoom, onJoinRoom }: HomeScreenProps) => {
               </div>
             </motion.div>
           )}
-        </motion.div>
-
-        {/* Features row */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="flex items-center justify-center gap-6 text-muted-foreground"
-        >
-          <div className="flex items-center gap-1.5 text-xs">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>14 Games</span>
-          </div>
-          <div className="h-3 w-px bg-border" />
-          <div className="flex items-center gap-1.5 text-xs">
-            <Zap className="h-3.5 w-3.5" />
-            <span>Real-time</span>
-          </div>
-          <div className="h-3 w-px bg-border" />
-          <div className="flex items-center gap-1.5 text-xs">
-            <Users className="h-3.5 w-3.5" />
-            <span>P2P</span>
-          </div>
         </motion.div>
       </motion.div>
     </div>
