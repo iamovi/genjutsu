@@ -1,11 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PostWithProfile } from "@/hooks/usePosts";
 import Navbar from "@/components/Navbar";
 import PostCard from "@/components/PostCard";
 import Sidebar from "@/components/Sidebar";
-import { Loader2, ArrowLeft, Calendar, ImageIcon, Send, Bookmark, Github, Twitter, Facebook, Globe } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar, ImageIcon, Send, Bookmark, Github, Twitter, Facebook, Globe, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ interface ProfileData {
     avatar_url: string;
     banner_url: string;
     social_links?: Record<string, string>;
+    fav_song?: any;
     created_at: string;
 }
 
@@ -42,6 +43,52 @@ const ProfilePage = () => {
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [posts, setPosts] = useState<PostWithProfile[]>([]);
     const [bookmarks, setBookmarks] = useState<PostWithProfile[]>([]);
+    const [isLiking, setIsLiking] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [progress, setProgress] = useState(0);
+
+    const togglePlay = () => {
+        if (!profile?.fav_song?.previewUrl) return;
+
+        if (!audioRef.current) {
+            audioRef.current = new Audio(profile.fav_song.previewUrl);
+            audioRef.current.addEventListener('timeupdate', () => {
+                if (audioRef.current) {
+                    setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
+                }
+            });
+            audioRef.current.addEventListener('ended', () => {
+                setIsPlaying(false);
+                setProgress(0);
+            });
+        }
+
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+    };
+
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+            setIsPlaying(false);
+            setProgress(0);
+        }
+    }, [profile?.fav_song?.previewUrl]);
+
+    useEffect(() => {
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, []);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<"posts" | "bookmarks">("posts");
 
@@ -362,7 +409,8 @@ const ProfilePage = () => {
                                                         bio: profile.bio,
                                                         avatar_url: profile.avatar_url,
                                                         banner_url: profile.banner_url,
-                                                        social_links: profile.social_links
+                                                        social_links: profile.social_links,
+                                                        fav_song: profile.fav_song
                                                     }}
                                                     onUpdate={fetchData}
                                                 />
@@ -392,7 +440,9 @@ const ProfilePage = () => {
                                         </div>
 
                                         <div className="mt-8">
-                                            <h1 className="text-2xl font-bold tracking-tight">{profile.display_name}</h1>
+                                            <h1 className="text-2xl font-bold tracking-tight">
+                                                {profile.display_name}
+                                            </h1>
                                             <p className="text-muted-foreground">@{profile.username}</p>
                                         </div>
 
@@ -427,6 +477,43 @@ const ProfilePage = () => {
                                                         </a>
                                                     );
                                                 })}
+                                            </div>
+                                        )}
+
+                                        {profile.fav_song && (
+                                            <div className="mt-6">
+                                                <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-background border-2 border-foreground rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-in fade-in slide-in-from-top-4 duration-500">
+                                                    <div className="relative group shrink-0">
+                                                        <img
+                                                            src={profile.fav_song.artworkUrl100}
+                                                            className="w-10 h-10 rounded-xl object-cover border-2 border-foreground animate-spin-slow"
+                                                            style={{ animationPlayState: isPlaying ? 'running' : 'paused' }}
+                                                            alt=""
+                                                        />
+                                                        <button
+                                                            onClick={togglePlay}
+                                                            className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                                                        >
+                                                            {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <div className="flex gap-1 items-end h-3 mb-1.5">
+                                                            {[1, 2, 3, 4, 5].map(i => (
+                                                                <div
+                                                                    key={i}
+                                                                    className={`w-1 bg-foreground rounded-full transition-all duration-300 ${isPlaying ? 'animate-music-bar' : 'h-1'}`}
+                                                                    style={{ animationDelay: `${i * 0.15}s` }}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                        <p className="text-xs font-black truncate max-w-[250px] leading-tight flex items-center gap-1.5">
+                                                            {profile.fav_song.trackName}
+                                                            <span className="w-1 h-1 rounded-full bg-foreground/20" />
+                                                            <span className="opacity-60 font-medium">{profile.fav_song.artistName}</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
 

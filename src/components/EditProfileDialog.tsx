@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Edit3, Loader2, Upload, Camera, Link as LinkIcon, ChevronDown, ChevronUp } from "lucide-react";
+import { Edit3, Loader2, Upload, Camera, Link as LinkIcon, ChevronDown, ChevronUp, Music, Search, Play, Pause, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getNow } from "@/lib/utils";
@@ -22,6 +22,7 @@ interface EditProfileDialogProps {
         avatar_url: string | null;
         banner_url: string | null;
         social_links?: Record<string, string>;
+        fav_song?: any;
     };
     onUpdate: () => void;
 }
@@ -32,12 +33,20 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
     const [avatarUrl, setAvatarUrl] = useState(currentProfile.avatar_url || "");
     const [bannerUrl, setBannerUrl] = useState(currentProfile.banner_url || "");
     const [socialLinks, setSocialLinks] = useState<Record<string, string>>(currentProfile.social_links || {});
+    const [favSong, setFavSong] = useState<any>(currentProfile.fav_song || null);
     const [submitting, setSubmitting] = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [uploadingBanner, setUploadingBanner] = useState(false);
     const [showUrls, setShowUrls] = useState(false);
     const [showSocials, setShowSocials] = useState(false);
+    const [showMusic, setShowMusic] = useState(false);
+    const [songQuery, setSongQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searching, setSearching] = useState(false);
     const [open, setOpen] = useState(false);
+
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [playingPreview, setPlayingPreview] = useState<string | null>(null);
 
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -49,7 +58,24 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
             setAvatarUrl(currentProfile.avatar_url || "");
             setBannerUrl(currentProfile.banner_url || "");
             setSocialLinks(currentProfile.social_links || {});
+            setFavSong(currentProfile.fav_song || null);
+            setShowMusic(false);
+            setSearchResults([]);
+            setSongQuery("");
+        } else {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+                setPlayingPreview(null);
+            }
         }
+
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
     }, [open]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, bucket: 'avatars' | 'banners') => {
@@ -133,6 +159,7 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
                     avatar_url: avatarUrl,
                     banner_url: bannerUrl,
                     social_links: socialLinks,
+                    fav_song: favSong,
                     updated_at: getNow().toISOString(),
                 })
                 .eq("user_id", user.id);
@@ -147,6 +174,37 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
             toast.error(error.message || "Failed to update profile");
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const searchSongs = async () => {
+        if (!songQuery.trim()) return;
+        setSearching(true);
+        try {
+            const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(songQuery)}&entity=song&limit=5`);
+            const data = await response.json();
+            setSearchResults(data.results || []);
+        } catch (error) {
+            console.error("Error searching songs:", error);
+            toast.error("Failed to search songs");
+        } finally {
+            setSearching(false);
+        }
+    };
+
+    const togglePreview = (previewUrl: string) => {
+        if (playingPreview === previewUrl) {
+            audioRef.current?.pause();
+            setPlayingPreview(null);
+        } else {
+            if (audioRef.current) {
+                audioRef.current.pause();
+            }
+            const audio = new Audio(previewUrl);
+            audio.play();
+            audioRef.current = audio;
+            setPlayingPreview(previewUrl);
+            audio.onended = () => setPlayingPreview(null);
         }
     };
 
@@ -301,6 +359,94 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
                                                     />
                                                 </div>
                                             ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Favorite Song Section */}
+                                <div className="pt-6 border-t border-foreground/5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowMusic(!showMusic)}
+                                        className="flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-all p-3 rounded-xl hover:bg-secondary/50 w-full justify-between"
+                                    >
+                                        <div className="flex items-center gap-2 uppercase tracking-widest">
+                                            <Music size={14} />
+                                            {favSong ? "Change Profile Music" : "Add Profile Music"}
+                                        </div>
+                                        {showMusic ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                    </button>
+
+                                    {showMusic && (
+                                        <div className="mt-4 space-y-4 p-6 bg-secondary/5 rounded-2xl gum-border animate-in slide-in-from-top-4 duration-300">
+                                            {favSong && (
+                                                <div className="flex items-center gap-4 p-4 bg-background rounded-xl gum-border mb-4">
+                                                    <img src={favSong.artworkUrl100} className="w-12 h-12 rounded-lg object-cover" alt="" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-bold text-sm truncate">{favSong.trackName}</p>
+                                                        <p className="text-xs text-muted-foreground truncate">{favSong.artistName}</p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFavSong(null)}
+                                                        className="p-2 hover:bg-secondary rounded-full transition-colors"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            <div className="flex gap-2">
+                                                <div className="relative flex-1">
+                                                    <Input
+                                                        value={songQuery}
+                                                        onChange={(e) => setSongQuery(e.target.value)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), searchSongs())}
+                                                        className="gum-border bg-background pl-10"
+                                                        placeholder="Search artists or songs..."
+                                                    />
+                                                    <Music className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={searchSongs}
+                                                    disabled={searching}
+                                                    className="bg-secondary p-3 rounded-lg border-2 border-foreground hover:opacity-80 disabled:opacity-50"
+                                                >
+                                                    {searching ? <Loader2 className="animate-spin" size={18} /> : <Search size={18} />}
+                                                </button>
+                                            </div>
+
+                                            <div className="space-y-2 mt-4">
+                                                {searchResults.map((song) => (
+                                                    <div
+                                                        key={song.trackId}
+                                                        className="flex items-center gap-3 p-3 bg-background rounded-xl hover:bg-secondary/50 transition-colors cursor-pointer group border-2 border-transparent hover:border-foreground/10"
+                                                        onClick={() => setFavSong(song)}
+                                                    >
+                                                        <div className="relative w-10 h-10 shrink-0">
+                                                            <img src={song.artworkUrl100} className="w-full h-full rounded-md object-cover" alt="" />
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    togglePreview(song.previewUrl);
+                                                                }}
+                                                                className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity rounded-md"
+                                                            >
+                                                                {playingPreview === song.previewUrl ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-bold text-xs truncate">{song.trackName}</p>
+                                                            <p className="text-[10px] text-muted-foreground truncate">{song.artistName}</p>
+                                                        </div>
+                                                        {favSong?.trackId === song.trackId && (
+                                                            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>

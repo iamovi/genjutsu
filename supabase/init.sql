@@ -32,6 +32,7 @@ CREATE TABLE public.profiles (
   avatar_url TEXT DEFAULT '',
   banner_url TEXT DEFAULT '',
   social_links JSONB DEFAULT '{}'::jsonb,
+  fav_song JSONB DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
