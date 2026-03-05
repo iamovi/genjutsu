@@ -172,13 +172,21 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
   .animate-spin-slow {
     animation: spin 8s linear infinite;
   }
 
   @keyframes music-bar {
-    0%, 100% { height: 4px; }
-    50% { height: 16px; }
+
+    0%,
+    100% {
+      height: 4px;
+    }
+
+    50% {
+      height: 16px;
+    }
   }
 
   .animate-music-bar {
@@ -225,5 +233,22 @@
   .gum-btn:active {
     box-shadow: var(--shadow-gum-active);
     transform: translate(4px, 4px);
+  }
+
+  /* GitHub-style Markdown Rendering */
+  .prose-readme {
+    @apply prose prose-sm dark:prose-invert max-w-none;
+    @apply prose-headings:font-bold prose-headings:tracking-tight;
+    @apply prose-h1:text-2xl prose-h1:pb-2 prose-h1:border-b prose-h1:mb-4;
+    @apply prose-h2:text-xl prose-h2:pb-2 prose-h2:border-b prose-h2:mb-4 prose-h2:mt-6;
+    @apply prose-p:leading-relaxed prose-p:my-3;
+    @apply prose-ul:list-disc prose-ul:pl-5;
+    @apply prose-ol:list-decimal prose-ol:pl-5;
+    @apply prose-li:my-1;
+    @apply prose-a:text-primary prose-a:no-underline hover:prose-a:underline;
+    @apply prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none;
+    @apply prose-pre:bg-muted prose-pre:gum-border prose-pre:p-4;
+    @apply prose-img:rounded-lg prose-img:gum-border;
+    @apply prose-hr:border-border prose-hr:my-6;
   }
 }

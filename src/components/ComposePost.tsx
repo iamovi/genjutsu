@@ -1,32 +1,52 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Code, ImageIcon, Smile, Send, X, Loader2 } from "lucide-react";
 import { useMentions } from "@/hooks/useMentions";
 import { motion, AnimatePresence } from "framer-motion";
 import MentionList from "./MentionList";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkGemoji from "remark-gemoji";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import vscDarkPlus from "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus";
+import { FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface ComposePostProps {
-  onPost: (content: string, code: string, tags: string[], media_url?: string) => Promise<void>;
+  onPost: (content: string, code: string, tags: string[], media_url?: string, is_readme?: boolean) => Promise<void>;
 }
 
 const ComposePost = ({ onPost }: ComposePostProps) => {
   const [content, setContent] = useState("");
   const [showCode, setShowCode] = useState(false);
   const [code, setCode] = useState("");
+  const [isReadme, setIsReadme] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { profile } = useProfile();
+  const { user } = useAuth();
 
   // Mention state
   const { suggestions, fetchSuggestions, clearSuggestions } = useMentions();
   const [mentionSearch, setMentionSearch] = useState("");
   const [mentionIndex, setMentionIndex] = useState(-1);
+
+  // Auto-expand textarea with limit
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      const newHeight = Math.min(textarea.scrollHeight, 400); // Max height of 400px
+      textarea.style.height = `${newHeight}px`;
+      textarea.style.overflowY = textarea.scrollHeight > 400 ? "auto" : "hidden";
+    }
+  }, [content]);
 
   const extractTags = (text: string): string[] => {
     // Unicode-aware regex to match hashtags in any language
@@ -120,15 +140,17 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
       }
 
       const tags = extractTags(content);
-      // Clean content by removing hashtags (Unicode supporting regex)
-      const cleanContent = content.replace(/#[\p{L}\p{N}_]+/gu, "").replace(/\s+/g, " ").trim();
+      // Clean content only for normal posts to remove extracted hashtags and collapse spaces
+      const postContent = isReadme
+        ? content
+        : content.replace(/#[\p{L}\p{N}_]+/gu, "").replace(/\s+/g, " ").trim();
 
-      await onPost(cleanContent || content, code, tags, mediaUrl);
+      await onPost(postContent || content, code, tags, mediaUrl, isReadme);
 
       setContent("");
       setCode("");
-      setShowCode(false);
-      setMediaFile(null);
+      setIsReadme(false);
+      setShowPreview(false);
       if (mediaPreview) URL.revokeObjectURL(mediaPreview);
       setMediaPreview(null);
     } catch (err: any) {
@@ -163,9 +185,39 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
             value={content}
             onChange={handleTextareaChange}
             placeholder="Share what you're building... (use #tags or @mentions)"
-            className="w-full bg-transparent resize-none outline-none text-sm placeholder:text-muted-foreground min-h-[60px]"
+            className="w-full bg-transparent resize-none outline-none text-sm placeholder:text-muted-foreground min-h-[60px] custom-scrollbar"
             rows={2}
           />
+
+          {isReadme && showPreview && (
+            <div className="mt-3 p-4 rounded-lg gum-border bg-secondary/10 max-h-[400px] overflow-y-auto prose-readme custom-scrollbar">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkGemoji]}
+                components={{
+                  code({ node, inline, className, children, ...props }: any) {
+                    const match = /language-(\w+)/.exec(className || "");
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        style={vscDarkPlus}
+                        language={match[1]}
+                        PreTag="div"
+                        className="rounded-md my-4"
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, "")}
+                      </SyntaxHighlighter>
+                    ) : (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
+              >
+                {content}
+              </ReactMarkdown>
+            </div>
+          )}
 
           <MentionList
             suggestions={suggestions}
@@ -228,6 +280,23 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
               >
                 <Code size={16} />
               </button>
+              <button
+                onClick={() => setIsReadme(!isReadme)}
+                className={`p-2 rounded-lg transition-colors ${isReadme ? "bg-primary text-primary-foreground" : "hover:bg-secondary text-muted-foreground"
+                  }`}
+                title="Toggle README (Markdown)"
+              >
+                <FileText size={16} />
+              </button>
+              {isReadme && (
+                <button
+                  onClick={() => setShowPreview(!showPreview)}
+                  className={`text-[10px] font-bold px-2 py-1 rounded-[3px] gum-border uppercase tracking-tight transition-colors ${showPreview ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
+                    }`}
+                >
+                  {showPreview ? "Editor" : "Preview"}
+                </button>
+              )}
             </div>
             <button
               onClick={handleSubmit}

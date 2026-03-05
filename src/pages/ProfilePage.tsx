@@ -118,18 +118,18 @@ const ProfilePage = () => {
             setProfile(p as ProfileData);
 
             // 2. Fetch Posts
-            const { data: postsData } = await supabase
+            const { data: postsData } = await (supabase
                 .from("posts")
                 .select(`
-                  id, content, code, media_url, tags, created_at, user_id,
+                  id, content, code, media_url, tags, created_at, user_id, is_readme,
                   profiles ( username, display_name, avatar_url )
-                `)
+                `) as any)
                 .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
                 .eq("user_id", p.user_id)
                 .order("created_at", { ascending: false });
 
             if (postsData && p) {
-                const postIds = postsData.map(post => post.id);
+                const postIds = (postsData as any[]).map(post => post.id);
 
                 // Fetch counts and user status
                 const [{ data: likesData }, { data: commentsData }] = await Promise.all([
@@ -201,12 +201,12 @@ const ProfilePage = () => {
 
             const postIds = bookmarkRows.map((b: any) => b.post_id);
 
-            const { data: postsData } = await supabase
+            const { data: postsData } = await (supabase
                 .from("posts")
                 .select(`
-                    id, content, code, media_url, tags, created_at, user_id,
+                    id, content, code, media_url, tags, created_at, user_id, is_readme,
                     profiles ( username, display_name, avatar_url )
-                `)
+                `) as any)
                 .in("id", postIds)
                 .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
                 .order("created_at", { ascending: false });
@@ -216,7 +216,7 @@ const ProfilePage = () => {
                 return;
             }
 
-            const activePostIds = postsData.map(p => p.id);
+            const activePostIds = (postsData as any[]).map(p => p.id);
 
             const [{ data: likesData }, { data: commentsData }] = await Promise.all([
                 supabase.from("likes").select("post_id").in("post_id", activePostIds),

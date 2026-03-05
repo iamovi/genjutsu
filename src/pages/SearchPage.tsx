@@ -47,19 +47,19 @@ const SearchPage = () => {
                 .limit(10);
 
             // 2. Search Posts
-            const { data: postsData } = await supabase
+            const { data: postsData } = await (supabase
                 .from("posts")
                 .select(`
-                    id, content, code, media_url, tags, created_at, user_id,
+                    id, content, code, media_url, tags, created_at, user_id, is_readme,
                     profiles ( username, display_name, avatar_url )
-                `)
+                `) as any)
                 .or(`content.ilike.%${sanitized}%,tags.cs.{${sanitized.replace('#', '')}}`)
                 .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
                 .order("created_at", { ascending: false })
                 .limit(20);
 
             if (postsData) {
-                const postIds = postsData.map(p => p.id);
+                const postIds = (postsData as any[]).map(p => p.id);
 
                 const [{ data: likesData }, { data: commentsData }] = await Promise.all([
                     supabase.from("likes").select("post_id").in("post_id", postIds),

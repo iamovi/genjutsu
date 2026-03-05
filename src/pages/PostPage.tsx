@@ -42,12 +42,12 @@ const PostPage = () => {
 
         try {
             setLoading(true);
-            const { data: p, error } = await supabase
+            const { data: p, error } = await (supabase
                 .from("posts")
                 .select(`
-          id, content, code, media_url, tags, created_at, user_id,
+          id, content, code, media_url, tags, created_at, user_id, is_readme,
           profiles ( username, display_name, avatar_url )
-        `)
+        `) as any)
                 .eq("id", postId)
                 .single();
 

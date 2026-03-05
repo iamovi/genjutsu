@@ -45,6 +45,7 @@ CREATE TABLE public.posts (
   code TEXT DEFAULT '',
   media_url TEXT DEFAULT '',
   tags TEXT[] DEFAULT '{}',
+  is_readme BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );

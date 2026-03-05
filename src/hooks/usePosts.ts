@@ -22,6 +22,7 @@ export interface PostWithProfile {
   user_liked: boolean;
   user_bookmarked: boolean;
   comments_count: number;
+  is_readme: boolean;
 }
 
 const PAGE_SIZE = 10;
@@ -35,12 +36,12 @@ export function usePosts() {
     const from = pageParam * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data: postsData, error } = await supabase
+    const { data: postsData, error } = await (supabase
       .from("posts")
       .select(`
-        id, content, code, media_url, tags, created_at, user_id,
+        id, content, code, media_url, tags, created_at, user_id, is_readme,
         profiles ( username, display_name, avatar_url )
-      `)
+      `) as any)
       .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
       .order("created_at", { ascending: false })
       .range(from, to);
@@ -48,7 +49,7 @@ export function usePosts() {
     if (error) throw error;
     if (!postsData) return [];
 
-    const postIds = postsData.map(p => p.id);
+    const postIds = (postsData as any[]).map(p => p.id);
     if (postIds.length === 0) return [];
 
     // Fetch likes counts
@@ -108,15 +109,16 @@ export function usePosts() {
   const posts = data?.pages.flat() ?? [];
 
   const createPostMutation = useMutation({
-    mutationFn: async ({ content, code, tags, media_url }: { content: string, code: string, tags: string[], media_url?: string }) => {
+    mutationFn: async ({ content, code, tags, media_url, is_readme }: { content: string, code: string, tags: string[], media_url?: string, is_readme: boolean }) => {
       if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("posts").insert({
+      const { error } = await (supabase.from("posts").insert({
         user_id: user.id,
         content,
         code: code || "",
         tags,
         media_url: media_url || "",
-      });
+        is_readme,
+      }) as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -132,12 +134,12 @@ export function usePosts() {
   return {
     posts,
     loading: status === "pending",
-    createPost: (content: string, code: string, tags: string[], media_url?: string) => {
+    createPost: (content: string, code: string, tags: string[], media_url?: string, is_readme: boolean = false) => {
       if (!user) {
         toast.error("Please sign in to share a post");
         return;
       }
-      return createPostMutation.mutateAsync({ content, code, tags, media_url });
+      return createPostMutation.mutateAsync({ content, code, tags, media_url, is_readme });
     },
     toggleLike,
     toggleBookmark,

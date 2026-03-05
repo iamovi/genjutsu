@@ -8,6 +8,11 @@ import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 import { getNow, cn } from "@/lib/utils";
 import { linkify } from "@/lib/linkify";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkGemoji from "remark-gemoji";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import vscDarkPlus from "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus";
 
 interface PostCardProps {
   post: PostWithProfile;
@@ -120,9 +125,39 @@ const PostCard = ({ post, onLike, onBookmark, onDelete }: PostCardProps) => {
             )}
           </div>
 
-          <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words">
-            {linkify(post.content)}
-          </p>
+          {post.is_readme ? (
+            <div className="mt-3 p-4 rounded-lg gum-border bg-secondary/10 prose-readme">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkGemoji]}
+                components={{
+                  code({ node, inline, className, children, ...props }: any) {
+                    const match = /language-(\w+)/.exec(className || "");
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        style={vscDarkPlus}
+                        language={match[1]}
+                        PreTag="div"
+                        className="rounded-md my-4"
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, "")}
+                      </SyntaxHighlighter>
+                    ) : (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
+              >
+                {post.content}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words">
+              {linkify(post.content)}
+            </p>
+          )}
 
           {post.media_url && (
             <div className="mt-3 rounded-lg gum-border overflow-hidden bg-muted">
