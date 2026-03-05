@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Code, ImageIcon, Smile, Send, X, Loader2 } from "lucide-react";
 import { useMentions } from "@/hooks/useMentions";
 import { motion, AnimatePresence } from "framer-motion";
+import MentionList from "./MentionList";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -166,44 +167,11 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
             rows={2}
           />
 
-          <AnimatePresence>
-            {suggestions.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="absolute bottom-full left-0 mb-2 w-64 gum-card bg-background/95 backdrop-blur-sm shadow-xl z-50 overflow-hidden border border-primary/20"
-              >
-                <div className="p-2 border-b border-secondary bg-secondary/30">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mention User</span>
-                </div>
-                <div className="max-h-60 overflow-y-auto">
-                  {suggestions.map((profile) => (
-                    <button
-                      key={profile.id}
-                      type="button"
-                      onClick={() => insertMention(profile.username)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-primary hover:text-primary-foreground transition-all group border-b border-secondary/10 last:border-0 text-left"
-                    >
-                      <div className="w-10 h-10 rounded-[3px] gum-border bg-secondary overflow-hidden shrink-0 group-hover:border-primary-foreground/30">
-                        {profile.avatar_url ? (
-                          <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center font-bold text-sm uppercase">
-                            {profile.display_name[0]}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm truncate leading-none">{profile.display_name}</p>
-                        <p className="text-xs opacity-70 truncate mt-1">@{profile.username}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <MentionList
+            suggestions={suggestions}
+            onSelect={insertMention}
+            containerRef={textareaRef}
+          />
 
           <AnimatePresence>
             {mediaPreview && (

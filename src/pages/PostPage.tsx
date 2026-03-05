@@ -14,6 +14,7 @@ import { usePostActions } from "@/hooks/usePostActions";
 import { linkify } from "@/lib/linkify";
 import { useMentions } from "@/hooks/useMentions";
 import { AnimatePresence, motion } from "framer-motion";
+import MentionList from "@/components/MentionList";
 
 
 const PostPage = () => {
@@ -314,44 +315,11 @@ const PostPage = () => {
                                                         rows={2}
                                                     />
 
-                                                    <AnimatePresence>
-                                                        {suggestions.length > 0 && (
-                                                            <motion.div
-                                                                initial={{ opacity: 0, y: 10 }}
-                                                                animate={{ opacity: 1, y: 0 }}
-                                                                exit={{ opacity: 0, y: 10 }}
-                                                                className="absolute bottom-full left-0 mb-2 w-64 gum-card bg-background/95 backdrop-blur-sm shadow-xl z-50 overflow-hidden border border-primary/20"
-                                                            >
-                                                                <div className="p-2 border-b border-secondary bg-secondary/30">
-                                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mention User</span>
-                                                                </div>
-                                                                <div className="max-h-48 overflow-y-auto">
-                                                                    {suggestions.map((profile) => (
-                                                                        <button
-                                                                            key={profile.id}
-                                                                            type="button"
-                                                                            onClick={() => insertMention(profile.username)}
-                                                                            className="w-full flex items-center gap-3 p-2.5 hover:bg-primary hover:text-primary-foreground transition-all group border-b border-secondary/10 last:border-0 text-left"
-                                                                        >
-                                                                            <div className="w-8 h-8 rounded-[3px] gum-border bg-secondary overflow-hidden shrink-0 group-hover:border-primary-foreground/30">
-                                                                                {profile.avatar_url ? (
-                                                                                    <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
-                                                                                ) : (
-                                                                                    <div className="w-full h-full flex items-center justify-center font-bold text-xs uppercase">
-                                                                                        {profile.display_name[0]}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <p className="font-bold text-xs truncate leading-none">{profile.display_name}</p>
-                                                                                <p className="text-[10px] opacity-70 truncate mt-0.5">@{profile.username}</p>
-                                                                            </div>
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
+                                                    <MentionList
+                                                        suggestions={suggestions}
+                                                        onSelect={insertMention}
+                                                        containerRef={textareaRef}
+                                                    />
 
                                                     <div className="flex justify-end mt-2 pt-2 border-t border-secondary">
                                                         <button
