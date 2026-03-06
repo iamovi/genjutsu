@@ -1,15 +1,40 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import { Helmet } from "react-helmet-async";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getNow } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, MessageCircle, FileCode2, ShieldAlert, Trash2, Ban, Undo2 } from "lucide-react";
+import {
+  Users,
+  MessageCircle,
+  FileCode2,
+  ShieldAlert,
+  Trash2,
+  Ban,
+  Undo2,
+  ShieldCheck,
+  Filter,
+  AlertTriangle,
+  Search,
+  LayoutDashboard,
+  Clock
+} from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface AdminStats {
   usersTotal: number;
@@ -35,14 +60,27 @@ interface ModerationUser {
   display_name: string;
   banned_until: string | null;
   ban_reason: string | null;
+  ban_scopes: string[] | null;
 }
 
 const AdminPage = () => {
   const queryClient = useQueryClient();
+  const [userSearchText, setUserSearchText] = useState("");
   const [blockContent, setBlockContent] = useState(true);
   const [blockSocial, setBlockSocial] = useState(true);
   const [blockMessages, setBlockMessages] = useState(true);
 
+  // Confirmation State
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmValue, setConfirmValue] = useState("");
+  const [pendingAction, setPendingAction] = useState<{
+    type: "delete_post" | "ban_user" | "unban_user";
+    targetId: string;
+    params?: any;
+    label?: string;
+  } | null>(null);
+
+  // Queries (Data fetching logic preserved)
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ["admin-stats"],
     queryFn: async () => {
@@ -83,7 +121,6 @@ const AdminPage = () => {
         .limit(50);
 
       if (error) throw error;
-
       return (data as any[]).map((p) => ({
         id: p.id,
         content: p.content,
@@ -94,23 +131,23 @@ const AdminPage = () => {
     },
   });
 
-  const { data: users = [], isLoading: usersLoading } = useQuery<ModerationUser[]>({
+  const { data: usersData = [], isLoading: usersLoading } = useQuery<ModerationUser[]>({
     queryKey: ["admin-users"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, user_id, username, display_name, banned_until, ban_reason")
+        .select("id, user_id, username, display_name, banned_until, ban_reason, ban_scopes")
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(200);
 
       if (error) throw error;
       return data as unknown as ModerationUser[];
     },
   });
 
+  // Mutations (Logic preserved)
   const deletePostMutation = useMutation({
     mutationFn: async (postId: string) => {
-      // 1. Fetch media_url to clean up storage
       const { data: post } = await supabase
         .from("posts")
         .select("media_url")
@@ -129,7 +166,6 @@ const AdminPage = () => {
         }
       }
 
-      // 2. Perform the database deletion
       const { error } = await (supabase as any).rpc("admin_delete_post", {
         p_post_id: postId,
       });
@@ -140,9 +176,7 @@ const AdminPage = () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       toast.success("Post deleted as admin.");
     },
-    onError: () => {
-      toast.error("Failed to delete post. Make sure your admin SQL migration is applied.");
-    },
+    onError: () => toast.error("Failed to delete post."),
   });
 
   const banUserMutation = useMutation({
@@ -159,9 +193,7 @@ const AdminPage = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast.success("User banned.");
     },
-    onError: () => {
-      toast.error("Failed to ban user. Check that the admin SQL migration ran successfully.");
-    },
+    onError: () => toast.error("Failed to ban user."),
   });
 
   const unbanUserMutation = useMutation({
@@ -175,12 +207,17 @@ const AdminPage = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast.success("User unbanned.");
     },
-    onError: () => {
-      toast.error("Failed to unban user.");
-    },
+    onError: () => toast.error("Failed to unban user."),
   });
 
-  const handleBan = (userId: string, minutes: number, label: string) => {
+  // Confirmation Handlers
+  const triggerDeleteConfirm = (postId: string) => {
+    setPendingAction({ type: "delete_post", targetId: postId });
+    setConfirmValue("");
+    setConfirmOpen(true);
+  };
+
+  const triggerBanConfirm = (userId: string, minutes: number, label: string) => {
     const scopes: string[] = [];
     if (blockContent) scopes.push("post", "comment");
     if (blockSocial) scopes.push("social");
@@ -191,7 +228,45 @@ const AdminPage = () => {
       return;
     }
 
-    banUserMutation.mutate({ userId, minutes, reason: label, scopes });
+    setPendingAction({
+      type: "ban_user",
+      targetId: userId,
+      params: { minutes, scopes },
+      label
+    });
+    setConfirmValue("");
+    setConfirmOpen(true);
+  };
+
+  const triggerUnbanConfirm = (userId: string) => {
+    setPendingAction({ type: "unban_user", targetId: userId });
+    setConfirmValue("");
+    setConfirmOpen(true);
+  };
+
+  const executeConfirmedAction = () => {
+    if (confirmValue !== "CONFIRM") return;
+    if (!pendingAction) return;
+
+    switch (pendingAction.type) {
+      case "delete_post":
+        deletePostMutation.mutate(pendingAction.targetId);
+        break;
+      case "ban_user":
+        banUserMutation.mutate({
+          userId: pendingAction.targetId,
+          minutes: pendingAction.params.minutes,
+          reason: pendingAction.label,
+          scopes: pendingAction.params.scopes
+        });
+        break;
+      case "unban_user":
+        unbanUserMutation.mutate(pendingAction.targetId);
+        break;
+    }
+
+    setConfirmOpen(false);
+    setPendingAction(null);
   };
 
   const isBanned = (user: ModerationUser) => {
@@ -199,292 +274,473 @@ const AdminPage = () => {
     return new Date(user.banned_until) > getNow();
   };
 
+  // Filtered lists
+  const filteredAllUsers = useMemo(() => {
+    const text = userSearchText.toLowerCase();
+    return usersData.filter(u =>
+      !text ||
+      u.username.toLowerCase().includes(text) ||
+      u.display_name.toLowerCase().includes(text)
+    );
+  }, [usersData, userSearchText]);
+
+  const bannedUsers = useMemo(() => {
+    return usersData.filter(u => isBanned(u));
+  }, [usersData]);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <Helmet>
         <title>genjutsu — Admin</title>
       </Helmet>
       <Navbar />
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Admin dashboard</h1>
-            <p className="text-sm text-muted-foreground">
-              High-level overview and moderation controls. Changes here are enforced on the backend.
+
+      <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black tracking-tighter uppercase italic">
+              Moderation <span className="text-primary italic">Command</span>
+            </h1>
+            <p className="text-muted-foreground font-medium text-sm">
+              Secured administrative oversight and behavioral control.
             </p>
+          </div>
+          <div className="flex items-center gap-3 bg-secondary/30 p-1 rounded-sm border border-white/5 backdrop-blur-md">
+            <div className="px-3 py-1 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] uppercase font-bold tracking-widest opacity-70">Server Live</span>
+            </div>
           </div>
         </header>
 
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {statsLoading ? <span className="text-muted-foreground">...</span> : stats?.usersTotal ?? 0}
+        {/* Action Confirmation Dialog */}
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent className="rounded-none border-white/10 bg-black/90 backdrop-blur-xl border-l-4 border-l-primary gap-6 p-8">
+            <DialogHeader className="space-y-4">
+              <div className="bg-primary/20 p-3 w-fit">
+                <ShieldAlert className="w-6 h-6 text-primary" />
               </div>
-              <CardDescription>All profiles created.</CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Posts (24h)</CardTitle>
-              <FileCode2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {statsLoading ? <span className="text-muted-foreground">...</span> : stats?.postsLast24h ?? 0}
-              </div>
-              <CardDescription>Ephemeral posts created in the last 24 hours.</CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Comments (24h)</CardTitle>
-              <MessageCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {statsLoading ? <span className="text-muted-foreground">...</span> : stats?.commentsLast24h ?? 0}
-              </div>
-              <CardDescription>New comments in the last 24 hours.</CardDescription>
-            </CardContent>
-          </Card>
-        </section>
-
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  Recent posts
-                  <ShieldAlert className="h-4 w-4 text-muted-foreground" />
-                </CardTitle>
-                <CardDescription>Last 50 posts. Deletions happen via secure admin RPC.</CardDescription>
+                <DialogTitle className="text-2xl font-black uppercase tracking-tight italic">Authorization Required</DialogTitle>
+                <DialogDescription className="text-[10px] font-bold uppercase opacity-60">
+                  Executing protocol: <span className="text-primary">{pendingAction?.type.replace(/_/g, ' ')}</span>
+                </DialogDescription>
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {postsLoading ? (
-                <p className="text-xs text-muted-foreground py-4">Loading posts…</p>
-              ) : posts.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-4">No posts found.</p>
-              ) : (
-                <div className="mt-2">
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <p className="text-[11px] font-bold leading-relaxed uppercase italic">
+                This action is significant and will be logged. Type <span className="text-primary font-black underline">CONFIRM</span> to bypass security locks.
+              </p>
+              <Input
+                className="rounded-none bg-white/5 border-white/10 h-11 text-center font-black tracking-[0.2em] uppercase text-primary placeholder:opacity-20 translate-x-[2px]"
+                placeholder="TYPE HERE"
+                value={confirmValue}
+                onChange={(e) => setConfirmValue(e.target.value)}
+              />
+            </div>
+
+            <DialogFooter className="flex sm:flex-row gap-2 mt-4">
+              <Button
+                variant="outline"
+                className="rounded-none h-11 flex-1 uppercase font-black text-[10px] border-white/5 hover:bg-white/5 transition-all"
+                onClick={() => setConfirmOpen(false)}
+              >
+                Abort
+              </Button>
+              <Button
+                variant="destructive"
+                className="rounded-none h-11 flex-1 uppercase font-black text-[10px] italic shadow-[4px_4px_0px_rgba(244,63,94,0.2)] disabled:opacity-20 disabled:grayscale transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                disabled={confirmValue !== "CONFIRM"}
+                onClick={executeConfirmedAction}
+              >
+                Execute
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Stats Grid */}
+        <motion.section
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          <motion.div variants={itemVariants}>
+            <Card className="rounded-none border-white/5 bg-secondary/20 hover:bg-secondary/40 transition-all duration-300 overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity translate-x-4 -translate-y-4">
+                <Users className="w-24 h-24" />
+              </div>
+              <CardHeader className="pb-2">
+                <CardDescription className="uppercase text-[10px] font-black tracking-[0.2em] text-primary/70">Population</CardDescription>
+                <CardTitle className="text-4xl font-black italic">{statsLoading ? "—" : stats?.usersTotal ?? 0}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground font-bold">Total registered citizens.</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <Card className="rounded-none border-white/5 bg-secondary/20 hover:bg-secondary/40 transition-all duration-300 overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity translate-x-4 -translate-y-4">
+                <FileCode2 className="w-24 h-24" />
+              </div>
+              <CardHeader className="pb-2">
+                <CardDescription className="uppercase text-[10px] font-black tracking-[0.2em] text-emerald-500/70">Intelligence</CardDescription>
+                <CardTitle className="text-4xl font-black italic">{statsLoading ? "—" : stats?.postsLast24h ?? 0}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground font-bold">New posts in circulation (24h).</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <Card className="rounded-none border-white/5 bg-secondary/20 hover:bg-secondary/40 transition-all duration-300 overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity translate-x-4 -translate-y-4">
+                <MessageCircle className="w-24 h-24" />
+              </div>
+              <CardHeader className="pb-2">
+                <CardDescription className="uppercase text-[10px] font-black tracking-[0.2em] text-blue-500/70">Engagement</CardDescription>
+                <CardTitle className="text-4xl font-black italic">{statsLoading ? "—" : stats?.commentsLast24h ?? 0}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground font-bold">Conversational volume (24h).</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.section>
+
+        <Tabs defaultValue="posts" className="w-full space-y-8">
+          <TabsList className="bg-transparent border-b border-white/5 w-full justify-start gap-8 rounded-none h-auto p-0 pb-2">
+            <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 pb-2 h-auto text-[11px] uppercase font-black tracking-widest transition-all hover:text-primary">
+              <LayoutDashboard className="w-3 h-3 mr-2" />
+              Live Posts
+            </TabsTrigger>
+            <TabsTrigger value="users" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 pb-2 h-auto text-[11px] uppercase font-black tracking-widest transition-all hover:text-primary">
+              <Users className="w-3 h-3 mr-2" />
+              All Users
+            </TabsTrigger>
+            <TabsTrigger value="banned" className="rounded-none border-b-2 border-transparent data-[state=active]:border-destructive data-[state=active]:bg-transparent px-2 pb-2 h-auto text-[11px] uppercase font-black tracking-widest transition-all hover:text-destructive">
+              <Ban className="w-3 h-3 mr-2" />
+              Banned Users
+              {bannedUsers.length > 0 && <Badge variant="destructive" className="ml-2 rounded-none px-1 py-0 h-4 text-[9px] min-w-4 flex items-center justify-center">{bannedUsers.length}</Badge>}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Posts Tab */}
+          <TabsContent value="posts" className="space-y-4 m-0 transition-all">
+            <Card className="rounded-none border-white/5 bg-secondary/10 overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 py-4">
+                <div className="space-y-0.5">
+                  <CardTitle className="text-xs uppercase font-black tracking-widest flex items-center gap-2">
+                    Operational Feed
+                  </CardTitle>
+                  <CardDescription className="text-[10px] font-medium">Real-time surveillance of user-generated content.</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>User</TableHead>
-                        <TableHead>Content</TableHead>
-                        <TableHead className="w-[120px]">Created</TableHead>
-                        <TableHead className="w-[80px] text-right">Actions</TableHead>
+                    <TableHeader className="bg-secondary/20">
+                      <TableRow className="border-white/5 hover:bg-transparent">
+                        <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Entity</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Payload</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Timestamp</TableHead>
+                        <TableHead className="text-right text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {posts.map((post) => (
-                        <TableRow key={post.id}>
-                          <TableCell>
+                      {postsLoading ? (
+                        <TableRow className="hover:bg-transparent"><TableCell colSpan={4} className="text-center py-10 text-[11px] uppercase font-bold opacity-50 italic">Retrieving stream...</TableCell></TableRow>
+                      ) : posts.length === 0 ? (
+                        <TableRow className="hover:bg-transparent"><TableCell colSpan={4} className="text-center py-10 text-[11px] uppercase font-bold opacity-50 italic">No activity detected.</TableCell></TableRow>
+                      ) : (
+                        posts.map((post) => (
+                          <TableRow key={post.id} className="border-white/5 group transition-colors">
+                            <TableCell className="py-4">
+                              <div className="flex flex-col">
+                                <span className="text-xs font-black uppercase italic tracking-tight">
+                                  {post.profiles?.display_name ?? "Missing Entity"}
+                                </span>
+                                <span className="text-[10px] text-primary font-bold">
+                                  @{post.profiles?.username ?? "null"}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <p className="text-[11px] font-medium leading-relaxed max-w-md line-clamp-2 opacity-80">{post.content}</p>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <div className="flex items-center gap-2 text-[10px] font-bold opacity-60">
+                                <Clock className="w-3 h-3 text-primary" />
+                                {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right py-4">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-8 rounded-none text-[10px] font-black uppercase italic opacity-0 group-hover:opacity-100 transition-all hover:scale-105"
+                                onClick={() => triggerDeleteConfirm(post.id)}
+                                disabled={deletePostMutation.isPending}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                Eviscerate
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="space-y-6 m-0 animate-in fade-in duration-500">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Controls Column */}
+              <div className="lg:w-80 space-y-6 shrink-0">
+                <Card className="rounded-none border-white/5 bg-secondary/10">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-[11px] uppercase font-black tracking-widest flex items-center gap-2">
+                      Targeting Filters
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder="Search Identification..."
+                        className="pl-9 h-10 rounded-none bg-background/50 border-white/5 text-[11px] font-bold"
+                        value={userSearchText}
+                        onChange={(e) => setUserSearchText(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-4 pt-2">
+                      <h4 className="text-[10px] uppercase font-black tracking-widest text-primary/70">Ban Scope Definition</h4>
+                      <div className="space-y-3">
+                        {[
+                          { id: "content", label: "Posts & Comments", state: blockContent, setter: setBlockContent },
+                          { id: "social", label: "Interactions (Likes/Follow)", state: blockSocial, setter: setBlockSocial },
+                          { id: "messages", label: "Private Whispers", state: blockMessages, setter: setBlockMessages },
+                        ].map((scope) => (
+                          <label key={scope.id} className="flex items-center justify-between p-3 border border-white/5 bg-background/30 cursor-pointer hover:bg-background/50 transition-colors">
+                            <span className="text-[10px] font-bold uppercase tracking-tight">{scope.label}</span>
+                            <div
+                              onClick={() => scope.setter(!scope.state)}
+                              className={`w-4 h-4 border-2 flex items-center justify-center transition-all ${scope.state ? 'bg-primary border-primary' : 'border-white/10'}`}
+                            >
+                              {scope.state && <div className="w-1.5 h-1.5 bg-background font-black" />}
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="rounded-none border-white/5 bg-primary/5 p-4 border-l-4 border-l-primary">
+                  <div className="flex gap-3">
+                    <ShieldAlert className="w-5 h-5 text-primary shrink-0" />
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-widest leading-tight">Admin Protocol</p>
+                      <p className="text-[9px] font-bold leading-tight uppercase italic opacity-60">
+                        Sanctions applied here are absolute. Actions are logged and permanent.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Users List Column */}
+              <div className="flex-1 min-w-0">
+                <Card className="rounded-none border-white/5 bg-secondary/10 overflow-hidden">
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader className="bg-secondary/20">
+                        <TableRow className="border-white/5 hover:bg-transparent">
+                          <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Subject</TableHead>
+                          <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Status</TableHead>
+                          <TableHead className="text-right text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Ban Application</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {usersLoading ? (
+                          <TableRow className="hover:bg-transparent"><TableCell colSpan={3} className="text-center py-10 text-[11px] uppercase font-bold opacity-50 italic">Decrypting registry...</TableCell></TableRow>
+                        ) : filteredAllUsers.length === 0 ? (
+                          <TableRow className="hover:bg-transparent"><TableCell colSpan={3} className="text-center py-10 text-[11px] uppercase font-bold opacity-50 italic">No matches found.</TableCell></TableRow>
+                        ) : (
+                          filteredAllUsers.map((user) => {
+                            const banned = isBanned(user);
+                            return (
+                              <TableRow key={user.id} className="border-white/5 group hover:bg-white/[0.02]">
+                                <TableCell className="py-4">
+                                  <div className="flex flex-col">
+                                    <span className="text-xs font-black uppercase italic italic">{user.display_name}</span>
+                                    <span className="text-[10px] font-bold opacity-60">@{user.username}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-4">
+                                  {banned ? (
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-1.5 h-1.5 bg-destructive rounded-full" />
+                                      <span className="text-[10px] uppercase font-black text-destructive tracking-widest italic">Restricted</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                                      <span className="text-[10px] uppercase font-black text-emerald-500 tracking-widest italic">Compliant</span>
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right py-4">
+                                  {banned ? (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-8 rounded-none border-emerald-500/30 text-emerald-500 text-[10px] font-black uppercase italic hover:bg-emerald-500 hover:text-white transition-all"
+                                      onClick={() => triggerUnbanConfirm(user.user_id)}
+                                      disabled={unbanUserMutation.isPending}
+                                    >
+                                      <Undo2 className="h-3.5 w-3.5 mr-1" />
+                                      Amnesty
+                                    </Button>
+                                  ) : (
+                                    <div className="flex justify-end gap-1.5">
+                                      {["1h", "24h", "7d"].map((duration) => (
+                                        <Button
+                                          key={duration}
+                                          size="sm"
+                                          variant={duration === "7d" ? "destructive" : "outline"}
+                                          className={`h-8 rounded-none text-[9px] font-black uppercase border-white/5 hover:scale-105 transition-transform ${duration !== '7d' ? 'hover:bg-primary/20 hover:text-primary hover:border-primary/50' : ''}`}
+                                          onClick={() => triggerBanConfirm(
+                                            user.user_id,
+                                            duration === '1h' ? 60 : duration === '24h' ? 1440 : 10080,
+                                            duration
+                                          )}
+                                          disabled={banUserMutation.isPending}
+                                        >
+                                          {duration}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Banned Tab */}
+          <TabsContent value="banned" className="space-y-4 m-0 animate-in slide-in-from-bottom-2 duration-500">
+            <Card className="rounded-none border-destructive/20 bg-destructive/[0.03] overflow-hidden">
+              <CardHeader className="border-b border-destructive/10 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-destructive/10 text-destructive">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <CardTitle className="text-sm uppercase font-black tracking-[0.2em] text-destructive">Sanction Registry</CardTitle>
+                    <CardDescription className="text-[10px] font-bold uppercase opacity-60 italic">Active correctional measures across the infrastructure.</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader className="bg-destructive/10">
+                    <TableRow className="border-destructive/10 hover:bg-transparent">
+                      <TableHead className="text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Subject</TableHead>
+                      <TableHead className="text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Expiration</TableHead>
+                      <TableHead className="text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Blocked Scopes</TableHead>
+                      <TableHead className="text-right text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bannedUsers.length === 0 ? (
+                      <TableRow className="hover:bg-transparent"><TableCell colSpan={4} className="text-center py-16 text-[11px] uppercase font-black opacity-30 tracking-widest italic">Zero active sanctions detected.</TableCell></TableRow>
+                    ) : (
+                      bannedUsers.map((user) => (
+                        <TableRow key={user.id} className="border-destructive/10 group hover:bg-destructive/[0.05] transition-colors">
+                          <TableCell className="py-5">
                             <div className="flex flex-col">
-                              <span className="text-xs font-medium">
-                                {post.profiles?.display_name ?? "Unknown user"}
-                              </span>
-                              <span className="text-[11px] text-muted-foreground">
-                                @{post.profiles?.username ?? "unknown"}
-                              </span>
+                              <span className="text-xs font-black uppercase italic">{user.display_name}</span>
+                              <span className="text-[10px] text-destructive/70 font-bold">@{user.username}</span>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <p className="text-xs max-w-[260px] line-clamp-3">{post.content}</p>
+                          <TableCell className="py-5">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-destructive/80 italic">
+                                <Clock className="w-3 h-3" />
+                                {new Date(user.banned_until as string).toLocaleDateString()}
+                              </div>
+                              <div className="text-[9px] font-bold opacity-50 uppercase leading-none">
+                                {new Date(user.banned_until as string).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
                           </TableCell>
-                          <TableCell>
-                            <span className="text-[11px] text-muted-foreground">
-                              {new Date(post.created_at).toLocaleString()}
-                            </span>
+                          <TableCell className="py-5">
+                            <div className="flex flex-wrap gap-1">
+                              {(user.ban_scopes && user.ban_scopes.length > 0) ? (
+                                user.ban_scopes.map((s) => (
+                                  <Badge key={s} className="rounded-none bg-destructive/10 text-destructive border-destructive/20 text-[8px] uppercase font-bold px-2 py-0">
+                                    {s}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <Badge className="rounded-none bg-destructive text-white text-[8px] uppercase font-black px-2 py-0 border-none">GLOBAL</Badge>
+                              )}
+                            </div>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right py-5 text-destructive/80">
                             <Button
                               size="sm"
                               variant="destructive"
-                              className="h-7 px-2 text-[11px]"
-                              onClick={() => deletePostMutation.mutate(post.id)}
-                              disabled={deletePostMutation.isPending}
+                              className="h-9 px-4 rounded-none text-[10px] font-black uppercase italic transition-all hover:scale-105 active:scale-95 shadow-[4px_4px_0px_rgba(244,63,94,0.2)] hover:shadow-none"
+                              onClick={() => triggerUnbanConfirm(user.user_id)}
+                              disabled={unbanUserMutation.isPending}
                             >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              Delete
+                              <Undo2 className="h-3.5 w-3.5 mr-2" />
+                              Pardon Subject
                             </Button>
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden">
-            <CardHeader className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    Users & bans
-                    <Ban className="h-4 w-4 text-muted-foreground" />
-                  </CardTitle>
-                  <CardDescription>
-                    Ban spammers temporarily. Banned users cannot post or comment while active.
-                  </CardDescription>
-                </div>
-              </div>
-              <Input
-                placeholder="Filter by username or display name…"
-                className="h-8 text-xs"
-                onChange={(e) => {
-                  const value = e.target.value.toLowerCase();
-                  queryClient.setQueryData<ModerationUser[]>(["admin-users"], (old = []) =>
-                    old.map((u) => ({
-                      ...u, _matchesFilter: !value
-                        || u.username.toLowerCase().includes(value)
-                        || u.display_name.toLowerCase().includes(value),
-                    } as any)),
-                  );
-                }}
-              />
-              <div className="flex flex-wrap gap-3 pt-1 text-[11px] text-muted-foreground">
-                <label className="flex items-center gap-1 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={blockContent}
-                    onChange={(e) => setBlockContent(e.target.checked)}
-                    className="h-3 w-3 rounded border border-border bg-background"
-                  />
-                  <span>Block posts & comments</span>
-                </label>
-                <label className="flex items-center gap-1 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={blockSocial}
-                    onChange={(e) => setBlockSocial(e.target.checked)}
-                    className="h-3 w-3 rounded border border-border bg-background"
-                  />
-                  <span>Block likes / bookmarks / follows</span>
-                </label>
-                <label className="flex items-center gap-1 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={blockMessages}
-                    onChange={(e) => setBlockMessages(e.target.checked)}
-                    className="h-3 w-3 rounded border border-border bg-background"
-                  />
-                  <span>Block whispers</span>
-                </label>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {usersLoading ? (
-                <p className="text-xs text-muted-foreground py-4">Loading users…</p>
-              ) : users.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-4">No users found.</p>
-              ) : (
-                <div className="mt-2 max-h-[420px] overflow-y-auto pr-1">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>User</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="w-[170px] text-right">Ban controls</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users
-                        .filter((u: any) => u._matchesFilter ?? true)
-                        .map((user) => {
-                          const banned = isBanned(user);
-                          return (
-                            <TableRow key={user.id}>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-medium">{user.display_name}</span>
-                                  <span className="text-[11px] text-muted-foreground">@{user.username}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                {banned ? (
-                                  <div className="flex flex-col">
-                                    <span className="text-[11px] text-destructive font-medium">Banned</span>
-                                    <span className="text-[10px] text-muted-foreground">
-                                      until {new Date(user.banned_until as string).toLocaleString()}
-                                    </span>
-                                    {user.ban_reason && (
-                                      <span className="text-[10px] text-muted-foreground line-clamp-1">
-                                        reason: {user.ban_reason}
-                                      </span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-[11px] text-emerald-500 font-medium">Active</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right space-x-1">
-                                {banned ? (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-7 px-2 text-[11px]"
-                                    onClick={() => unbanUserMutation.mutate(user.user_id)}
-                                    disabled={unbanUserMutation.isPending}
-                                  >
-                                    <Undo2 className="h-3 w-3 mr-1" />
-                                    Unban
-                                  </Button>
-                                ) : (
-                                  <div className="flex justify-end gap-1">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-7 px-2 text-[11px]"
-                                      onClick={() => handleBan(user.user_id, 60, "1h")}
-                                      disabled={banUserMutation.isPending}
-                                    >
-                                      1h
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-7 px-2 text-[11px]"
-                                      onClick={() => handleBan(user.user_id, 60 * 24, "24h")}
-                                      disabled={banUserMutation.isPending}
-                                    >
-                                      24h
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      className="h-7 px-2 text-[11px]"
-                                      onClick={() => handleBan(user.user_id, 60 * 24 * 7, "7d")}
-                                      disabled={banUserMutation.isPending}
-                                    >
-                                      7d
-                                    </Button>
-                                  </div>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </section>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
 };
 
 export default AdminPage;
+
 
