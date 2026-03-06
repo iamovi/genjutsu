@@ -22,6 +22,28 @@ CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
 -- TABLES
 -- =============================================================================
 
+-- Admin Users (Moderation System)
+CREATE TABLE public.admin_users (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_by UUID REFERENCES auth.users(id)
+);
+
+-- Admin Verification Helper
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM public.admin_users au
+    WHERE au.user_id = auth.uid()
+  );
+END;
+$$ LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public;
+
 -- Profiles
 CREATE TABLE public.profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -33,6 +55,9 @@ CREATE TABLE public.profiles (
   banner_url TEXT DEFAULT '',
   social_links JSONB DEFAULT '{}'::jsonb,
   fav_song JSONB DEFAULT NULL,
+  banned_until TIMESTAMPTZ,
+  ban_reason TEXT,
+  ban_scopes TEXT[] DEFAULT '{}'::text[],
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   whisper_last_seen_at TIMESTAMPTZ DEFAULT now()
@@ -159,30 +184,32 @@ CREATE POLICY "Users can update their own posts"
   ON public.posts FOR UPDATE USING ((select auth.uid()) = user_id);
 CREATE POLICY "Users can delete their own posts"
   ON public.posts FOR DELETE USING ((select auth.uid()) = user_id);
+CREATE POLICY "Admins can delete any post"
+  ON public.posts FOR DELETE USING (public.is_admin());
 
 -- Likes
 CREATE POLICY "Likes are viewable by everyone"
   ON public.likes FOR SELECT USING (true);
 CREATE POLICY "Users can like posts"
-  ON public.likes FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+  ON public.likes FOR INSERT WITH CHECK ((select auth.uid()) = user_id AND public.is_action_allowed('social'));
 CREATE POLICY "Users can unlike posts"
-  ON public.likes FOR DELETE USING ((select auth.uid()) = user_id);
+  ON public.likes FOR DELETE USING ((select auth.uid()) = user_id AND public.is_action_allowed('social'));
 
 -- Bookmarks
 CREATE POLICY "Users can view their own bookmarks"
   ON public.bookmarks FOR SELECT USING ((select auth.uid()) = user_id);
 CREATE POLICY "Users can bookmark posts"
-  ON public.bookmarks FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+  ON public.bookmarks FOR INSERT WITH CHECK ((select auth.uid()) = user_id AND public.is_action_allowed('social'));
 CREATE POLICY "Users can remove bookmarks"
-  ON public.bookmarks FOR DELETE USING ((select auth.uid()) = user_id);
+  ON public.bookmarks FOR DELETE USING ((select auth.uid()) = user_id AND public.is_action_allowed('social'));
 
 -- Follows
 CREATE POLICY "Follows are viewable by everyone"
   ON public.follows FOR SELECT USING (true);
 CREATE POLICY "Users can follow"
-  ON public.follows FOR INSERT WITH CHECK ((select auth.uid()) = follower_id);
+  ON public.follows FOR INSERT WITH CHECK ((select auth.uid()) = follower_id AND public.is_action_allowed('social'));
 CREATE POLICY "Users can unfollow"
-  ON public.follows FOR DELETE USING ((select auth.uid()) = follower_id);
+  ON public.follows FOR DELETE USING ((select auth.uid()) = follower_id AND public.is_action_allowed('social'));
 
 -- Comments (INSERT blocked — must use create_comment() function)
 CREATE POLICY "Comments are viewable by everyone"
@@ -191,6 +218,8 @@ CREATE POLICY "Users can update their own comments"
   ON public.comments FOR UPDATE USING ((select auth.uid()) = user_id);
 CREATE POLICY "Users can delete their own comments"
   ON public.comments FOR DELETE USING ((select auth.uid()) = user_id);
+CREATE POLICY "Admins can delete any comment"
+  ON public.comments FOR DELETE USING (public.is_admin());
 
 -- User Action Log
 CREATE POLICY "Users can view own action log"
@@ -200,7 +229,7 @@ CREATE POLICY "Users can view own action log"
 CREATE POLICY "Users can view their own messages"
   ON public.messages FOR SELECT USING ((select auth.uid()) = sender_id OR (select auth.uid()) = receiver_id);
 CREATE POLICY "Users can send messages"
-  ON public.messages FOR INSERT WITH CHECK ((select auth.uid()) = sender_id);
+  ON public.messages FOR INSERT WITH CHECK ((select auth.uid()) = sender_id AND public.is_action_allowed('message'));
 CREATE POLICY "Receivers can mark messages as read"
   ON public.messages FOR UPDATE USING ((select auth.uid()) = receiver_id);
 
@@ -428,10 +457,102 @@ SELECT cron.schedule('10 * * * *', 'SELECT public.delete_expired_action_logs()')
 
 
 -- =============================================================================
--- SERVER-SIDE RATE-LIMITED FUNCTIONS
+-- SERVER-SIDE RATE-LIMITED & MODERATION FUNCTIONS
 -- =============================================================================
 
--- create_post: 30s cooldown, idempotency support
+-- Helper: Check if a given action is allowed for the current user (Fine-grained bans)
+CREATE OR REPLACE FUNCTION public.is_action_allowed(p_action TEXT)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_banned_until TIMESTAMPTZ;
+  v_scopes TEXT[];
+BEGIN
+  SELECT banned_until, ban_scopes
+  INTO v_banned_until, v_scopes
+  FROM public.profiles
+  WHERE user_id = auth.uid();
+
+  -- Not banned or ban expired → everything allowed
+  IF v_banned_until IS NULL OR v_banned_until <= now() THEN
+    RETURN true;
+  END IF;
+
+  -- Banned and no specific scopes set → block all actions
+  IF v_scopes IS NULL OR array_length(v_scopes, 1) IS NULL THEN
+    RETURN false;
+  END IF;
+
+  -- If this action is in the blocked scopes → disallow
+  IF p_action = ANY (v_scopes) THEN
+    RETURN false;
+  END IF;
+
+  RETURN true;
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public;
+
+-- Admin RPC: admin_ban_user
+CREATE OR REPLACE FUNCTION public.admin_ban_user(
+  p_user_id UUID,
+  p_minutes INTEGER,
+  p_reason TEXT DEFAULT NULL,
+  p_scopes TEXT[] DEFAULT NULL
+)
+RETURNS VOID AS $$
+DECLARE
+  v_until TIMESTAMPTZ;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'not_authorized';
+  END IF;
+
+  v_until := now() + make_interval(mins => p_minutes);
+
+  UPDATE public.profiles
+  SET banned_until = v_until,
+      ban_reason = COALESCE(p_reason, ban_reason),
+      ban_scopes = COALESCE(p_scopes, '{}'::text[])
+  WHERE user_id = p_user_id;
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public;
+
+-- Admin RPC: admin_unban_user
+CREATE OR REPLACE FUNCTION public.admin_unban_user(p_user_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'not_authorized';
+  END IF;
+
+  UPDATE public.profiles
+  SET banned_until = NULL,
+      ban_scopes = '{}'::text[]
+  WHERE user_id = p_user_id;
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public;
+
+-- Admin RPC: admin_delete_post
+CREATE OR REPLACE FUNCTION public.admin_delete_post(p_post_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'not_authorized';
+  END IF;
+
+  DELETE FROM public.posts
+  WHERE id = p_post_id;
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public;
+
+-- create_post: 30s cooldown, idempotency support, respects ban scopes
 CREATE OR REPLACE FUNCTION public.create_post(
   p_content TEXT,
   p_code TEXT DEFAULT '',
@@ -448,10 +569,24 @@ DECLARE
   v_cooldown_seconds INT := 30;
   v_retry_after INT;
   v_new_post_id UUID;
+  v_banned_until TIMESTAMPTZ;
 BEGIN
   v_user_id := auth.uid();
   IF v_user_id IS NULL THEN
     RETURN jsonb_build_object('error', 'not_authenticated', 'message', 'You must be signed in');
+  END IF;
+
+  -- Ban check for posting
+  SELECT banned_until INTO v_banned_until
+  FROM public.profiles
+  WHERE user_id = v_user_id;
+
+  IF v_banned_until IS NOT NULL AND v_banned_until > now() AND NOT public.is_action_allowed('post') THEN
+    RETURN jsonb_build_object(
+      'error', 'banned',
+      'message', 'You are temporarily banned from posting',
+      'banned_until', v_banned_until
+    );
   END IF;
 
   IF p_idempotency_key IS NOT NULL THEN
@@ -492,7 +627,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- create_comment: 15s cooldown, idempotency support
+-- create_comment: 15s cooldown, idempotency support, respects ban scopes
 CREATE OR REPLACE FUNCTION public.create_comment(
   p_post_id UUID,
   p_content TEXT,
@@ -506,10 +641,24 @@ DECLARE
   v_cooldown_seconds INT := 15;
   v_retry_after INT;
   v_new_comment_id UUID;
+  v_banned_until TIMESTAMPTZ;
 BEGIN
   v_user_id := auth.uid();
   IF v_user_id IS NULL THEN
     RETURN jsonb_build_object('error', 'not_authenticated', 'message', 'You must be signed in');
+  END IF;
+
+  -- Ban check for commenting
+  SELECT banned_until INTO v_banned_until
+  FROM public.profiles
+  WHERE user_id = v_user_id;
+
+  IF v_banned_until IS NOT NULL AND v_banned_until > now() AND NOT public.is_action_allowed('comment') THEN
+    RETURN jsonb_build_object(
+      'error', 'banned',
+      'message', 'You are temporarily banned from commenting',
+      'banned_until', v_banned_until
+    );
   END IF;
 
   IF p_idempotency_key IS NOT NULL THEN

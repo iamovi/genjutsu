@@ -138,6 +138,15 @@ const PostPage = () => {
                 toast.error(`Please wait ${result.retry_after}s before commenting again.`);
                 return;
             }
+            if (result?.error === "banned") {
+                if (result.banned_until) {
+                    const until = new Date(result.banned_until);
+                    toast.error(`You are banned from commenting until ${until.toLocaleString()}.`);
+                } else {
+                    toast.error("You are currently banned from commenting.");
+                }
+                return;
+            }
             if (result?.error) {
                 throw new Error(result.message || "Failed to add comment");
             }

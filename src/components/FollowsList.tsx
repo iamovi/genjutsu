@@ -107,17 +107,38 @@ const FollowsList = ({ userId, type, isOpen, onOpenChange, onAction }: FollowsLi
 
         try {
             if (targetUser.is_following) {
-                await supabase.from("follows").delete().eq("follower_id", currentUser.id).eq("following_id", targetUser.user_id);
+                const { data, error } = await supabase.from("follows")
+                    .delete()
+                    .eq("follower_id", currentUser.id)
+                    .eq("following_id", targetUser.user_id)
+                    .select();
+                if (error) throw error;
+                if (!data || data.length === 0) throw new Error("violates row-level security policy");
                 setUsers(prev => prev.map(u => u.user_id === targetUser.user_id ? { ...u, is_following: false } : u));
                 toast.success(`Unfollowed @${targetUser.username}`);
             } else {
-                await supabase.from("follows").insert({ follower_id: currentUser.id, following_id: targetUser.user_id });
+                const { error } = await supabase.from("follows").insert({
+                    follower_id: currentUser.id,
+                    following_id: targetUser.user_id
+                });
+                if (error) throw error;
                 setUsers(prev => prev.map(u => u.user_id === targetUser.user_id ? { ...u, is_following: true } : u));
                 toast.success(`Following @${targetUser.username}`);
             }
             if (onAction) onAction();
-        } catch (err) {
-            toast.error("Action failed");
+        } catch (err: any) {
+            const msg = err?.message || "";
+            const code = err?.code;
+            if (
+                msg.includes("violates row-level security policy") ||
+                msg.includes("permission denied") ||
+                code === "PGRST301" ||
+                code === "42501"
+            ) {
+                toast.error("You are banned from following or unfollowing users right now.");
+            } else {
+                toast.error("Action failed");
+            }
         }
     };
 

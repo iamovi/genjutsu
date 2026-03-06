@@ -1,4 +1,4 @@
-import { Home, Search, User, LogOut, Settings, Hash, X, Send, Swords, LogIn, Bell } from "lucide-react";
+import { Home, Search, User, LogOut, Settings, Hash, X, Send, Swords, LogIn, Bell, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
   const location = useLocation();
@@ -188,6 +188,12 @@ const Navbar = () => {
                     <p className="text-sm font-bold truncate">{profile?.display_name}</p>
                     <p className="text-[10px] text-muted-foreground truncate">@{profile?.username}</p>
                   </div>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer">
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Admin</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => navigate(`/${profile?.username}`)} className="cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>

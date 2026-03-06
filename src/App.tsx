@@ -9,6 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/theme-provider";
 import { syncTime } from "@/lib/utils";
 import ScrollToTop from "@/components/ScrollToTop";
+import RequireAdmin from "@/components/RequireAdmin";
 
 import Index from "@/pages/Index";
 const AuthPage = lazy(() => import("@/pages/AuthPage"));
@@ -21,6 +22,7 @@ const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const WhispersPage = lazy(() => import("@/pages/WhispersPage"));
 const ChatPage = lazy(() => import("@/pages/ChatPage"));
 const PlayPage = lazy(() => import("@/pages/PlayPage"));
+const AdminPage = lazy(() => import("@/pages/AdminPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -65,6 +67,14 @@ const App = () => {
                     <Route path="/whispers" element={<WhispersPage />} />
                     <Route path="/whisper/:username" element={<ChatPage />} />
                     <Route path="/play" element={<PlayPage />} />
+                    <Route
+                      path="/admin"
+                      element={(
+                        <RequireAdmin>
+                          <AdminPage />
+                        </RequireAdmin>
+                      )}
+                    />
                     <Route path="/:username" element={<ProfilePage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>

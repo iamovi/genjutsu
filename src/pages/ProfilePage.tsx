@@ -5,7 +5,7 @@ import { PostWithProfile } from "@/hooks/usePosts";
 import Navbar from "@/components/Navbar";
 import PostCard from "@/components/PostCard";
 import Sidebar from "@/components/Sidebar";
-import { Loader2, ArrowLeft, Calendar, ImageIcon, Send, Bookmark, Github, Twitter, Facebook, Globe, Play, Pause } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar, ImageIcon, Send, Bookmark, Github, Twitter, Facebook, Globe, Play, Pause, Ban } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ interface ProfileData {
     social_links?: Record<string, string>;
     fav_song?: any;
     created_at: string;
+    banned_until?: string | null;
 }
 
 const ProfilePage = () => {
@@ -109,13 +110,13 @@ const ProfilePage = () => {
             // 1. Fetch Profile
             const { data: p, error: pError } = await supabase
                 .from("profiles")
-                .select("*")
+                .select("*, banned_until")
                 .eq("username", username.toLowerCase())
                 .single();
 
             if (pError) throw pError;
             if (!p) throw new Error("Profile not found");
-            setProfile(p as ProfileData);
+            setProfile(p as unknown as ProfileData);
 
             // 2. Fetch Posts
             const { data: postsData } = await (supabase
@@ -125,7 +126,7 @@ const ProfilePage = () => {
                   profiles ( username, display_name, avatar_url )
                 `) as any)
                 .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
-                .eq("user_id", p.user_id)
+                .eq("user_id", (p as any).user_id)
                 .order("created_at", { ascending: false });
 
             if (postsData && p) {
@@ -439,7 +440,23 @@ const ProfilePage = () => {
                                             )}
                                         </div>
 
-                                        <div className="mt-8 min-w-0 max-w-full overflow-hidden">
+                                        {isOwnProfile && profile.banned_until && new Date(profile.banned_until) > getNow() && (
+                                            <div className="mt-8 mb-4">
+                                                <div className="bg-destructive/10 border-2 border-destructive/20 rounded-[3px] p-4 flex items-start gap-3">
+                                                    <div className="bg-destructive text-destructive-foreground p-1.5 rounded-sm shrink-0">
+                                                        <Ban size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-bold text-destructive">Account Restricted</h3>
+                                                        <p className="text-xs text-destructive/80 mt-1">
+                                                            You are temporarily banned from posting and commenting until <strong>{new Date(profile.banned_until).toLocaleString()}</strong>.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className={`min-w-0 max-w-full overflow-hidden ${!(isOwnProfile && profile.banned_until && new Date(profile.banned_until) > getNow()) ? 'mt-8' : ''}`}>
                                             <h1 className="text-2xl font-bold tracking-tight truncate">
                                                 {profile.display_name}
                                             </h1>

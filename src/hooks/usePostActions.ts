@@ -68,13 +68,18 @@ export function usePostActions() {
 
             return { previousData };
         },
-        onError: (err, variables, context) => {
+        onError: (err: any, variables, context) => {
             if (context?.previousData) {
                 context.previousData.forEach(([queryKey, data]) => {
                     queryClient.setQueryData(queryKey, data);
                 });
             }
-            toast.error("Couldn't resonate with this post. Try again!");
+            const msg = err?.message || "";
+            if (msg.includes("violates row-level security policy") || msg.includes("permission denied")) {
+                toast.error("You are banned from liking posts right now.");
+            } else {
+                toast.error("Couldn't resonate with this post. Try again!");
+            }
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ["posts"] });
@@ -123,13 +128,18 @@ export function usePostActions() {
 
             return { previousData };
         },
-        onError: (err, variables, context) => {
+        onError: (err: any, variables, context) => {
             if (context?.previousData) {
                 context.previousData.forEach(([queryKey, data]) => {
                     queryClient.setQueryData(queryKey, data);
                 });
             }
-            toast.error("Couldn't preserve this memory. Try again!");
+            const msg = err?.message || "";
+            if (msg.includes("violates row-level security policy") || msg.includes("permission denied")) {
+                toast.error("You are banned from bookmarking posts right now.");
+            } else {
+                toast.error("Couldn't preserve this memory. Try again!");
+            }
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ["posts"] });

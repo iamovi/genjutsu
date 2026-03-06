@@ -125,6 +125,9 @@ export function usePosts() {
       if (result?.error === "cooldown_active") {
         throw new Error(`COOLDOWN:${result.retry_after}`);
       }
+      if (result?.error === "banned") {
+        throw new Error(`BANNED_POST:${result.banned_until || ""}`);
+      }
       if (result?.error) {
         throw new Error(result.message || "Failed to create post");
       }
@@ -134,13 +137,24 @@ export function usePosts() {
       queryClient.invalidateQueries({ queryKey: ["trending-tags"] });
       toast.success("Post shared!");
     },
-    onError: (error) => {
-      if (error.message.startsWith("COOLDOWN:")) {
-        const seconds = parseInt(error.message.split(":")[1], 10);
+    onError: (error: any) => {
+      const msg = error?.message || "";
+      if (msg.startsWith("COOLDOWN:")) {
+        const seconds = parseInt(msg.split(":")[1], 10);
         toast.error(`Please wait ${seconds}s before posting again.`);
-      } else {
-        toast.error("Your thoughts couldn't be woven into the world. Please try again.");
+        return;
       }
+      if (msg.startsWith("BANNED_POST:")) {
+        const untilRaw = msg.substring("BANNED_POST:".length);
+        if (untilRaw) {
+          const until = new Date(untilRaw);
+          toast.error(`You are banned from posting until ${until.toLocaleString()}.`);
+        } else {
+          toast.error("You are currently banned from posting.");
+        }
+        return;
+      }
+      toast.error("Your thoughts couldn't be woven into the world. Please try again.");
     }
   });
 

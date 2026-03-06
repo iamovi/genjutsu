@@ -142,8 +142,13 @@ export function useWhispers(targetUserId?: string) {
             queryClient.invalidateQueries({ queryKey: ["whispers", user?.id, targetUserId] });
             queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
         },
-        onError: () => {
-            toast.error("Your whisper disappeared before it could be heard. Please try again.");
+        onError: (err: any) => {
+            const msg = err?.message || "";
+            if (msg.includes("violates row-level security policy") || msg.includes("permission denied")) {
+                toast.error("You are banned from sending whispers right now.");
+            } else {
+                toast.error("Your whisper disappeared before it could be heard. Please try again.");
+            }
         }
     });
 

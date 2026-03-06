@@ -72,13 +72,15 @@ export function useFollow(targetUserId?: string) {
         try {
             if (originalFollowing) {
                 // Unfollow
-                const { error } = await supabase
+                const { data, error } = await supabase
                     .from("follows")
                     .delete()
                     .eq("follower_id", user.id)
-                    .eq("following_id", targetUserId);
+                    .eq("following_id", targetUserId)
+                    .select();
 
                 if (error) throw error;
+                if (!data || data.length === 0) throw new Error("violates row-level security policy");
             } else {
                 // Follow
                 const { error } = await supabase
@@ -97,7 +99,18 @@ export function useFollow(targetUserId?: string) {
                 ...prev,
                 followers: originalFollowersCount
             }));
-            toast.error(err.message || "Failed to update follow status");
+            const msg = err?.message || "";
+            const code = err?.code;
+            if (
+                msg.includes("violates row-level security policy") ||
+                msg.includes("permission denied") ||
+                code === "PGRST301" ||
+                code === "42501"
+            ) {
+                toast.error("You are banned from following or unfollowing users right now.");
+            } else {
+                toast.error(msg || "Failed to update follow status");
+            }
         }
     };
 
