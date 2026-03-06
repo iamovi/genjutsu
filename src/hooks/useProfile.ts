@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -15,29 +15,21 @@ export interface Profile {
 
 export function useProfile() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!user) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
-
-    const fetchProfile = async () => {
+  const { data: profile, isLoading: loading } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", user!.id)
         .single();
-
-      setProfile(data as Profile | null);
-      setLoading(false);
-    };
-
-    fetchProfile();
-  }, [user?.id]);
+      return data as Profile | null;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   const updateProfile = async (updates: Partial<Pick<Profile, "display_name" | "bio" | "avatar_url" | "banner_url">>) => {
     if (!user) return { error: "Not authenticated" };
@@ -46,10 +38,12 @@ export function useProfile() {
       .update(updates)
       .eq("user_id", user.id);
     if (!error) {
-      setProfile((prev) => prev ? { ...prev, ...updates } : prev);
+      queryClient.setQueryData(["profile", user.id], (old: Profile | null) =>
+        old ? { ...old, ...updates } : old
+      );
     }
     return { error };
   };
 
-  return { profile, loading, updateProfile };
+  return { profile: profile ?? null, loading, updateProfile };
 }
