@@ -305,10 +305,10 @@ const AdminPage = () => {
       </Helmet>
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8 sm:space-y-10">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
           <div className="space-y-1">
-            <h1 className="text-4xl font-black tracking-tighter uppercase italic">
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tighter uppercase italic">
               Moderation <span className="text-primary italic">Command</span>
             </h1>
             <p className="text-muted-foreground font-medium text-sm">
@@ -325,7 +325,7 @@ const AdminPage = () => {
 
         {/* Action Confirmation Dialog */}
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <DialogContent className="rounded-none border-white/10 bg-black/90 backdrop-blur-xl border-l-4 border-l-primary gap-6 p-8">
+          <DialogContent className="rounded-none border-white/10 bg-black/90 backdrop-blur-xl border-l-4 border-l-primary gap-6 p-6 sm:p-8">
             <DialogHeader className="space-y-4">
               <div className="bg-primary/20 p-3 w-fit">
                 <ShieldAlert className="w-6 h-6 text-primary" />
@@ -423,22 +423,24 @@ const AdminPage = () => {
           </motion.div>
         </motion.section>
 
-        <Tabs defaultValue="posts" className="w-full space-y-8">
-          <TabsList className="bg-transparent border-b border-white/5 w-full justify-start gap-8 rounded-none h-auto p-0 pb-2">
-            <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 pb-2 h-auto text-[11px] uppercase font-black tracking-widest transition-all hover:text-primary">
-              <LayoutDashboard className="w-3 h-3 mr-2" />
-              Live Posts
-            </TabsTrigger>
-            <TabsTrigger value="users" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 pb-2 h-auto text-[11px] uppercase font-black tracking-widest transition-all hover:text-primary">
-              <Users className="w-3 h-3 mr-2" />
-              All Users
-            </TabsTrigger>
-            <TabsTrigger value="banned" className="rounded-none border-b-2 border-transparent data-[state=active]:border-destructive data-[state=active]:bg-transparent px-2 pb-2 h-auto text-[11px] uppercase font-black tracking-widest transition-all hover:text-destructive">
-              <Ban className="w-3 h-3 mr-2" />
-              Banned Users
-              {bannedUsers.length > 0 && <Badge variant="destructive" className="ml-2 rounded-none px-1 py-0 h-4 text-[9px] min-w-4 flex items-center justify-center">{bannedUsers.length}</Badge>}
-            </TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="posts" className="w-full space-y-6 sm:space-y-8">
+          <div className="overflow-x-auto scrollbar-hide">
+            <TabsList className="bg-transparent border-b border-white/5 w-full min-w-max justify-start gap-4 sm:gap-8 rounded-none h-auto p-0 pb-2">
+              <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 pb-2 h-auto text-[10px] sm:text-[11px] uppercase font-black tracking-widest transition-all hover:text-primary">
+                <LayoutDashboard className="w-3 h-3 mr-2" />
+                Live Posts
+              </TabsTrigger>
+              <TabsTrigger value="users" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 pb-2 h-auto text-[10px] sm:text-[11px] uppercase font-black tracking-widest transition-all hover:text-primary">
+                <Users className="w-3 h-3 mr-2" />
+                All Users
+              </TabsTrigger>
+              <TabsTrigger value="banned" className="rounded-none border-b-2 border-transparent data-[state=active]:border-destructive data-[state=active]:bg-transparent px-2 pb-2 h-auto text-[10px] sm:text-[11px] uppercase font-black tracking-widest transition-all hover:text-destructive">
+                <Ban className="w-3 h-3 mr-2" />
+                Banned Users
+                {bannedUsers.length > 0 && <Badge variant="destructive" className="ml-2 rounded-none px-1 py-0 h-3.5 sm:h-4 text-[8px] sm:text-[9px] min-w-4 flex items-center justify-center">{bannedUsers.length}</Badge>}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Posts Tab */}
           <TabsContent value="posts" className="space-y-4 m-0 transition-all">
@@ -452,7 +454,45 @@ const AdminPage = () => {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-white/5">
+                  {postsLoading ? (
+                    <div className="p-10 text-center text-[10px] uppercase font-black opacity-30 italic">Retrieving stream...</div>
+                  ) : posts.length === 0 ? (
+                    <div className="p-10 text-center text-[10px] uppercase font-black opacity-30 italic">No activity detected.</div>
+                  ) : (
+                    posts.map((post) => (
+                      <div key={post.id} className="p-4 space-y-3 bg-secondary/10">
+                        <div className="flex justify-between items-start">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black uppercase italic tracking-tight">{post.profiles?.display_name ?? "Missing Entity"}</span>
+                            <span className="text-[10px] text-primary font-bold">@{post.profiles?.username ?? "null"}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[9px] font-bold opacity-60">
+                            <Clock className="w-2.5 h-2.5 text-primary" />
+                            {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                        <p className="text-[11px] font-medium leading-relaxed opacity-80 line-clamp-3">{post.content}</p>
+                        <div className="flex justify-end pt-2">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 w-full rounded-none text-[10px] font-black uppercase italic"
+                            onClick={() => triggerDeleteConfirm(post.id)}
+                            disabled={deletePostMutation.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-2" />
+                            Eviscerate
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                   <Table>
                     <TableHeader className="bg-secondary/20">
                       <TableRow className="border-white/5 hover:bg-transparent">
@@ -515,7 +555,7 @@ const AdminPage = () => {
           <TabsContent value="users" className="space-y-6 m-0 animate-in fade-in duration-500">
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Controls Column */}
-              <div className="lg:w-80 space-y-6 shrink-0">
+              <div className="w-full lg:w-80 space-y-6 shrink-0">
                 <Card className="rounded-none border-white/5 bg-secondary/10">
                   <CardHeader className="pb-4">
                     <CardTitle className="text-[11px] uppercase font-black tracking-widest flex items-center gap-2">
@@ -573,87 +613,152 @@ const AdminPage = () => {
               <div className="flex-1 min-w-0">
                 <Card className="rounded-none border-white/5 bg-secondary/10 overflow-hidden">
                   <CardContent className="p-0">
-                    <Table>
-                      <TableHeader className="bg-secondary/20">
-                        <TableRow className="border-white/5 hover:bg-transparent">
-                          <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Subject</TableHead>
-                          <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Status</TableHead>
-                          <TableHead className="text-right text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Ban Application</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {usersLoading ? (
-                          <TableRow className="hover:bg-transparent"><TableCell colSpan={3} className="text-center py-10 text-[11px] uppercase font-bold opacity-50 italic">Decrypting registry...</TableCell></TableRow>
-                        ) : filteredAllUsers.length === 0 ? (
-                          <TableRow className="hover:bg-transparent"><TableCell colSpan={3} className="text-center py-10 text-[11px] uppercase font-bold opacity-50 italic">No matches found.</TableCell></TableRow>
-                        ) : (
-                          filteredAllUsers.map((user) => {
-                            const banned = isBanned(user);
-                            return (
-                              <TableRow key={user.id} className="border-white/5 group hover:bg-white/[0.02]">
-                                <TableCell className="py-4">
-                                  <div className="flex flex-col">
-                                    <span className="text-xs font-black uppercase italic italic">{user.display_name}</span>
-                                    <span className="text-[10px] font-bold opacity-60">@{user.username}</span>
+                    {/* Mobile Card View */}
+                    <div className="md:hidden divide-y divide-white/5">
+                      {usersLoading ? (
+                        <div className="p-10 text-center text-[10px] uppercase font-black opacity-30 italic">Decrypting registry...</div>
+                      ) : filteredAllUsers.length === 0 ? (
+                        <div className="p-10 text-center text-[10px] uppercase font-black opacity-30 italic">No matches found.</div>
+                      ) : (
+                        filteredAllUsers.map((user) => {
+                          const banned = isBanned(user);
+                          return (
+                            <div key={user.id} className="p-4 space-y-4 bg-secondary/10">
+                              <div className="flex justify-between items-center">
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-black uppercase italic">{user.display_name}</span>
+                                  <span className="text-[10px] font-bold opacity-60">@{user.username}</span>
+                                </div>
+                                {banned ? (
+                                  <Badge variant="destructive" className="rounded-none text-[8px] font-black uppercase italic px-1.5 py-0">Restricted</Badge>
+                                ) : (
+                                  <Badge className="rounded-none bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[8px] font-black uppercase italic px-1.5 py-0">Compliant</Badge>
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                {banned ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 w-full rounded-none border-emerald-500/50 text-emerald-500 text-[10px] font-black uppercase italic hover:bg-emerald-500 hover:text-white transition-all shadow-[2px_2px_0px_rgba(16,185,129,0.1)] active:shadow-none"
+                                    onClick={() => triggerUnbanConfirm(user.user_id)}
+                                    disabled={unbanUserMutation.isPending}
+                                  >
+                                    <Undo2 className="h-3.5 w-3.5 mr-2" />
+                                    Amnesty
+                                  </Button>
+                                ) : (
+                                  <div className="grid grid-cols-3 gap-2">
+                                    {["1h", "24h", "7d"].map((duration) => (
+                                      <Button
+                                        key={duration}
+                                        size="sm"
+                                        variant={duration === "7d" ? "destructive" : "outline"}
+                                        className={`h-8 rounded-none text-[9px] font-black uppercase border-white/5 active:scale-95 transition-all ${duration !== '7d' ? 'active:bg-primary/20 active:text-primary active:border-primary/50' : ''}`}
+                                        onClick={() => triggerBanConfirm(
+                                          user.user_id,
+                                          duration === '1h' ? 60 : duration === '24h' ? 1440 : 10080,
+                                          duration
+                                        )}
+                                        disabled={banUserMutation.isPending}
+                                      >
+                                        {duration}
+                                      </Button>
+                                    ))}
                                   </div>
-                                </TableCell>
-                                <TableCell className="py-4">
-                                  {banned ? (
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-1.5 h-1.5 bg-destructive rounded-full" />
-                                      <span className="text-[10px] uppercase font-black text-destructive tracking-widest italic">Restricted</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block">
+                      <Table>
+                        <TableHeader className="bg-secondary/20">
+                          <TableRow className="border-white/5 hover:bg-transparent">
+                            <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Subject</TableHead>
+                            <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Status</TableHead>
+                            <TableHead className="text-right text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Ban Application</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {usersLoading ? (
+                            <TableRow className="hover:bg-transparent"><TableCell colSpan={3} className="text-center py-10 text-[11px] uppercase font-bold opacity-50 italic">Decrypting registry...</TableCell></TableRow>
+                          ) : filteredAllUsers.length === 0 ? (
+                            <TableRow className="hover:bg-transparent"><TableCell colSpan={3} className="text-center py-10 text-[11px] uppercase font-bold opacity-50 italic">No matches found.</TableCell></TableRow>
+                          ) : (
+                            filteredAllUsers.map((user) => {
+                              const banned = isBanned(user);
+                              return (
+                                <TableRow key={user.id} className="border-white/5 group hover:bg-white/[0.02]">
+                                  <TableCell className="py-4">
+                                    <div className="flex flex-col">
+                                      <span className="text-xs font-black uppercase italic italic">{user.display_name}</span>
+                                      <span className="text-[10px] font-bold opacity-60">@{user.username}</span>
                                     </div>
-                                  ) : (
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                                      <span className="text-[10px] uppercase font-black text-emerald-500 tracking-widest italic">Compliant</span>
-                                    </div>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-right py-4">
-                                  {banned ? (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-8 rounded-none border-emerald-500/30 text-emerald-500 text-[10px] font-black uppercase italic hover:bg-emerald-500 hover:text-white transition-all"
-                                      onClick={() => triggerUnbanConfirm(user.user_id)}
-                                      disabled={unbanUserMutation.isPending}
-                                    >
-                                      <Undo2 className="h-3.5 w-3.5 mr-1" />
-                                      Amnesty
-                                    </Button>
-                                  ) : (
-                                    <div className="flex justify-end gap-1.5">
-                                      {["1h", "24h", "7d"].map((duration) => (
-                                        <Button
-                                          key={duration}
-                                          size="sm"
-                                          variant={duration === "7d" ? "destructive" : "outline"}
-                                          className={`h-8 rounded-none text-[9px] font-black uppercase border-white/5 hover:scale-105 transition-transform ${duration !== '7d' ? 'hover:bg-primary/20 hover:text-primary hover:border-primary/50' : ''}`}
-                                          onClick={() => triggerBanConfirm(
-                                            user.user_id,
-                                            duration === '1h' ? 60 : duration === '24h' ? 1440 : 10080,
-                                            duration
-                                          )}
-                                          disabled={banUserMutation.isPending}
-                                        >
-                                          {duration}
-                                        </Button>
-                                      ))}
-                                    </div>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })
-                        )}
-                      </TableBody>
-                    </Table>
+                                  </TableCell>
+                                  <TableCell className="py-4">
+                                    {banned ? (
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-destructive rounded-full" />
+                                        <span className="text-[10px] uppercase font-black text-destructive tracking-widest italic">Restricted</span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                                        <span className="text-[10px] uppercase font-black text-emerald-500 tracking-widest italic">Compliant</span>
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-right py-4">
+                                    {banned ? (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-8 rounded-none border-emerald-500/30 text-emerald-500 text-[10px] font-black uppercase italic hover:bg-emerald-500 hover:text-white transition-all"
+                                        onClick={() => triggerUnbanConfirm(user.user_id)}
+                                        disabled={unbanUserMutation.isPending}
+                                      >
+                                        <Undo2 className="h-3.5 w-3.5 mr-1" />
+                                        Amnesty
+                                      </Button>
+                                    ) : (
+                                      <div className="flex justify-end gap-1.5">
+                                        {["1h", "24h", "7d"].map((duration) => (
+                                          <Button
+                                            key={duration}
+                                            size="sm"
+                                            variant={duration === "7d" ? "destructive" : "outline"}
+                                            className={`h-8 rounded-none text-[9px] font-black uppercase border-white/5 hover:scale-105 transition-transform ${duration !== '7d' ? 'hover:bg-primary/20 hover:text-primary hover:border-primary/50' : ''}`}
+                                            onClick={() => triggerBanConfirm(
+                                              user.user_id,
+                                              duration === '1h' ? 60 : duration === '24h' ? 1440 : 10080,
+                                              duration
+                                            )}
+                                            disabled={banUserMutation.isPending}
+                                          >
+                                            {duration}
+                                          </Button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
             </div>
           </TabsContent>
+
 
           {/* Banned Tab */}
           <TabsContent value="banned" className="space-y-4 m-0 animate-in slide-in-from-bottom-2 duration-500">
@@ -670,68 +775,121 @@ const AdminPage = () => {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader className="bg-destructive/10">
-                    <TableRow className="border-destructive/10 hover:bg-transparent">
-                      <TableHead className="text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Subject</TableHead>
-                      <TableHead className="text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Expiration</TableHead>
-                      <TableHead className="text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Blocked Scopes</TableHead>
-                      <TableHead className="text-right text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {bannedUsers.length === 0 ? (
-                      <TableRow className="hover:bg-transparent"><TableCell colSpan={4} className="text-center py-16 text-[11px] uppercase font-black opacity-30 tracking-widest italic">Zero active sanctions detected.</TableCell></TableRow>
-                    ) : (
-                      bannedUsers.map((user) => (
-                        <TableRow key={user.id} className="border-destructive/10 group hover:bg-destructive/[0.05] transition-colors">
-                          <TableCell className="py-5">
-                            <div className="flex flex-col">
-                              <span className="text-xs font-black uppercase italic">{user.display_name}</span>
-                              <span className="text-[10px] text-destructive/70 font-bold">@{user.username}</span>
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-destructive/10">
+                  {bannedUsers.length === 0 ? (
+                    <div className="p-16 text-center text-[10px] uppercase font-black opacity-30 tracking-widest italic">Zero active sanctions.</div>
+                  ) : (
+                    bannedUsers.map((user) => (
+                      <div key={user.id} className="p-4 space-y-4 bg-destructive/[0.03]">
+                        <div className="flex justify-between items-start">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black uppercase italic tracking-tight">{user.display_name}</span>
+                            <span className="text-[10px] text-destructive/70 font-bold">@{user.username}</span>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center gap-1 text-[9px] font-black uppercase text-destructive italic">
+                              <Clock className="w-2.5 h-2.5" />
+                              {new Date(user.banned_until as string).toLocaleDateString()}
                             </div>
-                          </TableCell>
-                          <TableCell className="py-5">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-destructive/80 italic">
-                                <Clock className="w-3 h-3" />
-                                {new Date(user.banned_until as string).toLocaleDateString()}
+                            <span className="text-[8px] font-bold opacity-40 uppercase leading-none">
+                              {new Date(user.banned_until as string).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1">
+                          {(user.ban_scopes && user.ban_scopes.length > 0) ? (
+                            user.ban_scopes.map((s) => (
+                              <Badge key={s} className="rounded-none bg-destructive/10 text-destructive border-destructive/20 text-[8px] uppercase font-bold px-2 py-0">
+                                {s}
+                              </Badge>
+                            ))
+                          ) : (
+                            <Badge className="rounded-none bg-destructive text-white text-[8px] uppercase font-black px-2 py-0 border-none">GLOBAL</Badge>
+                          )}
+                        </div>
+
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="w-full h-9 rounded-none text-[10px] font-black uppercase italic shadow-[4px_4px_0px_rgba(244,63,94,0.1)] active:shadow-none transition-all"
+                          onClick={() => unbanUserMutation.mutate(user.user_id)}
+                          disabled={unbanUserMutation.isPending}
+                        >
+                          <Undo2 className="h-3.5 w-3.5 mr-2" />
+                          Pardon Subject
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-destructive/10">
+                      <TableRow className="border-destructive/10 hover:bg-transparent">
+                        <TableHead className="text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Subject</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Expiration</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Blocked Scopes</TableHead>
+                        <TableHead className="text-right text-[10px] uppercase font-black tracking-widest text-destructive py-3 h-auto">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {bannedUsers.length === 0 ? (
+                        <TableRow className="hover:bg-transparent"><TableCell colSpan={4} className="text-center py-16 text-[11px] uppercase font-black opacity-30 tracking-widest italic">Zero active sanctions detected.</TableCell></TableRow>
+                      ) : (
+                        bannedUsers.map((user) => (
+                          <TableRow key={user.id} className="border-destructive/10 group hover:bg-destructive/[0.05] transition-colors">
+                            <TableCell className="py-5">
+                              <div className="flex flex-col">
+                                <span className="text-xs font-black uppercase italic">{user.display_name}</span>
+                                <span className="text-[10px] text-destructive/70 font-bold">@{user.username}</span>
                               </div>
-                              <div className="text-[9px] font-bold opacity-50 uppercase leading-none">
-                                {new Date(user.banned_until as string).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </TableCell>
+                            <TableCell className="py-5">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-destructive/80 italic">
+                                  <Clock className="w-3 h-3" />
+                                  {new Date(user.banned_until as string).toLocaleDateString()}
+                                </div>
+                                <div className="text-[9px] font-bold opacity-50 uppercase leading-none">
+                                  {new Date(user.banned_until as string).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-5">
-                            <div className="flex flex-wrap gap-1">
-                              {(user.ban_scopes && user.ban_scopes.length > 0) ? (
-                                user.ban_scopes.map((s) => (
-                                  <Badge key={s} className="rounded-none bg-destructive/10 text-destructive border-destructive/20 text-[8px] uppercase font-bold px-2 py-0">
-                                    {s}
-                                  </Badge>
-                                ))
-                              ) : (
-                                <Badge className="rounded-none bg-destructive text-white text-[8px] uppercase font-black px-2 py-0 border-none">GLOBAL</Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right py-5 text-destructive/80">
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="h-9 px-4 rounded-none text-[10px] font-black uppercase italic transition-all hover:scale-105 active:scale-95 shadow-[4px_4px_0px_rgba(244,63,94,0.2)] hover:shadow-none"
-                              onClick={() => triggerUnbanConfirm(user.user_id)}
-                              disabled={unbanUserMutation.isPending}
-                            >
-                              <Undo2 className="h-3.5 w-3.5 mr-2" />
-                              Pardon Subject
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                            </TableCell>
+                            <TableCell className="py-5">
+                              <div className="flex flex-wrap gap-1">
+                                {(user.ban_scopes && user.ban_scopes.length > 0) ? (
+                                  user.ban_scopes.map((s) => (
+                                    <Badge key={s} className="rounded-none bg-destructive/10 text-destructive border-destructive/20 text-[8px] uppercase font-bold px-2 py-0">
+                                      {s}
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <Badge className="rounded-none bg-destructive text-white text-[8px] uppercase font-black px-2 py-0 border-none">GLOBAL</Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right py-5 text-destructive/80">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-9 px-4 rounded-none text-[10px] font-black uppercase italic transition-all hover:scale-105 active:scale-95 shadow-[4px_4px_0px_rgba(244,63,94,0.2)] hover:shadow-none"
+                                onClick={() => unbanUserMutation.mutate(user.user_id)}
+                                disabled={unbanUserMutation.isPending}
+                              >
+                                <Undo2 className="h-3.5 w-3.5 mr-2" />
+                                Pardon Subject
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
