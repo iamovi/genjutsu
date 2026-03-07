@@ -60,33 +60,34 @@ cp .env.example .env
 
 ### database setup
 
-you need to run the existing migrations to set up your local database.
+the quickest way to set up your database is using the consolidated `init.sql` script.
 
-**option 1: using supabase cli (recommended)**
+**option 1: consolidated setup (recommended for fresh projects)**
+
+1. go to your supabase project dashboard.
+2. navigate to the **sql editor**.
+3. copy the entire content of `supabase/init.sql` and run it.
+4. this handles all tables, extensions, rpcs, and security policies in one go.
+
+**option 2: local development with supabase cli**
+
+if you prefer working locally:
 
 ```bash
-# install supabase cli if you haven't
+# install supabase cli
 npm install -g supabase
 
-# login to supabase
+# login and link
 supabase login
-
-# link to your project
 supabase link --project-ref your-project-ref
 
-# run all migrations
+# reset/initialize
 supabase db reset
 ```
 
-**option 2: manual setup via supabase dashboard**
+**option 3: incremental migrations**
 
-1. go to your supabase project dashboard
-2. navigate to sql editor
-3. run each migration file from `supabase/migrations/` in order:
-   - `20260206130201_192bbe39-d155-4be6-93d7-613675763b5a.sql`
-   - `20260302111846_add_media_and_banner.sql`
-   - `20260303120000_add_comments.sql`
-   - `20260304150000_add_whispers.sql`
+if you are updating an existing setup, run the migration files from `supabase/migrations/` in alphabetical order.
 
 ### start development server
 
