@@ -21,23 +21,87 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+
+    const checkAdminStatus = async (user: User | null) => {
+      if (!user || !mounted) {
+        setIsAdmin(false);
+        return;
+      }
+
+      // 1. Quick frontend check (no-op for regular users)
+      if (!isAdminUser(user)) {
+        setIsAdmin(false);
+        return;
+      }
+
+      // 2. Database check (only for potential admins)
+      try {
+        const { data, error } = await supabase
+          .from("admin_users")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (mounted) {
+          if (error) {
+            console.error("Error checking admin status:", error);
+            setIsAdmin(false);
+          } else {
+            setIsAdmin(!!data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch admin status:", err);
+        if (mounted) setIsAdmin(false);
+      }
+    };
+
+    const handleAuthChange = async (user: User | null, session: Session | null) => {
+      if (!mounted) return;
+
+      setUser(user);
+      setSession(session);
+
+      try {
+        if (user) {
+          await checkAdminStatus(user);
+        } else {
+          setIsAdmin(false);
+        }
+      } catch (err) {
+        console.error("Error in handleAuthChange:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    // Initial session check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) {
+        if (session) {
+          handleAuthChange(session.user, session);
+        } else {
+          setLoading(false);
+        }
+      }
+    });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+      async (event, session) => {
+        if (mounted) {
+          handleAuthChange(session?.user ?? null, session);
+        }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, username: string, displayName: string) => {
@@ -102,7 +166,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         session,
         loading,
-        isAdmin: isAdminUser(user),
+        isAdmin,
         signUp,
         signIn,
         signInWithGoogle,

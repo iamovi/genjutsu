@@ -145,6 +145,7 @@ export type Database = {
           tags: string[] | null
           updated_at: string
           user_id: string
+          is_readme: boolean
         }
         Insert: {
           code?: string | null
@@ -155,6 +156,7 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string
           user_id: string
+          is_readme?: boolean
         }
         Update: {
           code?: string | null
@@ -165,6 +167,7 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string
           user_id?: string
+          is_readme?: boolean
         }
         Relationships: []
       }
@@ -180,6 +183,10 @@ export type Database = {
           user_id: string
           username: string
           whisper_last_seen_at: string | null
+          banned_until: string | null
+          ban_reason: string | null
+          social_links: Json | null
+          fav_song: Json | null
         }
         Insert: {
           avatar_url?: string | null
@@ -192,6 +199,10 @@ export type Database = {
           user_id: string
           username: string
           whisper_last_seen_at?: string | null
+          banned_until?: string | null
+          ban_reason?: string | null
+          social_links?: Json | null
+          fav_song?: Json | null
         }
         Update: {
           avatar_url?: string | null
@@ -204,8 +215,38 @@ export type Database = {
           user_id?: string
           username?: string
           whisper_last_seen_at?: string | null
+          banned_until?: string | null
+          ban_reason?: string | null
+          social_links?: Json | null
+          fav_song?: Json | null
         }
         Relationships: []
+      }
+      admin_users: {
+        Row: {
+          user_id: string
+          created_at: string
+          created_by: string | null
+        }
+        Insert: {
+          user_id: string
+          created_at?: string
+          created_by?: string | null
+        }
+        Update: {
+          user_id?: string
+          created_at?: string
+          created_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       user_action_log: {
         Row: {
