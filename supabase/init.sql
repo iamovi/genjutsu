@@ -144,7 +144,7 @@ CREATE TABLE public.notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   actor_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('like', 'comment', 'follow', 'mention')),
+  type TEXT NOT NULL CHECK (type IN ('like', 'unlike', 'comment', 'uncomment', 'follow', 'unfollow', 'mention')),
   post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE,
   comment_id UUID REFERENCES public.comments(id) ON DELETE CASCADE,
   is_read BOOLEAN DEFAULT false,
@@ -468,10 +468,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+-- Delete expired follow/unfollow notifications
+CREATE OR REPLACE FUNCTION public.delete_expired_follow_notifications()
+RETURNS void AS $$
+BEGIN
+  DELETE FROM public.notifications
+  WHERE created_at < now() - INTERVAL '24 hours'
+    AND type IN ('follow', 'unfollow');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
 -- Schedule cleanups (every hour)
 SELECT cron.schedule('0 * * * *', 'SELECT public.delete_expired_posts()');
 SELECT cron.schedule('5 * * * *', 'SELECT public.delete_expired_whispers()');
 SELECT cron.schedule('10 * * * *', 'SELECT public.delete_expired_action_logs()');
+SELECT cron.schedule('15 * * * *', 'SELECT public.delete_expired_follow_notifications()');
 
 
 -- =============================================================================
@@ -819,6 +830,45 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+-- delete_comment: server-side comment deletion (bypasses RLS, checks ownership/admin)
+CREATE OR REPLACE FUNCTION public.delete_comment(p_comment_id UUID)
+RETURNS JSONB AS $$
+DECLARE
+  v_user_id UUID;
+  v_comment_owner UUID;
+  v_post_id UUID;
+  v_post_owner UUID;
+BEGIN
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('error', 'not_authenticated', 'message', 'You must be signed in');
+  END IF;
+
+  -- Get comment metadata
+  SELECT user_id, post_id INTO v_comment_owner, v_post_id
+  FROM public.comments
+  WHERE id = p_comment_id;
+
+  IF v_comment_owner IS NULL THEN
+    RETURN jsonb_build_object('error', 'not_found', 'message', 'Comment not found');
+  END IF;
+
+  -- Get post owner
+  SELECT user_id INTO v_post_owner
+  FROM public.posts
+  WHERE id = v_post_id;
+
+  -- Check authorization: must be comment owner, post owner, or admin
+  IF v_comment_owner != v_user_id AND v_post_owner != v_user_id AND NOT public.is_admin() THEN
+    RETURN jsonb_build_object('error', 'not_authorized', 'message', 'You can only delete your own comments (or echoes on your posts)');
+  END IF;
+
+  DELETE FROM public.comments WHERE id = p_comment_id;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
 
 -- =============================================================================
 -- NOTIFICATION TRIGGERS
@@ -843,6 +893,34 @@ CREATE TRIGGER on_like_notify
   AFTER INSERT ON public.likes
   FOR EACH ROW EXECUTE FUNCTION public.notify_on_like();
 
+-- On unlike → notify post owner (skip self-unlike)
+CREATE OR REPLACE FUNCTION public.notify_on_unlike()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_post_owner UUID;
+BEGIN
+  -- Only create a notification when the authenticated user is the liker
+  IF auth.uid() IS NULL OR auth.uid() <> OLD.user_id THEN
+    RETURN OLD;
+  END IF;
+
+  SELECT user_id INTO v_post_owner
+  FROM public.posts
+  WHERE id = OLD.post_id;
+
+  IF v_post_owner IS NOT NULL AND v_post_owner <> OLD.user_id THEN
+    INSERT INTO public.notifications (user_id, actor_id, type, post_id)
+    VALUES (v_post_owner, OLD.user_id, 'unlike', OLD.post_id);
+  END IF;
+
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER on_unlike_notify
+  AFTER DELETE ON public.likes
+  FOR EACH ROW EXECUTE FUNCTION public.notify_on_unlike();
+
 -- On comment → notify post owner (skip self-comment)
 CREATE OR REPLACE FUNCTION public.notify_on_comment()
 RETURNS TRIGGER AS $$
@@ -862,6 +940,34 @@ CREATE TRIGGER on_comment_notify
   AFTER INSERT ON public.comments
   FOR EACH ROW EXECUTE FUNCTION public.notify_on_comment();
 
+-- On uncomment → notify post owner (skip self-uncomment)
+CREATE OR REPLACE FUNCTION public.notify_on_uncomment()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_post_owner UUID;
+BEGIN
+  -- Only create a notification when the authenticated user is the commenter
+  IF auth.uid() IS NULL OR auth.uid() <> OLD.user_id THEN
+    RETURN OLD;
+  END IF;
+
+  SELECT user_id INTO v_post_owner
+  FROM public.posts
+  WHERE id = OLD.post_id;
+
+  IF v_post_owner IS NOT NULL AND v_post_owner <> OLD.user_id THEN
+    INSERT INTO public.notifications (user_id, actor_id, type, post_id)
+    VALUES (v_post_owner, OLD.user_id, 'uncomment', OLD.post_id);
+  END IF;
+
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER on_uncomment_notify
+  AFTER DELETE ON public.comments
+  FOR EACH ROW EXECUTE FUNCTION public.notify_on_uncomment();
+
 -- On follow → notify followed user
 CREATE OR REPLACE FUNCTION public.notify_on_follow()
 RETURNS TRIGGER AS $$
@@ -877,6 +983,28 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 CREATE TRIGGER on_follow_notify
   AFTER INSERT ON public.follows
   FOR EACH ROW EXECUTE FUNCTION public.notify_on_follow();
+
+-- On unfollow → notify unfollowed user
+CREATE OR REPLACE FUNCTION public.notify_on_unfollow()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Only create a notification when the authenticated user is the follower
+  IF auth.uid() IS NULL OR auth.uid() <> OLD.follower_id THEN
+    RETURN OLD;
+  END IF;
+
+  IF OLD.follower_id <> OLD.following_id THEN
+    INSERT INTO public.notifications (user_id, actor_id, type)
+    VALUES (OLD.following_id, OLD.follower_id, 'unfollow');
+  END IF;
+
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER on_unfollow_notify
+  AFTER DELETE ON public.follows
+  FOR EACH ROW EXECUTE FUNCTION public.notify_on_unfollow();
 
 
 -- Mention handling: Extract mentions (@username) and notify users

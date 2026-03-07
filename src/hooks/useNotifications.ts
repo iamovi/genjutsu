@@ -7,7 +7,7 @@ export interface NotificationWithActor {
     id: string;
     user_id: string;
     actor_id: string;
-    type: "like" | "comment" | "follow" | "mention";
+    type: "like" | "unlike" | "comment" | "uncomment" | "follow" | "unfollow" | "mention";
     post_id: string | null;
     comment_id: string | null;
     is_read: boolean;

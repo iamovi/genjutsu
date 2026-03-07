@@ -326,6 +326,8 @@ const AdminPage = () => {
         {/* Action Confirmation Dialog */}
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
           <DialogContent className="rounded-none border-white/10 bg-black/90 backdrop-blur-xl border-l-4 border-l-primary gap-6 p-6 sm:p-8">
+            <DialogTitle className="sr-only">Edit User</DialogTitle>
+            <DialogDescription className="sr-only">Admin tool to modify user profile details and status.</DialogDescription>
             <DialogHeader className="space-y-4">
               <div className="bg-primary/20 p-3 w-fit">
                 <ShieldAlert className="w-6 h-6 text-primary" />

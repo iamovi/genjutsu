@@ -1,4 +1,4 @@
-import { Heart, MessageSquare, UserPlus, Check, Bell, AtSign } from "lucide-react";
+import { Heart, HeartOff, MessageSquare, MessageCircleOff, UserPlus, UserMinus, Check, Bell, AtSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { NotificationWithActor } from "@/hooks/useNotifications";
@@ -16,10 +16,16 @@ function getNotificationIcon(type: string) {
     switch (type) {
         case "like":
             return <Heart size={14} className="text-red-500" />;
+        case "unlike":
+            return <HeartOff size={14} className="text-muted-foreground" />;
         case "comment":
             return <MessageSquare size={14} className="text-blue-500" />;
+        case "uncomment":
+            return <MessageCircleOff size={14} className="text-muted-foreground" />;
         case "follow":
             return <UserPlus size={14} className="text-green-500" />;
+        case "unfollow":
+            return <UserMinus size={14} className="text-destructive" />;
         case "mention":
             return <AtSign size={14} className="text-purple-500" />;
         default:
@@ -31,10 +37,16 @@ function getNotificationText(type: string, actorName: string) {
     switch (type) {
         case "like":
             return <><strong>{actorName}</strong> resonated with your post</>;
+        case "unlike":
+            return <><strong>{actorName}</strong> stopped resonating with your post</>;
         case "comment":
             return <><strong>{actorName}</strong> echoed on your post</>;
+        case "uncomment":
+            return <><strong>{actorName}</strong> erased their echo on your post</>;
         case "follow":
             return <><strong>{actorName}</strong> started following you</>;
+        case "unfollow":
+            return <><strong>{actorName}</strong> stopped following you</>;
         case "mention":
             return <><strong>{actorName}</strong> mentioned you in a void</>;
         default:

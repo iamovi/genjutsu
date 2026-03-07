@@ -18,6 +18,8 @@ import { getNow } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
+    DialogTitle,
+    DialogDescription,
     DialogTrigger,
 } from "@/components/ui/dialog";
 
@@ -385,6 +387,8 @@ const ProfilePage = () => {
                                                     </div>
                                                 </DialogTrigger>
                                                 <DialogContent className="max-w-[90vw] max-h-[90vh] p-8 border-none bg-transparent shadow-none flex items-center justify-center">
+                                                    <DialogTitle className="sr-only">Avatar Preview</DialogTitle>
+                                                    <DialogDescription className="sr-only">Full size view of {profile.display_name}'s avatar</DialogDescription>
                                                     <div className="relative group">
                                                         {profile.avatar_url ? (
                                                             <img

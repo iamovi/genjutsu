@@ -16,6 +16,8 @@ import vscDarkPlus from "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 
@@ -80,7 +82,7 @@ const PostCard = ({ post, onLike, onBookmark, onDelete }: PostCardProps) => {
     .slice(0, 2) || "??";
 
   const isOwner = user?.id === post.user_id;
-  
+
 
   return (
     <motion.article
@@ -185,6 +187,8 @@ const PostCard = ({ post, onLike, onBookmark, onDelete }: PostCardProps) => {
                 </button>
               </DialogTrigger>
               <DialogContent className="max-w-[90vw] max-h-[90vh] p-8 border-none bg-transparent shadow-none flex items-center justify-center">
+                <DialogTitle className="sr-only">Image Preview</DialogTitle>
+                <DialogDescription className="sr-only">Full size view of the post image</DialogDescription>
                 <div className="relative group">
                   <img
                     src={post.media_url}

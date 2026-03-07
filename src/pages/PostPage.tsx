@@ -253,20 +253,23 @@ const PostPage = () => {
 
         try {
             setDeletingCommentId(commentId);
-            const { error } = await supabase
-                .from("comments")
-                .delete()
-                .eq("id", commentId)
-                .eq("user_id", user.id);
+            const { data: rpcResult, error: rpcError } = await (supabase.rpc as any)("delete_comment", {
+                p_comment_id: commentId,
+            });
 
-            if (error) throw error;
+            if (rpcError) throw rpcError;
+
+            const result = rpcResult as any;
+            if (result?.error) {
+                throw new Error(result.message || "Failed to delete comment");
+            }
 
             setComments(prev => prev.filter(comment => comment.id !== commentId));
             setPost(prev => prev ? { ...prev, comments_count: Math.max(0, prev.comments_count - 1) } : null);
             setOpenCommentMenuId(null);
             toast.success("Comment deleted");
-        } catch (err) {
-            toast.error("Failed to delete comment");
+        } catch (err: any) {
+            toast.error(err.message || "Failed to delete comment");
         } finally {
             setDeletingCommentId(null);
         }
@@ -396,8 +399,8 @@ const PostPage = () => {
                                                                     • {formatDistanceToNow(new Date(comment.created_at))} ago
                                                                 </span>
 
-                                                                {/* Only show menu if the logged-in user is the author of the comment */}
-                                                                {user?.id === comment.user_id && (
+                                                                {/* Only show menu if the logged-in user is the author of the comment OR the author of the post */}
+                                                                {(user?.id === comment.user_id || (post && user.id === post.user_id)) && (
                                                                     <div className="relative ml-auto">
                                                                         <button
                                                                             type="button"

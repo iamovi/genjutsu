@@ -4,6 +4,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogTrigger,
     DialogFooter,
 } from "@/components/ui/dialog";
@@ -216,6 +217,7 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
                 </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-none w-full h-full max-h-none rounded-none gum-card border-none p-0 overflow-hidden flex flex-col [&>button:last-child]:hidden">
+                <DialogDescription className="sr-only">Update your display name, bio, social links, and profile images.</DialogDescription>
                 <form onSubmit={handleSubmit} className="flex flex-col h-full bg-background overflow-hidden">
                     {/* Top Navigation Bar */}
                     <div className="flex items-center justify-between p-4 border-b-2 border-foreground bg-secondary shrink-0 z-10">

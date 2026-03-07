@@ -2,79 +2,87 @@
  genjutsu — Supabase Database Setup Guide
 ================================================================================
 
-This folder contains the database migrations and setup files for genjutsu.
+This guide provides a step-by-step process for setting up a fresh Supabase 
+project for the genjutsu application.
 
 
 FILES
 -----
 
-  init.sql        → Single file to set up an entire fresh Supabase project.
-                    Use this instead of running migrations one by one.
+  init.sql        → Single file to set up the entire database.
+                    Includes all tables, RLS policies, RPCs, and cron jobs.
 
   migrations/     → Individual migration files (historical record).
-                    These were applied incrementally during development.
-                    Kept for reference but not needed for fresh setup.
+                    Not needed for a fresh setup but kept for reference.
 
 
-FRESH SETUP (NEW SUPABASE PROJECT)
-----------------------------------
+FRESH SETUP (STEP-BY-STEP)
+--------------------------
 
-  1. Create a new Supabase project at https://supabase.com
+  1. CREATE PROJECT
+     Create a new project at https://supabase.com.
 
-  2. Go to SQL Editor and run the entire contents of init.sql
+  2. ENABLE EXTENSIONS
+     In the Supabase Dashboard, go to Database → Extensions and enable:
+     - pg_net (Required for automated storage cleanup)
+     - pg_cron (Required for 24h expiration)
 
-  3. Store your service_role key in Vault (required for auto storage cleanup):
+  3. RUN INIT SQL
+     Go to the SQL Editor, create a new query, paste the entire contents 
+     of init.sql, and run it.
 
-     Go to Settings → API → copy the service_role key, then run:
+  4. CONFIGURE STORAGE BUCKETS
+     Go to Storage and create the following buckets (set them to PUBLIC):
+     - post-media    (For post images/videos)
+     - avatars       (For profile pictures)
+     - banners       (For profile banners)
 
-       SELECT vault.create_secret('supabase_service_role_key', 'YOUR_KEY');
+  5. SETUP SERVICE ROLE KEY (CRITICAL FOR AUTO-CLEANUP)
+     This is required for the 24h cleanup job to delete files from storage.
+     
+     a. Go to Settings → API.
+     b. Copy the "service_role" secret key (NOT the anon key).
+     c. Go to SQL Editor and run this command:
+        
+        SELECT vault.create_secret('supabase_service_role_key', 'YOUR_SERVICE_ROLE_KEY');
 
-  4. Set up your .env file in the project root:
+  6. UPDATE PROJECT ID (AUTO-CLEANUP)
+     In init.sql, search for 'scvikrxfxijqoedfryvx' (the project ID).
+     Replace it with your own project ID found in your Supabase URL.
 
-       VITE_SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
-       VITE_SUPABASE_PUBLISHABLE_KEY="YOUR_ANON_KEY"
-
-     (Find both values in Supabase Dashboard → Settings → API)
-
-  5. Run the app: npm run dev
-
-
-WHAT THE DATABASE DOES
-----------------------
-
-  Tables:
-    - profiles      Users (auto-created on signup)
-    - posts         24-hour ephemeral posts
-    - likes         Post likes
-    - bookmarks     Post bookmarks
-    - comments      Post comments (echoes)
-    - follows       User follow relationships
-    - messages      Whispers (DMs, also 24-hour)
-
-  Storage Buckets:
-    - post-media    Images attached to posts
-    - avatars       User profile pictures
-    - banners       User profile banners
-
-  Cron Jobs (run every hour):
-    - delete_expired_posts      Deletes posts older than 24h + their storage files
-    - delete_expired_whispers   Deletes messages older than 24h
-
-  Cascade Deletion:
-    When a post is deleted (manually or by cron), these are auto-deleted:
-    - All comments on the post
-    - All likes on the post
-    - All bookmarks on the post
+  7. SETUP ADMIN USER (OPTIONAL)
+     To grant admin access, find your user ID in the Auth section and run:
+     
+     INSERT INTO public.admin_users (user_id)
+     VALUES ('YOUR_AUTH_USERS_ID_HERE');
 
 
-IMPORTANT NOTES
----------------
+HOW EXPIRATION WORKS
+--------------------
 
-  - The init.sql contains a hardcoded Supabase project URL in the
-    delete_expired_posts() function. If you use a different project,
-    update that URL.
+  Everything in genjutsu is ephemeral (lasts only 24 hours):
+  
+  - Posts & Media: Auto-deleted after 24 hours.
+  - Whispers (DMs): Auto-deleted after 24 hours.
+  - Follow Notifications: Auto-deleted after 24 hours.
+  - Storage Files: Cleaned up automatically when posts expire.
 
-  - The service_role key in Vault is ONLY used server-side by the cron job.
-    It is never exposed to the client/frontend.
+  Cron jobs are scheduled in init.sql to run these cleanups every hour.
 
-  - Never commit your service_role key to git or use it in frontend code.
+
+CLIENT SETUP
+------------
+
+  Update your .env file in the project root:
+
+    VITE_SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
+    VITE_SUPABASE_PUBLISHABLE_KEY="YOUR_ANON_KEY"
+
+
+SECURITY REMINDER
+-----------------
+
+  - Your service_role key is stored safely in the Vault and is NEVER 
+    exposed to the frontend.
+  - Never share or commit your service_role key.
+================================================================================

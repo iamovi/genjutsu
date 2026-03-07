@@ -4,6 +4,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, UserPlus, UserCheck, Send } from "lucide-react";
@@ -146,15 +147,14 @@ const FollowsList = ({ userId, type, isOpen, onOpenChange, onAction }: FollowsLi
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent
                 className="sm:max-w-[400px] gum-card border-2 border-foreground p-0 overflow-hidden max-h-[80vh] flex flex-col"
-                aria-describedby="follows-list-description"
             >
                 <DialogHeader className="p-4 bg-secondary border-b-2 border-foreground">
                     <DialogTitle className="text-lg font-bold capitalize">
                         {type}
                     </DialogTitle>
-                    <div id="follows-list-description" className="sr-only">
+                    <DialogDescription className="sr-only">
                         List of users who are {type} of the profile
-                    </div>
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto p-2">
