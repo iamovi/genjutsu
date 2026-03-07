@@ -6,13 +6,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 import { useNavigate, Link } from "react-router-dom";
-import { getNow, cn } from "@/lib/utils";
+import { getNow } from "@/lib/utils";
 import { linkify } from "@/lib/linkify";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkGemoji from "remark-gemoji";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import vscDarkPlus from "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface PostCardProps {
   post: PostWithProfile;
@@ -75,6 +80,7 @@ const PostCard = ({ post, onLike, onBookmark, onDelete }: PostCardProps) => {
     .slice(0, 2) || "??";
 
   const isOwner = user?.id === post.user_id;
+  
 
   return (
     <motion.article
@@ -164,14 +170,30 @@ const PostCard = ({ post, onLike, onBookmark, onDelete }: PostCardProps) => {
           )}
 
           {post.media_url && (
-            <div className="mt-3 rounded-[3px] gum-border overflow-hidden bg-muted">
-              <img
-                src={post.media_url}
-                alt="Post content"
-                className="w-full h-auto max-h-[500px] object-contain mx-auto"
-                loading="lazy"
-              />
-            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  className="mt-3 w-full rounded-[3px] gum-border overflow-hidden bg-muted cursor-pointer hover:opacity-95 transition-opacity"
+                >
+                  <img
+                    src={post.media_url}
+                    alt="Post content"
+                    className="w-full h-auto max-h-[500px] object-contain mx-auto"
+                    loading="lazy"
+                  />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[90vw] max-h-[90vh] p-8 border-none bg-transparent shadow-none flex items-center justify-center">
+                <div className="relative group">
+                  <img
+                    src={post.media_url}
+                    alt="Post content"
+                    className="max-w-full max-h-[80vh] rounded-[3px] gum-border gum-shadow object-contain"
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
 
           {post.code && (
