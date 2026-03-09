@@ -77,38 +77,41 @@ export default async function handler(req) {
             }
         }
 
-        const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
+        // --- INJECT INTO INDEX.HTML ---
+        const indexRes = await fetch(`${APP_URL}/index.html`);
+        let html = await indexRes.text();
+
+        // Prepare the meta tags block
+        const metaBlock = `
   <title>${title}</title>
-  
   <meta name="title" content="${title}">
   <meta name="description" content="${description}">
-
   <meta property="og:type" content="article" />
   <meta property="og:url" content="${targetUrl}" />
   <meta property="og:title" content="${title}" />
   <meta property="og:description" content="${description}" />
   <meta property="og:image" content="${image}" />
-
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:url" content="${targetUrl}" />
   <meta name="twitter:title" content="${title}" />
   <meta name="twitter:description" content="${description}" />
   <meta name="twitter:image" content="${image}" />
+`;
 
-  <meta http-equiv="refresh" content="0; url=${targetUrl}" />
-</head>
-<body>
-  <p>Redirecting to <a href="${targetUrl}">${targetUrl}</a>...</p>
-</body>
-</html>`;
+        // We clean ALL existing static SEO/OG/Twitter tags to avoid duplicates
+        // which can confuse some crawlers (like Discord/Telegram).
+        html = html.replace(/<title>.*?<\/title>/gi, '');
+        html = html.replace(/<meta name="description".*?>/gi, '');
+        html = html.replace(/<meta property="og:.*?".*?>/gi, '');
+        html = html.replace(/<meta name="twitter:.*?".*?>/gi, '');
+
+        // Inject our fresh dynamic block into the head
+        html = html.replace('</head>', `${metaBlock}</head>`);
 
         return new Response(html, {
             headers: {
                 'Content-Type': 'text/html; charset=utf-8',
-                'Cache-Control': 'public, max-age=3600, s-maxage=3600' // Cache at Edge for 1hr
+                'Cache-Control': 'public, max-age=3600, s-maxage=3600'
             },
         });
 
