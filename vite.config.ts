@@ -31,17 +31,19 @@ export default defineConfig(({ mode }) => ({
         theme_color: "#0a0a0a", // Matches Tailwind dark background
         background_color: "#0a0a0a",
         display: "standalone",
-        orientation: "portrait", 
+        orientation: "portrait",
         icons: [
           {
-            src: "/fav.jpg", // Note: PWABuilder prefers PNGs, consider using their image generator later
+            src: "/icon-192x192.png",
             sizes: "192x192",
-            type: "image/jpeg",
+            type: "image/png",
+            purpose: "any maskable"
           },
           {
-            src: "/fav.jpg",
+            src: "/icon-512x512.png",
             sizes: "512x512",
-            type: "image/jpeg",
+            type: "image/png",
+            purpose: "any maskable"
           },
         ],
       },
