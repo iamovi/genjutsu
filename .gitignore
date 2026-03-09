@@ -26,3 +26,6 @@ dist-ssr
 .env
 
 todo.txt
+
+# PWABuilder Android Packages
+genjutsu - Google Play package/

@@ -1,0 +1,14 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.iamovi.genjutsu",
+            "sha256_cert_fingerprints": [
+                "34:64:A8:FB:B3:FD:1B:3F:15:2A:D5:35:44:12:D8:22:AA:C0:16:98:DB:34:7C:80:16:DC:2D:6F:EB:7C:35:9A"
+            ]
+        }
+    }
+]
