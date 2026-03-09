@@ -7,34 +7,75 @@ const APP_URL = 'https://genjutsu-social.vercel.app'; // Production URL
 export default async function handler(req) {
     const { searchParams } = new URL(req.url);
     const postId = searchParams.get('postId');
+    const usernameParam = searchParams.get('username');
 
-    if (!postId) {
-        return new Response('Missing postId', { status: 400 });
+    // If neither is provided, fail early
+    if (!postId && !usernameParam) {
+        return new Response('Missing target', { status: 400 });
     }
 
     try {
-        // Fetch post from Supabase using REST API
-        const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/posts?id=eq.${postId}&select=content,media_url,profiles(display_name,username,avatar_url)`,
-            {
-                headers: {
-                    apikey: SUPABASE_PUBLISHABLE_KEY,
-                    Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-                },
+        let title = 'Genjutsu';
+        let description = 'The 24 hour social network for developers.';
+        let image = `${APP_URL}/fav.jpg`;
+        let targetUrl = APP_URL;
+
+        // --- HANDLE POSTS ---
+        if (postId) {
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/posts?id=eq.${postId}&select=content,media_url,profiles(display_name,username,avatar_url)`,
+                {
+                    headers: {
+                        apikey: SUPABASE_PUBLISHABLE_KEY,
+                        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+                    },
+                }
+            );
+
+            const data = await res.json();
+            const post = data[0];
+
+            if (!post) {
+                return new Response('Post not found', { status: 404 });
             }
-        );
 
-        const data = await res.json();
-        const post = data[0];
+            title = `${post.profiles?.display_name || 'Someone'} on Genjutsu`;
 
-        if (!post) {
-            return new Response('Post not found', { status: 404 });
+            // Better text extraction, removing markdown hashtags/codeblocks visually if short
+            description = post.content ? (post.content.length > 200 ? post.content.substring(0, 200) + '...' : post.content) : 'View this post on Genjutsu.';
+
+            image = post.media_url || post.profiles?.avatar_url || `${APP_URL}/fav.jpg`;
+            targetUrl = `${APP_URL}/post/${postId}`;
         }
+        // --- HANDLE PROFILES ---
+        else if (usernameParam) {
+            // Decode URL encoding in case it exists (e.g. %40username) and strip leading @ if present
+            const cleanUsername = usernameParam.replace(/^@/, '');
 
-        const title = `${post.profiles?.display_name || 'Someone'} on Genjutsu`;
-        const description = post.content ? (post.content.length > 160 ? post.content.substring(0, 160) + '...' : post.content) : 'View this post on Genjutsu.';
-        const image = post.media_url || post.profiles?.avatar_url || `${APP_URL}/fav.jpg`;
-        const postUrl = `${APP_URL}/post/${postId}`;
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/profiles?username=eq.${cleanUsername}&select=display_name,avatar_url,bio`,
+                {
+                    headers: {
+                        apikey: SUPABASE_PUBLISHABLE_KEY,
+                        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+                    },
+                }
+            );
+
+            const data = await res.json();
+            const profile = data[0];
+
+            if (!profile) {
+                // Fallback gracefully to default if no user found but still give the URL
+                targetUrl = `${APP_URL}/${cleanUsername}`;
+            } else {
+                const displayName = profile.display_name || cleanUsername;
+                title = `${displayName} (@${cleanUsername}) on Genjutsu`;
+                description = profile.bio ? (profile.bio.length > 160 ? profile.bio.substring(0, 160) + '...' : profile.bio) : `Check out ${displayName}'s profile on Genjutsu, the 24-hour developer social network.`;
+                image = profile.avatar_url || `${APP_URL}/fav.jpg`;
+                targetUrl = `${APP_URL}/${cleanUsername}`;
+            }
+        }
 
         const html = `<!DOCTYPE html>
 <html>
@@ -42,29 +83,25 @@ export default async function handler(req) {
   <meta charset="UTF-8" />
   <title>${title}</title>
   
-  <!-- Primary Meta Tags -->
   <meta name="title" content="${title}">
   <meta name="description" content="${description}">
 
-  <!-- Open Graph / Facebook -->
   <meta property="og:type" content="article" />
-  <meta property="og:url" content="${postUrl}" />
+  <meta property="og:url" content="${targetUrl}" />
   <meta property="og:title" content="${title}" />
   <meta property="og:description" content="${description}" />
   <meta property="og:image" content="${image}" />
 
-  <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:url" content="${postUrl}" />
+  <meta name="twitter:url" content="${targetUrl}" />
   <meta name="twitter:title" content="${title}" />
   <meta name="twitter:description" content="${description}" />
   <meta name="twitter:image" content="${image}" />
 
-  <!-- Instant Redirect for bots/users that somehow execute this -->
-  <meta http-equiv="refresh" content="0; url=${postUrl}" />
+  <meta http-equiv="refresh" content="0; url=${targetUrl}" />
 </head>
 <body>
-  <p>Redirecting to <a href="${postUrl}">${postUrl}</a>...</p>
+  <p>Redirecting to <a href="${targetUrl}">${targetUrl}</a>...</p>
 </body>
 </html>`;
 
@@ -76,7 +113,7 @@ export default async function handler(req) {
         });
 
     } catch (error) {
-        console.error("Error fetching post for OG tag generation:", error);
+        console.error("Error fetching data for OG tag generation:", error);
         return new Response('Failed to load preview', { status: 500 });
     }
 }

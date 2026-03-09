@@ -12,6 +12,17 @@
             "destination": "/api/og?postId=:postId"
         },
         {
+            "source": "/:username(?!api/|assets/|favicon.ico).*",
+            "has": [
+                {
+                    "type": "header",
+                    "key": "user-agent",
+                    "value": ".*(Twitterbot|facebookexternalhit|Instagram|WhatsApp|TelegramBot|Slackbot|LinkedInBot|Discordbot|SkypeUriPreview|iMessageBot|curl|python-requests).*"
+                }
+            ],
+            "destination": "/api/og?username=:username"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }
