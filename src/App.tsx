@@ -21,6 +21,7 @@ const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const WhispersPage = lazy(() => import("@/pages/WhispersPage"));
 const ChatPage = lazy(() => import("@/pages/ChatPage"));
+const CommunityChat = lazy(() => import("@/pages/CommunityChat"));
 const PlayPage = lazy(() => import("@/pages/PlayPage"));
 const AdminPage = lazy(() => import("@/pages/AdminPage"));
 const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
@@ -66,6 +67,7 @@ const App = () => {
                     <Route path="/post/:postId" element={<PostPage />} />
                     <Route path="/search" element={<SearchPage />} />
                     <Route path="/whispers" element={<WhispersPage />} />
+                    <Route path="/whispers/community" element={<CommunityChat />} />
                     <Route path="/whisper/:username" element={<ChatPage />} />
                     <Route path="/play" element={<PlayPage />} />
                     <Route

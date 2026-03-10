@@ -34,6 +34,7 @@ export function useWhispers(targetUserId?: string) {
     const sb = supabase as any;
     const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
     const channelRef = useRef<any>(null);
+    const isSubscribedRef = useRef(false);
 
     // Fetch all conversations (list of people)
     const { data: conversations, isLoading: loadingConversations } = useQuery({
@@ -156,7 +157,7 @@ export function useWhispers(targetUserId?: string) {
 
     // Broadcast typing status
     const setTyping = useCallback((typing: boolean) => {
-        if (channelRef.current && targetUserId && user) {
+        if (channelRef.current && isSubscribedRef.current && targetUserId && user) {
             channelRef.current.send({
                 type: 'broadcast',
                 event: 'typing',
@@ -228,18 +229,35 @@ export function useWhispers(targetUserId?: string) {
                         }
                     }
                 })
-                .subscribe();
+                .subscribe((status: string) => {
+                     if (status === 'SUBSCRIBED') {
+                         isSubscribedRef.current = true;
+                     } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                         isSubscribedRef.current = false;
+                     }
+                });
         }, 100);
 
         return () => {
             cancelled = true;
             clearTimeout(timer);
             if (typingTimeout) clearTimeout(typingTimeout);
+            
             if (channelRef.current) {
                 const chan = channelRef.current;
                 channelRef.current = null;
-                chan.unsubscribe();
-                sb.removeChannel(chan).catch(() => { });
+                
+                // Safe cleanup: Only attempt to remove if it actually finished connecting
+                // This prevents the 'WebSocket is closed before connection is established' error
+                const state = chan.state;
+                if (state === 'joined' || state === 'joining') {
+                     // Supabase handles unsubscribe cleanly
+                     chan.unsubscribe().then(() => {
+                         sb.removeChannel(chan).catch(() => {});
+                     }).catch(() => {});
+                } else {
+                     sb.removeChannel(chan).catch(() => {});
+                }
             }
         };
     }, [user?.id, targetUserId, queryClient]);

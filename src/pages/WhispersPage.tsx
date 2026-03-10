@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
-import { Send, Loader2, ArrowLeft, LogIn } from "lucide-react";
+import { Send, Loader2, ArrowLeft, LogIn, Users } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 
 const WhispersPage = () => {
@@ -63,6 +63,23 @@ const WhispersPage = () => {
                             </div>
                         ) : conversations && conversations.length > 0 ? (
                             <div className="space-y-3">
+                                {/* Pinned Community Chat */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    onClick={() => navigate("/whispers/community")}
+                                    className="gum-card p-4 flex items-center gap-4 cursor-pointer hover:bg-secondary/50 transition-all group border-primary/30 bg-primary/5"
+                                >
+                                    <div className="w-12 h-12 rounded-[3px] gum-border bg-primary/10 flex items-center justify-center shrink-0">
+                                        <Users size={22} className="text-primary" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-bold group-hover:underline">Community Chat</h4>
+                                        <p className="text-xs text-muted-foreground italic truncate">Public room — everyone can join</p>
+                                    </div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0 animate-pulse" />
+                                </motion.div>
+
                                 {conversations.map((conv) => (
                                     <motion.div
                                         key={conv.user_id}
@@ -106,12 +123,21 @@ const WhispersPage = () => {
                                     <p className="text-sm text-muted-foreground mt-1">
                                         You haven't sent any whispers yet. Messages vanish after 24 hours. Silence is your cover.
                                     </p>
-                                    <button
-                                        onClick={() => navigate("/search")}
-                                        className="mt-6 gum-btn bg-primary text-primary-foreground text-sm"
-                                    >
-                                        Find someone to whisper to
-                                    </button>
+                                    <div className="flex flex-col sm:flex-row gap-3 mt-6 justify-center">
+                                        <button
+                                            onClick={() => navigate("/whispers/community")}
+                                            className="gum-btn bg-primary text-primary-foreground text-sm flex items-center gap-2 justify-center"
+                                        >
+                                            <Users size={16} />
+                                            Join Community Chat
+                                        </button>
+                                        <button
+                                            onClick={() => navigate("/search")}
+                                            className="text-sm border-2 border-border rounded-[3px] px-4 py-2 hover:bg-secondary transition-colors"
+                                        >
+                                            Find someone to whisper to
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}
