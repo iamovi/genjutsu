@@ -28,6 +28,7 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { profile } = useProfile();
@@ -70,9 +71,12 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
     return matches ? matches.map((t) => t.slice(1).toLowerCase()) : [];
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFiles = (file: File | null) => {
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please upload an image file.");
+        return;
+      }
       if (file.size > 5 * 1024 * 1024) {
         toast.error("That's a heavy memory! Please keep images under 5MB.");
         return;
@@ -81,6 +85,46 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
       setMediaFile(file);
       setMediaPreview(URL.createObjectURL(file));
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFiles(e.target.files?.[0] || null);
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          handleFiles(file);
+          // Optional: Prevent pasting the image as text if the browser tries to do both
+          e.preventDefault();
+        }
+      }
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files[0]);
+      e.dataTransfer.clearData();
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
   };
 
   const uploadMedia = async (): Promise<string | null> => {
@@ -95,7 +139,6 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
         .upload(filePath, mediaFile);
 
       if (uploadError) {
-        // If bucket doesn't exist, this might fail. We should ideally check first.
         throw uploadError;
       }
 
@@ -192,7 +235,10 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="gum-card p-5 mb-6"
+      className={`gum-card p-5 mb-6 transition-colors ${isDragging ? "border-primary bg-primary/5" : ""}`}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
     >
       <div className="flex gap-3">
         <div className="w-10 h-10 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
@@ -205,6 +251,7 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
             ref={textareaRef}
             value={content}
             onChange={handleTextareaChange}
+            onPaste={handlePaste}
             placeholder="Share what you're building... (use #tags or @mentions)"
             id="post-content"
             name="content"
