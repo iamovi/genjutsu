@@ -290,7 +290,10 @@
     @apply prose-hr:border-border prose-hr:my-6;
   }
 
-  .bg-background {
-    background-color: transparent;
+  /* Allow the fixed body grid to show through the top-level page wrappers, but keep modals opaque */
+  div.min-h-screen.bg-background,
+  div.h-\[100svh\].bg-background,
+  div.h-screen.bg-background {
+    background-color: transparent !important;
   }
 }
