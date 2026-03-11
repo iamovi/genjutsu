@@ -83,7 +83,15 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
 
   const isOwner = user?.id === post.user_id;
 
+  // see more
+  const [isExpanded, setIsExpanded] = useState(false);
+  const words = post.content.split(' ');
+  const isLongPost = words.length > 20;
+  const displayedContent = isExpanded ? post.content : words.slice(0, 20).join(' ') + '...';
 
+  const codeLines = post.code?.split('\n') || [];
+  const isLongCode = codeLines.length > 10;
+  const displayedCode = isExpanded ? post.code : codeLines.slice(0, 10).join('\n') + '\n...';
 
 
   return (
@@ -164,13 +172,33 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
                   },
                 }}
               >
-                {post.content}
+                {isLongPost && !isExpanded ? displayedContent : post.content}
               </ReactMarkdown>
+
+              {isLongPost && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-blue-500 font-semibold mt-2 hover:underline focus:outline-none text-sm"
+                >
+                  {isExpanded ? 'See Less' : 'See More'}
+                </button>
+              )}
             </div>
           ) : (
-            <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words">
-              {linkify(post.content)}
-            </p>
+            <div className="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words">
+              <p>
+                {isLongPost ? linkify(displayedContent) : linkify(post.content)}
+              </p>
+
+              {isLongPost && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-blue-500 font-semibold mt-1 hover:underline focus:outline-none"
+                >
+                  {isExpanded ? 'See Less' : 'See More'}
+                </button>
+              )}
+            </div>
           )}
 
           {post.media_url && (
@@ -205,8 +233,16 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
           {post.code && (
             <div className="mt-3 gum-border rounded-[3px] bg-muted p-4 overflow-x-auto">
               <pre className="text-xs font-mono text-foreground">
-                <code>{post.code}</code>
+                <code>{isLongCode && !isExpanded ? displayedCode : post.code}</code>
               </pre>
+              {isLongCode && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-blue-500 font-semibold mt-2 hover:underline focus:outline-none text-xs"
+                >
+                  {isExpanded ? 'See Less' : 'See More'}
+                </button>
+              )}
             </div>
           )}
 
