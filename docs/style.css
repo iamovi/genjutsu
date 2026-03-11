@@ -1,47 +1,246 @@
+/* ─── DARK MODE (default) ─── */
+:root {
+    --bg: #070708;
+    --fg: #fafafa;
+    --card-bg: #0e0e10;
+    --border-col: rgba(136, 107, 171, 0.3);
+    --muted-bg: #1d1d20;
+    --muted-fg: rgba(136, 107, 171, 0.9);
+    --label-color: rgba(136, 107, 171, 0.9);
+    --dot-color: rgba(136, 107, 171, 0.2);
+    --shadow-col: rgba(136, 107, 171, 0.3);
+    --btn-bg: #fafafa;
+    --btn-fg: #070708;
+    --btn-border: #fafafa;
+    --nav-bg: #070708;
+    --footer-bg: #070708;
+}
+
+/* ─── LIGHT MODE ─── */
+html.light {
+    --bg: #f5f4f0;
+    --fg: #0a0a0b;
+    --card-bg: #ffffff;
+    --border-col: rgba(136, 107, 171, 0.35);
+    --muted-bg: #e8e7e2;
+    --muted-fg: rgba(100, 70, 140, 0.85);
+    --label-color: rgba(100, 70, 140, 0.85);
+    --dot-color: rgba(136, 107, 171, 0.2);
+    --shadow-col: rgba(136, 107, 171, 0.35);
+    --btn-bg: #0a0a0b;
+    --btn-fg: #f5f4f0;
+    --btn-border: #0a0a0b;
+    --nav-bg: #f5f4f0;
+    --footer-bg: #f5f4f0;
+}
+
+/* ─── BASE TRANSITIONS ─── */
+*, *::before, *::after {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
 body {
-    background-color: #070708;
-    color: #fafafa;
+    background-color: var(--bg);
+    color: var(--fg);
     font-family: 'Space Grotesk', sans-serif;
-    background-image: radial-gradient(#2b2b30 1px, transparent 1px);
+    background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
     background-size: 20px 20px;
     min-height: 100vh;
 }
 
 .gum-border {
-    border: 2px solid #2b2b30;
+    border: 2px solid var(--border-col);
 }
 
 .gum-card {
-    background-color: #0e0e10;
-    border: 2px solid #2b2b30;
+    background-color: var(--card-bg);
+    border: 2px solid var(--border-col);
     border-radius: 3px;
-    box-shadow: 4px 4px 0px #2b2b30;
+    box-shadow: 4px 4px 0px var(--shadow-col);
 }
 
 .gum-btn {
-    background-color: #fafafa;
-    color: #070708;
-    border: 2px solid #fafafa;
+    background-color: var(--btn-bg);
+    color: var(--btn-fg);
+    border: 2px solid var(--btn-border);
     border-radius: 3px;
-    box-shadow: 4px 4px 0px #2b2b30;
-    transition: all 0.15s ease;
+    box-shadow: 4px 4px 0px var(--shadow-col);
+    transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.25s ease;
 }
 
 .gum-btn:hover {
-    box-shadow: 2px 2px 0px #2b2b30;
+    box-shadow: 2px 2px 0px var(--shadow-col);
     transform: translate(2px, 2px);
-    background-color: #e5e5e5;
 }
 
 .gum-btn:active {
-    box-shadow: 0px 0px 0px #2b2b30;
+    box-shadow: 0px 0px 0px var(--shadow-col);
     transform: translate(4px, 4px);
 }
 
 .halftone-bg {
     background-image:
-        radial-gradient(#2b2b30 15%, transparent 16%),
-        radial-gradient(#2b2b30 15%, transparent 16%);
+        radial-gradient(var(--dot-color) 15%, transparent 16%),
+        radial-gradient(var(--dot-color) 15%, transparent 16%);
     background-size: 8px 8px;
     background-position: 0 0, 4px 4px;
+}
+
+/* ─── NAV ─── */
+.site-nav {
+    background-color: var(--nav-bg);
+    border-bottom: 2px solid var(--border-col);
+}
+
+/* ─── SECONDARY BUTTON ─── */
+.gum-btn-ghost {
+    background-color: var(--card-bg);
+    color: var(--fg);
+    border: 2px solid var(--border-col);
+    border-radius: 3px;
+}
+
+.gum-btn-ghost:hover {
+    background-color: var(--muted-bg);
+}
+
+/* ─── FOOTER ─── */
+.site-footer {
+    background-color: var(--footer-bg);
+    border-top: 2px solid var(--border-col);
+}
+
+/* ─── HERO INVERT SPAN ─── */
+.hero-invert {
+    color: var(--bg);
+    background-color: var(--fg);
+}
+
+/* ─── MUTED TEXT ─── */
+.text-muted-custom {
+    color: var(--muted-fg);
+}
+
+/* ─── BADGE ─── */
+.badge {
+    background-color: var(--card-bg);
+    border: 2px solid var(--border-col);
+    color: var(--fg);
+}
+
+/* ─── CARD ICON BOX ─── */
+.icon-box {
+    background-color: var(--muted-bg);
+    border: 2px solid var(--border-col);
+}
+
+/* ─── THEME TOGGLE ─── */
+.theme-toggle {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    background-color: var(--muted-bg);
+    border: 2px solid var(--border-col);
+    border-radius: 3px;
+    cursor: pointer;
+    box-shadow: 3px 3px 0px var(--shadow-col);
+    flex-shrink: 0;
+    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.15s ease;
+}
+
+.theme-toggle:hover {
+    box-shadow: 1px 1px 0px var(--shadow-col);
+    transform: translate(2px, 2px);
+}
+
+.theme-toggle:active {
+    box-shadow: 0px 0px 0px var(--shadow-col);
+    transform: translate(3px, 3px);
+}
+
+.toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background-color: var(--fg);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease;
+}
+
+html.light .toggle-thumb {
+    transform: translateX(24px);
+}
+
+/* icon swap */
+.icon-moon { display: block; }
+.icon-sun  { display: none; }
+html.light .icon-moon { display: none; }
+html.light .icon-sun  { display: block; }
+
+
+/* ─── SCROLL OFFSET FOR FIXED NAVBAR ─── */
+section[id], main[id] {
+    scroll-margin-top: 72px;
+}
+
+
+/* ─── PURPLE VIBE LABELS & DESCRIPTIONS ─── */
+.section-label {
+    color: var(--label-color);
+}
+
+/* ─── PURPLE SCROLLBAR ─── */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(136, 107, 171, 0.5);
+    border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(136, 107, 171, 0.9);
+}
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(136, 107, 171, 0.5) transparent;
+}
+
+/* ─── MOBILE MENU ANIMATIONS ─── */
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes slideOut {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(100%); opacity: 0; }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+#mobileMenu .menu-panel {
+    animation: slideIn 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+#mobileMenu .menu-backdrop {
+    animation: fadeIn 0.25s ease forwards;
+}
+#mobileMenu.closing .menu-panel {
+    animation: slideOut 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+#mobileMenu.closing .menu-backdrop {
+    animation: fadeOut 0.2s ease forwards;
 }
