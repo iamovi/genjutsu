@@ -72,7 +72,7 @@ const Navbar = () => {
               <button
                 key={label}
                 onClick={() => navigate(path)}
-                className={`relative flex items-center gap-2 px-3.5 py-2 rounded-[3px] text-sm font-medium transition-all ${location.pathname === path
+                className={`relative flex items-center gap-2 px-3.5 py-2 rounded-[3px] text-sm font-medium transition-all gum-border ${location.pathname === path
                   ? "bg-primary text-primary-foreground gum-shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   }`}

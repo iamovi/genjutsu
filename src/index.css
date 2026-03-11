@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
+    --background: 270 10% 99%;
     --foreground: 0 0% 5%;
 
     --card: 0 0% 100%;
@@ -57,7 +57,7 @@
   }
 
   .dark {
-    --background: 240 10% 3%;
+    --background: 240 10% 3.5%;
     --foreground: 0 0% 98%;
 
     --card: 240 10% 6%;
@@ -267,5 +267,14 @@
     @apply prose-pre:bg-muted prose-pre:gum-border prose-pre:p-4;
     @apply prose-img:rounded-[3px] prose-img:gum-border;
     @apply prose-hr:border-border prose-hr:my-6;
+  }
+
+  .bg-background {
+    background-color: hsl(var(--background));
+    background-image: 
+      linear-gradient(hsl(var(--primary) / 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--primary) / 0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-attachment: fixed;
   }
 }
