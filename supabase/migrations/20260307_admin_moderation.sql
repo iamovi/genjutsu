@@ -248,3 +248,10 @@ $$ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public;
 
+-- 10) Enable RLS on admin_users table
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own admin status"
+  ON public.admin_users FOR SELECT
+  USING ((select auth.uid()) = user_id);
+

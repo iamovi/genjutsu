@@ -160,6 +160,7 @@ CREATE INDEX idx_notifications_unread ON public.notifications (user_id, is_read)
 -- ROW LEVEL SECURITY
 -- =============================================================================
 
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
@@ -169,6 +170,10 @@ ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_action_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+-- Admin Users
+CREATE POLICY "Users can view their own admin status"
+  ON public.admin_users FOR SELECT USING ((select auth.uid()) = user_id);
 
 -- Profiles
 CREATE POLICY "Profiles are viewable by everyone"
