@@ -19,17 +19,24 @@ toggleBtn.addEventListener('click', () => {
 
 // ─── DOWNLOAD COUNT ──────────────────────────────────────────────────────────
 const REPO = 'iamovi/genjutsu';
-const TAG = 'v.1.0.0.0';
-const ASSET_NAME = 'genjutsu.apk';
 
 async function fetchDownloadCount() {
     try {
-        const response = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/${TAG}`);
-        const data = await response.json();
-        const asset = data.assets.find(a => a.name === ASSET_NAME);
+        const response = await fetch(`https://api.github.com/repos/${REPO}/releases`);
+        const releases = await response.json();
+
+        if (!Array.isArray(releases)) throw new Error('Unexpected API response');
+
+        let totalDownloads = 0;
+        releases.forEach(release => {
+            release.assets.forEach(asset => {
+                totalDownloads += asset.download_count;
+            });
+        });
+
         const countElement = document.getElementById('download-count');
         if (countElement) {
-            countElement.innerText = asset ? asset.download_count.toLocaleString() : '0';
+            countElement.innerText = totalDownloads.toLocaleString();
         }
     } catch (error) {
         console.error('Error fetching download count:', error);
