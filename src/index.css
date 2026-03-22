@@ -4,6 +4,14 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  background-color: hsl(270, 10%, 99%);
+}
+
+html.dark {
+  background-color: #0a0a0a;
+}
+
 @layer base {
   :root {
     --background: 270 10% 99%;
