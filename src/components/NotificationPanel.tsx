@@ -69,7 +69,7 @@ const NotificationPanel = ({
         }
 
         if (notification.type === "follow" && notification.actor_profile) {
-            navigate(`/${notification.actor_profile.username}`);
+            navigate(`/u/${notification.actor_profile.username}`);
         } else if (notification.post_id) {
             navigate(`/post/${notification.post_id}`);
         }

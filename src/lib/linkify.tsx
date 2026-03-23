@@ -40,7 +40,7 @@ export function linkify(text: string) {
                     <React.Fragment key={`mention-${i}-${j}`}>
                         {leadingSpace}
                         <Link
-                            to={`/${username}`}
+                            to={`/u/${username}`}
                             className="text-primary font-bold hover:underline"
                         >
                             {mention}

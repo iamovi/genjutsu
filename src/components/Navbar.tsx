@@ -198,7 +198,7 @@ const Navbar = () => {
                   <DropdownMenuItem 
                     onClick={() => {
                       if (profile?.username) {
-                        navigate(`/${profile.username}`);
+                        navigate(`/u/${profile.username}`);
                       }
                     }} 
                     className={`cursor-pointer ${!profile?.username ? 'opacity-50' : ''}`}

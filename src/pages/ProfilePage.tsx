@@ -331,9 +331,9 @@ const ProfilePage = () => {
         <div className="min-h-screen bg-background text-foreground">
             {profile && (
                 <Helmet>
-                    <title>{profile.display_name} (@{profile.username}) — genjutsu</title>
+                    <title>{profile.display_name} (u/{profile.username}) — genjutsu</title>
                     <meta name="description" content={profile.bio || `Check out ${profile.display_name}'s profile on genjutsu.`} />
-                    <meta property="og:title" content={`${profile.display_name} (@${profile.username}) — genjutsu`} />
+                    <meta property="og:title" content={`${profile.display_name} (u/${profile.username}) — genjutsu`} />
                     <meta property="og:description" content={profile.bio || `Check out ${profile.display_name}'s profile on genjutsu.`} />
                     <meta property="og:image" content={profile.avatar_url || "/fav.jpg"} />
                 </Helmet>
@@ -464,7 +464,7 @@ const ProfilePage = () => {
                                             <h1 className="text-2xl font-bold tracking-tight truncate">
                                                 {profile.display_name}
                                             </h1>
-                                            <p className="text-muted-foreground truncate">@{profile.username}</p>
+                                            <p className="text-muted-foreground truncate">u/{profile.username}</p>
                                         </div>
 
                                         <p className="mt-4 text-sm leading-relaxed max-w-xl whitespace-pre-wrap">

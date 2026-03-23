@@ -375,7 +375,7 @@ const PostPage = () => {
                                                 <div key={comment.id} className="gum-card p-4 bg-background/50">
                                                     <div className="flex gap-3">
                                                         <button
-                                                            onClick={() => navigate(`/${comment.profiles?.username}`)}
+                                                            onClick={() => navigate(`/u/${comment.profiles?.username}`)}
                                                             className="w-8 h-8 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden hover:opacity-80 transition-opacity"
                                                         >
                                                             {comment.profiles?.avatar_url ? (
@@ -386,7 +386,7 @@ const PostPage = () => {
                                                             {/* Header Part containing the Menu */}
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <button
-                                                                    onClick={() => navigate(`/${comment.profiles?.username}`)}
+                                                                    onClick={() => navigate(`/u/${comment.profiles?.username}`)}
                                                                     className="flex items-center gap-2 group text-left"
                                                                 >
                                                                     <span className="font-bold text-xs group-hover:underline">

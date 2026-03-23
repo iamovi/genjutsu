@@ -116,7 +116,7 @@ const CommunityChat = () => {
                                     {/* Avatar (only for others) */}
                                     {!isMe && (
                                         <button
-                                            onClick={() => msg.profile?.username && navigate(`/${msg.profile.username}`)}
+                                            onClick={() => msg.profile?.username && navigate(`/u/${msg.profile.username}`)}
                                             className="w-7 h-7 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-[10px] shrink-0 overflow-hidden hover:opacity-80 transition-opacity"
                                         >
                                             {msg.profile?.avatar_url ? (
@@ -134,7 +134,7 @@ const CommunityChat = () => {
                                         {/* Username label for others */}
                                         {!isMe && msg.profile && (
                                             <button
-                                                onClick={() => navigate(`/${msg.profile!.username}`)}
+                                                onClick={() => navigate(`/u/${msg.profile!.username}`)}
                                                 className="text-[10px] font-bold opacity-70 hover:underline block mb-0.5"
                                             >
                                                 @{msg.profile.username}
