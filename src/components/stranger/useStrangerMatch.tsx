@@ -92,25 +92,29 @@ export function useStrangerMatch(userName: string = "Anonymous") {
        }
     });
 
-    // Enter presence so others can see we are searching
-    await lobby.presence.enter({ searching: true, name: userName });
-    
-    // Check if anyone else is already waiting
-    const presenceSet = await lobby.presence.get();
-    const otherWaiters = presenceSet.filter(p => p.clientId !== ably.auth.clientId && p.data?.searching);
-    
-    if (otherWaiters.length > 0) {
-       // Pick the first random waiter
-       const target = otherWaiters[Math.floor(Math.random() * otherWaiters.length)];
-       const newChatChannelId = `chat_${Math.random().toString(36).substring(2)}`;
-       
-       // Send offer exclusively to them
-       lobby.publish('offer', { target: target.clientId, channel: newChatChannelId, strangerName: userName });
-       
-       // Clean up lobby and join the new private chat
-       lobby.presence.leave().catch(() => {});
-       try { lobby.detach(); } catch(e) {}
-       joinChat(newChatChannelId, target.data?.name || "Stranger");
+    try {
+        // Enter presence so others can see we are searching
+        await lobby.presence.enter({ searching: true, name: userName });
+        
+        // Check if anyone else is already waiting
+        const presenceSet = await lobby.presence.get();
+        const otherWaiters = presenceSet.filter(p => p.clientId !== ably.auth.clientId && p.data?.searching);
+        
+        if (otherWaiters.length > 0) {
+           // Pick the first random waiter
+           const target = otherWaiters[Math.floor(Math.random() * otherWaiters.length)];
+           const newChatChannelId = `chat_${Math.random().toString(36).substring(2)}`;
+           
+           // Send offer exclusively to them
+           lobby.publish('offer', { target: target.clientId, channel: newChatChannelId, strangerName: userName });
+           
+           // Clean up lobby and join the new private chat
+           lobby.presence.leave().catch(() => {});
+           try { lobby.detach(); } catch(e) {}
+           joinChat(newChatChannelId, target.data?.name || "Stranger");
+        }
+    } catch (e: any) {
+        console.warn("Ably search logic interrupted:", e.message);
     }
   };
 
@@ -121,8 +125,12 @@ export function useStrangerMatch(userName: string = "Anonymous") {
      const chatChannel = ably.channels.get(channelId);
      chatChannelRef.current = chatChannel;
 
-     // Enter presence to track disconnects
-     await chatChannel.presence.enter();
+     try {
+         // Enter presence to track disconnects
+         await chatChannel.presence.enter();
+     } catch (e: any) {
+         console.warn("Ably chat join interrupted:", e.message);
+     }
      
      chatChannel.presence.subscribe('leave', (member) => {
          if (member.clientId !== ably.auth.clientId) {
