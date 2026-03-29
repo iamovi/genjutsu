@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, memo } from "react";
-import { Hash, Heart, MessageSquare, Share, Bookmark, MoreHorizontal, Trash2, Send } from "lucide-react";
+import { Hash, Heart, MessageSquare, Share, Bookmark, MoreHorizontal, Trash2, Send, Languages, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { PostWithProfile } from "@/hooks/usePosts";
 import { useAuth } from "@/hooks/useAuth";
@@ -65,6 +65,11 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Translation States
+  const [translatedContent, setTranslatedContent] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [isShowingTranslation, setIsShowingTranslation] = useState(false);
+
   useEffect(() => {
     if (!showMenu) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -84,19 +89,55 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
     .slice(0, 2) || "??";
 
   const { theme } = useTheme();
-  const currentTheme = theme === "system" 
+  const currentTheme = theme === "system"
     ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
     : theme;
   const highlighterTheme = currentTheme === "dark" ? vscDarkPlus : oneLight;
 
   const isOwner = user?.id === post.user_id;
 
-  // see more — separate states for text and code
   const [isTextExpanded, setIsTextExpanded] = useState(false);
   const [isCodeExpanded, setIsCodeExpanded] = useState(false);
 
-  const isLongPost = post.content.length > 300;
-  const truncatedContent = isLongPost ? post.content.slice(0, 300) + '…' : post.content;
+  // Translation Logic
+  const handleTranslate = async () => {
+    if (isShowingTranslation) {
+      setIsShowingTranslation(false);
+      return;
+    }
+
+    if (translatedContent) {
+      setIsShowingTranslation(true);
+      return;
+    }
+
+    try {
+      setIsTranslating(true);
+      // Replace with your actual local server URL
+      const apiUrl = import.meta.env.VITE_LANG_SERVICE;
+      const response = await fetch(`${apiUrl}/api/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: post.content, target: 'en' })
+      });
+
+      if (!response.ok) throw new Error();
+
+      const data = await response.json();
+      setTranslatedContent(data.translatedText);
+      setIsShowingTranslation(true);
+      toast.success("Translated to English");
+    } catch (error) {
+      toast.error("Could not translate post.");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // Content Selection Logic
+  const rawContent = isShowingTranslation && translatedContent ? translatedContent : post.content;
+  const isLongPost = rawContent.length > 300;
+  const displayContent = isLongPost && !isTextExpanded ? rawContent.slice(0, 300) + '…' : rawContent;
 
   const codeLines = post.code?.split('\n') || [];
   const isLongCode = codeLines.length > 10;
@@ -181,7 +222,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
                   },
                 }}
               >
-                {isLongPost && !isTextExpanded ? truncatedContent : post.content}
+                {displayContent}
               </ReactMarkdown>
 
               {isLongPost && (
@@ -196,7 +237,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
           ) : (
             <div className="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words">
               <p>
-                {isLongPost && !isTextExpanded ? linkify(truncatedContent) : linkify(post.content)}
+                {linkify(displayContent)}
               </p>
 
               {isLongPost && (
@@ -261,7 +302,6 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
             </div>
           )}
 
-          {/* Hashtags Section */}
           {post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {post.tags.map((tag) => (
@@ -269,7 +309,6 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
                   key={tag}
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Navigate to search route
                     navigate(`/search?q=${encodeURIComponent(tag.startsWith('#') ? tag : '#' + tag)}`);
                   }}
                   className="inline-flex items-center gap-1 text-xs font-mono font-medium bg-secondary px-2.5 py-1 rounded-[3px] gum-border gum-shadow-sm cursor-pointer hover:bg-primary/10 hover:border-primary/50 transition-all active:scale-95"
@@ -319,6 +358,24 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
             >
               <Bookmark size={15} fill={post.user_bookmarked ? "currentColor" : "none"} />
             </button>
+
+            {/* Translation Button */}
+            <button
+              onClick={handleTranslate}
+              disabled={isTranslating}
+              className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${isShowingTranslation ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              title={isShowingTranslation ? "Show Original" : "Translate to English"}
+            >
+              {isTranslating ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Languages size={15} />
+              )}
+              <span className="hidden xs:inline">
+                {isShowingTranslation ? "Original" : "Translate"}
+              </span>
+            </button>
+
             <button
               onClick={() => {
                 navigator.clipboard.writeText(window.location.origin + "/post/" + post.id);
