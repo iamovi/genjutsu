@@ -25,11 +25,11 @@
             "destination": "/index.html"
         },
         {
-            "source": "/:username",
+            "source": "/u/:username",
             "destination": "/api/og?username=:username"
         },
         {
-            "source": "/((?!assets/|.*\\..*).*)",
+            "source": "/((?!api/|assets/|.*\\..*).*)",
             "destination": "/index.html"
         }
     ]

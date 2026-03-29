@@ -96,7 +96,7 @@ export default async function handler(req) {
             const profile = data[0];
 
             if (!profile) {
-                targetUrl = `${APP_URL}/${cleanUsername}`;
+                targetUrl = `${APP_URL}/u/${cleanUsername}`;
             } else {
                 const displayName = profile.display_name || cleanUsername;
                 title = `${displayName} (@${cleanUsername}) on Genjutsu`;
@@ -104,7 +104,7 @@ export default async function handler(req) {
                     ? (profile.bio.length > 160 ? profile.bio.substring(0, 160) + '...' : profile.bio)
                     : `Check out ${displayName}'s profile on Genjutsu, the 24-hour developer social network.`;
                 image = profile.avatar_url || `${APP_URL}/fav.jpg`;
-                targetUrl = `${APP_URL}/${cleanUsername}`;
+                targetUrl = `${APP_URL}/u/${cleanUsername}`;
 
                 bodyContent = `
                     <div id="ssr-content" style="font-family:sans-serif;max-width:680px;margin:40px auto;padding:0 20px;">
