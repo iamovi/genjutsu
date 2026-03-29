@@ -78,7 +78,7 @@ const App = () => {
                         </RequireAdmin>
                       )}
                     />
-                    <Route path="/:username" element={<ProfilePage />} />
+                    <Route path="/u/:username" element={<ProfilePage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>

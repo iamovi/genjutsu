@@ -173,7 +173,7 @@ const FollowsList = ({ userId, type, isOpen, onOpenChange, onAction }: FollowsLi
                                     key={item.user_id}
                                     onClick={() => {
                                         onOpenChange(false);
-                                        navigate(`/${item.username}`);
+                                        navigate(`/u/${item.username}`);
                                     }}
                                     className="flex items-center gap-3 p-3 rounded-[3px] hover:bg-secondary cursor-pointer transition-colors group"
                                 >

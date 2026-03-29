@@ -257,7 +257,7 @@ const SearchPage = () => {
                                             {results.profiles.map(profile => (
                                                 <div
                                                     key={profile.id}
-                                                    onClick={() => navigate(`/${profile.username}`)}
+                                                    onClick={() => navigate(`/u/${profile.username}`)}
                                                     className="gum-card p-4 flex items-center gap-4 cursor-pointer hover:bg-secondary/50 transition-colors group"
                                                 >
                                                     <div className="w-12 h-12 rounded-[3px] gum-border bg-secondary overflow-hidden shrink-0">

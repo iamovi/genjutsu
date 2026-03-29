@@ -111,7 +111,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
     >
       <div className="flex gap-3">
         <button
-          onClick={() => navigate(`/${post.profiles?.username}`)}
+          onClick={() => navigate(`/u/${post.profiles?.username}`)}
           className="w-10 h-10 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden hover:opacity-80 transition-opacity"
         >
           {post.profiles?.avatar_url ? (
@@ -122,7 +122,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
           <div className="flex items-center justify-between">
             <div className="flex flex-col sm:flex-row sm:items-center min-w-0 overflow-hidden">
               <button
-                onClick={() => navigate(`/${post.profiles?.username}`)}
+                onClick={() => navigate(`/u/${post.profiles?.username}`)}
                 className="flex items-center gap-1 group text-left min-w-0 overflow-hidden"
               >
                 <span className="font-bold text-sm group-hover:underline truncate shrink-0 max-w-[140px] xs:max-w-[180px] sm:max-w-[220px]">{post.profiles?.display_name || "Unknown"}</span>

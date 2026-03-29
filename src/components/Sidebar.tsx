@@ -177,7 +177,7 @@ const Sidebar = ({ onAction }: SidebarProps) => {
                     className="flex items-center gap-3 min-w-0"
                   >
                     <button
-                      onClick={() => { navigate(`/${dev.username}`); onAction?.(); }}
+                      onClick={() => { navigate(`/u/${dev.username}`); onAction?.(); }}
                       className="w-9 h-9 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-[10px] shrink-0 overflow-hidden hover:opacity-80 transition-opacity"
                     >
                       {dev.avatar_url ? (
@@ -187,7 +187,7 @@ const Sidebar = ({ onAction }: SidebarProps) => {
                       )}
                     </button>
                     <button
-                      onClick={() => { navigate(`/${dev.username}`); onAction?.(); }}
+                      onClick={() => { navigate(`/u/${dev.username}`); onAction?.(); }}
                       className="flex-1 min-w-0 text-left group"
                     >
                       <p className="text-sm font-bold truncate group-hover:underline">{dev.display_name}</p>
@@ -258,4 +258,3 @@ const Sidebar = ({ onAction }: SidebarProps) => {
 };
 
 export default Sidebar;
-
