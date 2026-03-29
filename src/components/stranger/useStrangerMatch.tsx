@@ -58,9 +58,13 @@ export function useStrangerMatch(userName: string = "Anonymous") {
 
     return () => {
       mountedRef.current = false;
-      globalChannel.presence.leave().catch(() => {});
-      globalChannel.presence.unsubscribe();
-      client.close();
+      try {
+        globalChannel.presence.leave().catch(() => {});
+        globalChannel.presence.unsubscribe();
+        client.close();
+      } catch (e) {
+        // Silently handle — connection may already be dead on slow networks
+      }
     };
   }, []);
 
