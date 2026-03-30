@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 import { useNavigate, Link } from "react-router-dom";
-import { getNow } from "@/lib/utils";
+import { getNow, isTextEnglish } from "@/lib/utils";
 import { linkify } from "@/lib/linkify";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -100,20 +100,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
   const [isCodeExpanded, setIsCodeExpanded] = useState(false);
 
   // Content Selection Logic
-  const isAlreadyEnglish = useMemo(() => {
-    const text = post.content.trim();
-    if (!text) return true;
-    
-    // If it contains characters from non-Latin scripts (Cyrillic, Arabic, CJK, Bengali, Hindi, Thai, Hebrew, Greek, etc), it's definitely not English
-    const hasOtherScripts = /[\u0400-\u04FF\u0600-\u06FF\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF\u0980-\u09FF\u0900-\u097F\u0E00-\u0E7F\u0370-\u03FF\u0590-\u05FF\u0B80-\u0BFF\u0A80-\u0AFF\u0C00-\u0C7F]/.test(text);
-    if (hasOtherScripts) return false;
-    
-    // Check for common English words (most effective heuristic for Latin-script text)
-    const commonEnglishWords = /\b(the|and|is|it|you|that|in|was|for|on|are|with|as|I|be|at|have|from|this|but|his|by|they|we|say|her|she|or|an|will|my|one|all|would|there|their|what|so|up|out|if|about|who|get|which|go|me)\b/i;
-    
-    // It's English if it has English words or it's very short and only ASCII
-    return commonEnglishWords.test(text) || (text.length < 30 && !/[^\x00-\x7F]/.test(text));
-  }, [post.content]);
+  const isAlreadyEnglish = useMemo(() => isTextEnglish(post.content), [post.content]);
 
   const rawContent = isShowingTranslation && translatedContent ? translatedContent : post.content;
   const isLongPost = rawContent.length > 300;
