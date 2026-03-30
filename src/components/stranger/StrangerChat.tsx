@@ -4,7 +4,7 @@ import { MessageList } from "./MessageList";
 import { Send, UserRoundX, Orbit } from "lucide-react";
 
 export const StrangerChat = () => {
-  const { status, messages, sendMessage, startSearch, stopSearch, strangerName, onlineCount, isStrangerTyping, sendTypingIndicator } = useStrangerMatch();
+  const { status, messages, sendMessage, startSearch, stopSearch, skip, strangerName, onlineCount, isStrangerTyping, sendTypingIndicator } = useStrangerMatch();
   const [text, setText] = useState("");
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -99,10 +99,10 @@ export const StrangerChat = () => {
             ) : (
                <div className={`p-4 bg-background border-t-2 border-border ${status !== 'matched' ? 'opacity-50 pointer-events-none' : ''}`}>
                   <div className="flex gap-1.5 sm:gap-2 relative">
-                     <button 
-                       onClick={() => { stopSearch(); startSearch(); }}
-                       className="flex shrink-0 items-center justify-center gap-1 bg-destructive text-destructive-foreground px-3 sm:px-4 py-2 rounded-[3px] font-bold text-sm gum-btn hover:bg-red-600 transition-colors"
-                     >
+                      <button 
+                        onClick={skip}
+                        className="flex shrink-0 items-center justify-center gap-1 bg-destructive text-destructive-foreground px-3 sm:px-4 py-2 rounded-[3px] font-bold text-sm gum-btn hover:bg-red-600 transition-colors"
+                      >
                        <UserRoundX size={16} />
                        <span className="hidden sm:inline">Skip</span>
                      </button>

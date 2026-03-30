@@ -19,6 +19,12 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     tracesSampleRate: 1.0,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
+    ignoreErrors: [
+      "Connection closed",
+      "Access denied",
+      "NetworkError when attempting to fetch resource.",
+      "Failed to fetch",
+    ],
   });
 }
 
