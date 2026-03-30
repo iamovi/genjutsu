@@ -28,8 +28,8 @@ export default defineConfig(({ mode }) => ({
         name: "genjutsu — everything vanishes",
         short_name: "genjutsu",
         description: "The 24 hour social network for developers.",
-        theme_color: "#0a0a0a", // Matches Tailwind dark background
-        background_color: "#0a0a0a",
+        theme_color: "#9B78C2",
+        background_color: "#9B78C2",
         display: "standalone",
         orientation: "portrait",
         icons: [
@@ -37,13 +37,19 @@ export default defineConfig(({ mode }) => ({
             src: "/icon-192x192.png",
             sizes: "192x192",
             type: "image/png",
-            purpose: "any maskable"
+            purpose: "any maskable"  // home screen app icon
           },
           {
             src: "/icon-512x512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any maskable"
+            purpose: "maskable"      // high-res app icon (adaptive)
+          },
+          {
+            src: "/splash-image.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any"           // used for splash screen
           },
         ],
       },
