@@ -1,4 +1,4 @@
-import { Home, Search, User, LogOut, Settings, Hash, X, Send, Swords, UsersRound, LogIn, Bell, Shield } from "lucide-react";
+import { Home, Search, User, LogOut, Settings, Hash, X, Send, Swords, UsersRound, LogIn, Bell, Shield, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -40,6 +40,18 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [isNotifOpen]);
 
+  // Prevent body scrolling when mobile drawer is open
+  useEffect(() => {
+    if (isDrawerOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isDrawerOpen]);
+
   const initials = profile?.display_name
     ?.split(" ")
     .map((n) => n[0])
@@ -56,10 +68,10 @@ const Navbar = () => {
       >
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <button onClick={() => navigate("/")} className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <div className="w-8 h-8 rounded-[3px] overflow-hidden gum-border">
+            <div className="w-8 h-8 rounded-[3px] overflow-hidden">
               <img src="/fav.jpg" alt="genjutsu" className="w-full h-full object-cover" />
             </div>
-            <span className="font-bold text-lg tracking-tight hidden sm:block">genjutsu</span>
+            <span className="font-black text-lg tracking-tight text-primary">genjutsu</span>
           </button>
 
           <nav className="hidden md:flex items-center gap-1">
@@ -87,54 +99,18 @@ const Navbar = () => {
             ))}
           </nav>
 
-          <div className="flex items-center gap-1 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-2">
             <div className="hidden sm:block">
               <ModeToggle />
             </div>
-            <button
-              onClick={() => navigate("/")}
-              className="md:hidden p-1.5 sm:p-2 rounded-[3px] hover:bg-secondary text-muted-foreground transition-colors gum-border"
-              title="Feed"
-            >
-              <Home size={16} />
-            </button>
+
+            {/* Mobile: Search button */}
             <button
               onClick={() => navigate("/search")}
               className="md:hidden p-1.5 sm:p-2 rounded-[3px] hover:bg-secondary text-muted-foreground transition-colors gum-border"
               title="Search"
             >
               <Search size={16} />
-            </button>
-            <button
-              onClick={() => navigate("/play")}
-              className="md:hidden p-1.5 sm:p-2 rounded-[3px] hover:bg-secondary text-muted-foreground transition-colors gum-border"
-              title="Play"
-            >
-              <Swords size={16} />
-            </button>
-            <button
-              onClick={() => navigate("/stranger")}
-              className="md:hidden p-1.5 sm:p-2 rounded-[3px] hover:bg-secondary text-muted-foreground transition-colors gum-border"
-              title="Stranger"
-            >
-              <UsersRound size={16} />
-            </button>
-            <button
-              onClick={() => navigate("/whispers")}
-              className="md:hidden relative p-1.5 sm:p-2 rounded-[3px] hover:bg-secondary text-muted-foreground transition-colors gum-border"
-              title="Whispers"
-            >
-              <Send size={16} />
-              {hasUnreadWhispers && (
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background animate-pulse" />
-              )}
-            </button>
-            <button
-              onClick={() => setIsDrawerOpen(true)}
-              className="lg:hidden p-1.5 sm:p-2 rounded-[3px] hover:bg-secondary text-primary transition-colors gum-border"
-              title="Discovery"
-            >
-              <Hash size={16} />
             </button>
 
             {/* Notification Bell */}
@@ -203,12 +179,12 @@ const Navbar = () => {
                       <span>Admin</span>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => {
                       if (profile?.username) {
                         navigate(`/u/${profile.username}`);
                       }
-                    }} 
+                    }}
                     className={`cursor-pointer ${!profile?.username ? 'opacity-50' : ''}`}
                     disabled={!profile?.username}
                   >
@@ -234,12 +210,21 @@ const Navbar = () => {
             ) : (
               <button
                 onClick={() => navigate("/auth")}
-                className="gum-btn bg-primary text-primary-foreground text-xs sm:text-sm px-2.5 sm:px-5 py-1.5 sm:py-2.5 flex items-center gap-2 whitespace-nowrap"
+                className="p-1.5 sm:px-4 sm:py-1.5 rounded-[3px] gum-border bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap"
               >
                 <LogIn size={16} />
-                <span className="hidden sm:inline">Sign In</span>
+                <span className="hidden sm:inline font-bold">Sign In</span>
               </button>
             )}
+
+            {/* Mobile: Menu button — md:hidden */}
+            <button
+              onClick={() => setIsDrawerOpen(true)}
+              className="md:hidden p-1.5 sm:p-2 rounded-[3px] hover:bg-secondary text-muted-foreground transition-colors gum-border"
+              title="Menu"
+            >
+              <Menu size={16} />
+            </button>
           </div>
         </div>
       </motion.header>
@@ -254,27 +239,131 @@ const Navbar = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsDrawerOpen(false)}
-                className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] lg:hidden"
+                className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] md:hidden"
               />
               <motion.div
                 initial={{ x: "100%" }}
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed right-0 top-0 bottom-0 w-[280px] bg-background border-l-2 border-border z-[70] p-6 lg:hidden overflow-y-auto"
+                className="fixed right-0 top-0 bottom-0 w-[280px] bg-background border-l-2 border-border z-[70] md:hidden overflow-y-auto"
               >
-                <div className="flex items-center justify-between mb-8">
-                  <span className="font-bold tracking-tighter text-xl">Discovery</span>
-                  <button onClick={() => setIsDrawerOpen(false)} className="p-2 hover:bg-secondary rounded-[3px] transition-colors">
-                    <X size={20} />
+                {/* Drawer Header */}
+                <div className="flex items-center justify-between p-4 border-b-2 border-border bg-secondary/30">
+                  <span className="font-black tracking-tight text-lg uppercase">Menu</span>
+                  <button onClick={() => setIsDrawerOpen(false)} className="p-1.5 hover:bg-secondary rounded-[3px] transition-colors gum-border bg-background shadow-sm active:translate-y-px">
+                    <X size={16} />
                   </button>
                 </div>
-                <Sidebar onAction={() => setIsDrawerOpen(false)} />
+
+                <div className="p-4 space-y-5">
+                  {/* User Profile */}
+                  {user && profile && (
+                    <button
+                      onClick={() => { if (profile?.username) { navigate(`/u/${profile.username}`); setIsDrawerOpen(false); } }}
+                      className="flex items-center gap-3 w-full hover:bg-secondary rounded-[3px] p-2 -mx-2 transition-colors"
+                    >
+                      <div className="w-10 h-10 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-sm overflow-hidden shrink-0">
+                        {profile?.avatar_url ? (
+                          <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+                        ) : initials}
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-bold leading-none">{profile?.display_name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">@{profile?.username}</p>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* NAVIGATE */}
+                  <div>
+                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase mb-2 px-1">Navigate</p>
+                    <div className="space-y-0.5">
+                      {[
+                        { icon: Home, label: "Feed", path: "/" },
+                        { icon: Send, label: "Whispers", path: "/whispers" },
+                        { icon: UsersRound, label: "Stranger", path: "/stranger" },
+                        { icon: Swords, label: "Play", path: "/play" },
+                      ].map(({ icon: Icon, label, path }) => (
+                        <button
+                          key={label}
+                          onClick={() => {
+                            navigate(path); setIsDrawerOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[3px] text-sm font-medium transition-colors ${location.pathname === path
+                              ? "bg-primary/10 text-primary font-bold"
+                              : "hover:bg-secondary text-foreground"
+                            }`}
+                        >
+                          <div className="relative">
+                            <Icon size={16} className={location.pathname === path ? "text-primary" : "text-muted-foreground"} />
+                            {label === "Whispers" && hasUnreadWhispers && (
+                              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            )}
+                          </div>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ACCOUNT */}
+                  {user && (
+                    <div>
+                      <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase mb-2 px-1">Account</p>
+                      <div className="space-y-0.5">
+                        {isAdmin && (
+                          <button
+                            onClick={() => { navigate("/admin"); setIsDrawerOpen(false); }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[3px] text-sm font-medium hover:bg-secondary transition-colors"
+                          >
+                            <Shield size={16} className="text-muted-foreground" />
+                            Admin
+                          </button>
+                        )}
+                        <button
+                          onClick={() => { if (profile?.username) { navigate(`/u/${profile.username}`); setIsDrawerOpen(false); } }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[3px] text-sm font-medium hover:bg-secondary transition-colors"
+                        >
+                          <User size={16} className="text-muted-foreground" />
+                          Profile
+                        </button>
+                        <button
+                          onClick={() => { navigate("/settings"); setIsDrawerOpen(false); }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[3px] text-sm font-medium hover:bg-secondary transition-colors"
+                        >
+                          <Settings size={16} className="text-muted-foreground" />
+                          Settings
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* DISCOVERY */}
+                  <div>
+                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase mb-2 px-1">Discovery</p>
+                    <Sidebar onAction={() => setIsDrawerOpen(false)} />
+                  </div>
+
+                  {/* Footer */}
+                  <div className="border-t-2 border-border pt-4 flex items-center justify-between">
+                    <ModeToggle />
+                    {user && (
+                      <button
+                        onClick={() => { signOut(); setIsDrawerOpen(false); }}
+                        className="flex items-center gap-2 text-sm font-bold text-destructive hover:underline"
+                      >
+                        <LogOut size={14} />
+                        Sign Out
+                      </button>
+                    )}
+                  </div>
+                </div>
               </motion.div>
             </>
           )
         }
-      </AnimatePresence >
+      </AnimatePresence>
     </>
   );
 };
