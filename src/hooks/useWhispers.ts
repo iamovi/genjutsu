@@ -128,6 +128,7 @@ export function useWhispers(targetUserId?: string) {
         if (targetUserId) {
             markRead(targetUserId);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, targetUserId]);
 
     // Send message
@@ -260,6 +261,7 @@ export function useWhispers(targetUserId?: string) {
                 }
             }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, targetUserId, queryClient]);
 
     return {

@@ -61,7 +61,9 @@ export function useStrangerMatch() {
         try {
             const presence = await globalChannel.presence.get();
             safeSetOnlineCount(Math.max(1, presence.length));
-        } catch (e) {}
+        } catch (e) {
+            /* ignore error */
+        }
     };
 
     globalChannel.presence.subscribe(['enter', 'leave'], updateCount);
@@ -77,7 +79,7 @@ export function useStrangerMatch() {
         // Silently handle — connection may already be dead on slow networks
       }
     };
-  }, []);
+  }, [safeSetMessages, safeSetOnlineCount]);
 
   const startSearch = async () => {
     if (!ablyRef.current || isActionPending.current) return;
@@ -100,7 +102,7 @@ export function useStrangerMatch() {
            prevChat.unsubscribe();
            prevChat.presence.unsubscribe();
            await prevChat.presence.leave().catch(() => {});
-           try { prevChat.detach(); } catch(e) {}
+           try { prevChat.detach(); } catch(e) { /* ignore error */ }
         }
 
         const lobby = ably.channels.get('genjutsu_stranger_lobby');
@@ -163,7 +165,7 @@ export function useStrangerMatch() {
              prevChat.unsubscribe();
              prevChat.presence.unsubscribe();
              await prevChat.presence.leave().catch(() => {});
-             try { prevChat.detach(); } catch(e) {}
+             try { prevChat.detach(); } catch(e) { /* ignore error */ }
          }
 
          const chatChannel = ably.channels.get(channelId);
@@ -179,7 +181,7 @@ export function useStrangerMatch() {
                 safeSetMessages(prev => [...prev, { id: 'disc_' + Date.now(), text: 'Stranger has disconnected.', sender: 'system', timestamp: Date.now() }]);
                 chatChannel.unsubscribe();
                 chatChannel.presence.unsubscribe();
-                try { chatChannel.detach(); } catch(e) {}
+                try { chatChannel.detach(); } catch(e) { /* ignore error */ }
                 chatChannelRef.current = null;
              }
          });
@@ -229,7 +231,7 @@ export function useStrangerMatch() {
              lobby.unsubscribe();
              lobby.presence.unsubscribe();
              await lobby.presence.leave().catch(() => {});
-             try { lobby.detach(); } catch(e) {}
+             try { lobby.detach(); } catch(e) { /* ignore error */ }
          }
          if (chatChannelRef.current) {
              const chat = chatChannelRef.current;
@@ -237,9 +239,11 @@ export function useStrangerMatch() {
              chat.unsubscribe();
              chat.presence.unsubscribe();
              await chat.presence.leave().catch(() => {});
-             try { chat.detach(); } catch(e) {}
+             try { chat.detach(); } catch(e) { /* ignore error */ }
          }
-     } catch (e) {}
+     } catch (e) {
+         /* ignore error */
+     }
 
       safeSetStatus('idle');
       safeSetIsStrangerTyping(false);

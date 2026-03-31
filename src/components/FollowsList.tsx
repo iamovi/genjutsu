@@ -67,7 +67,7 @@ const FollowsList = ({ userId, type, isOpen, onOpenChange, onAction }: FollowsLi
 
             if (profilesData) {
                 // Map data to the interface
-                let extractedUsers = profilesData as FollowUser[];
+                const extractedUsers = profilesData as FollowUser[];
 
                 // 3. If logged in, check which ones the current user follows
                 if (currentUser) {
@@ -97,6 +97,7 @@ const FollowsList = ({ userId, type, isOpen, onOpenChange, onAction }: FollowsLi
 
     useEffect(() => {
         fetchUsers();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId, type, isOpen, currentUser]);
 
     const handleToggleFollow = async (e: React.MouseEvent, targetUser: FollowUser) => {

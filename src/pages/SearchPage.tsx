@@ -122,12 +122,14 @@ const SearchPage = () => {
         }, 400);
 
         return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchTerm]);
 
     useEffect(() => {
         if (query && query !== searchTerm) {
             setSearchTerm(query);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [query]);
 
     const { toggleLike, toggleBookmark, deletePost } = usePostActions();

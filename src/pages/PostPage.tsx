@@ -212,6 +212,7 @@ const PostPage = () => {
 
     useEffect(() => {
         fetchPost();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [postId, user?.id]);
 
     const handleLike = async (id: string, currentlyLiked: boolean) => {

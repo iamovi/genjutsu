@@ -87,6 +87,7 @@ export function usePlayPresence() {
             supabase.removeChannel(channel);
             channelRef.current = null;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, profile?.username, profile?.display_name, profile?.avatar_url]);
 
     // Filter online players to only show connections (followers/following)

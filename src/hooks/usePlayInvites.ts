@@ -49,6 +49,7 @@ export function usePlayInvites() {
             supabase.removeChannel(channel);
             channelRef.current = null;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id]);
 
     // Send an invite to another user

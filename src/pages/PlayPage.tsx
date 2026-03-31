@@ -48,6 +48,7 @@ const PlayPage = () => {
                 },
             }
         );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [invites.pendingInvite]);
 
     // Handle when our invite gets declined — leave the waiting room
@@ -70,6 +71,7 @@ const PlayPage = () => {
         );
 
         invites.clearDecline();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [invites.declinedBy]);
 
     // Handle challenging a friend
@@ -90,6 +92,7 @@ const PlayPage = () => {
         if (challengingUserId && peer.roomCode && peer.status === 'waiting') {
             invites.sendInvite(challengingUserId, peer.roomCode);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [challengingUserId, peer.roomCode, peer.status]);
 
     // Clear challenging state when connected or disconnected

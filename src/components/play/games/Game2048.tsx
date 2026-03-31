@@ -51,10 +51,10 @@ const moveGrid = (grid: number[], dir: 'up' | 'down' | 'left' | 'right'): { grid
     }
   };
 
-  const count = dir === 'left' || dir === 'right' ? SIZE : SIZE;
-  for (let i = 0; i < count; i++) {
-    let row = getRow(i, dir);
-    if (dir === 'right' || dir === 'down') row.reverse();
+    const count = dir === 'left' || dir === 'right' ? SIZE : SIZE;
+    for (let i = 0; i < count; i++) {
+      const row = getRow(i, dir);
+      if (dir === 'right' || dir === 'down') row.reverse();
     const oldRow = [...row];
     const slid = slide(row);
     if (dir === 'right' || dir === 'down') slid.reverse();

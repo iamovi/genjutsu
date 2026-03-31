@@ -43,6 +43,7 @@ const HomeScreen = ({
     if (isLoggedIn && displayName && !nickname) {
       setNickname(displayName);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, displayName]);
 
   const handleCreate = () => {

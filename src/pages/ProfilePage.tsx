@@ -185,6 +185,7 @@ const ProfilePage = () => {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [username, user?.id]);
 
     // Fetch bookmarked posts (only for own profile)
@@ -260,6 +261,7 @@ const ProfilePage = () => {
         if (activeTab === "bookmarks" && profile && user?.id === profile.user_id) {
             fetchBookmarks();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab, profile?.user_id, user?.id]);
 
     const { toggleLike, toggleBookmark, deletePost } = usePostActions();

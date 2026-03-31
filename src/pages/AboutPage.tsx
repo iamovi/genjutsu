@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { Eye, Code, Zap, Shield, ArrowLeft, MessageSquare, Swords, Ghost, Infinity } from "lucide-react";
+import { Eye, Code, Zap, Shield, ArrowLeft, MessageSquare, Swords, Ghost, Infinity as InfinityIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 
@@ -35,7 +35,7 @@ const AboutPage = () => {
             description: "We use server-side rate limiting and idempotency controls to keep the community clean from bots and spam, focusing on human-to-human interaction."
         },
         {
-            icon: <Infinity className="text-primary" size={20} />,
+            icon: <InfinityIcon className="text-primary" size={20} />,
             title: "Transient Arts",
             description: "The name 'Genjutsu' (幻術) means illusionary arts. We believe the internet should be as transient as conversation—powerful in the moment, but destined to fade."
         }

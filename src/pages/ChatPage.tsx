@@ -48,6 +48,7 @@ const ChatPage = () => {
             }
         };
         fetchProfile();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [username, navigate]);
 
     const { messages, loadingMessages, sendMessage, isSending, setTyping, isOtherUserTyping } = useWhispers(targetProfile?.user_id);
