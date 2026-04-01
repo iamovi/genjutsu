@@ -9,6 +9,7 @@ import Sidebar from "./Sidebar";
 import NotificationPanel from "./NotificationPanel";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useUnreadWhispers } from "@/hooks/useUnreadWhispers";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ const Navbar = () => {
   const location = useLocation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const { t } = useTranslation();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const notifRef = useRef<HTMLDivElement>(null);
   const { hasUnread: hasUnreadWhispers } = useUnreadWhispers();
@@ -76,14 +78,14 @@ const Navbar = () => {
 
           <nav className="hidden md:flex items-center gap-1">
             {[
-              { icon: Home, label: "Feed", path: "/" },
-              { icon: Search, label: "Search", path: "/search" },
-              { icon: Send, label: "Whispers", path: "/whispers" },
-              { icon: UsersRound, label: "Stranger", path: "/stranger" },
-              { icon: Swords, label: "Play", path: "/play" },
+              { icon: Home, label: t("nav.feed"), path: "/" },
+              { icon: Search, label: t("nav.search"), path: "/search" },
+              { icon: Send, label: t("nav.whispers"), path: "/whispers" },
+              { icon: UsersRound, label: t("nav.stranger"), path: "/stranger" },
+              { icon: Swords, label: t("nav.play"), path: "/play" },
             ].map(({ icon: Icon, label, path }) => (
               <button
-                key={label}
+                key={path}
                 onClick={() => navigate(path)}
                 className={`relative flex items-center gap-2 px-3.5 py-2 rounded-[3px] text-sm font-medium transition-all gum-border ${location.pathname === path
                   ? "bg-primary text-primary-foreground gum-shadow-sm"
@@ -92,7 +94,7 @@ const Navbar = () => {
               >
                 <Icon size={16} />
                 {label}
-                {label === "Whispers" && hasUnreadWhispers && (
+                {path === "/whispers" && hasUnreadWhispers && (
                   <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background animate-pulse" />
                 )}
               </button>
@@ -176,7 +178,7 @@ const Navbar = () => {
                   {isAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer">
                       <Shield className="mr-2 h-4 w-4" />
-                      <span>Admin</span>
+                      <span>{t("nav.admin")}</span>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
@@ -189,18 +191,18 @@ const Navbar = () => {
                     disabled={!profile?.username}
                   >
                     <User className="mr-2 h-4 w-4" />
-                    <span>{profile?.username ? 'Profile' : 'Loading...'}</span>
+                    <span>{profile?.username ? t("nav.profile") : 'Loading...'}</span>
                   </DropdownMenuItem>
 
                   <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
+                    <span>{t("nav.settings")}</span>
                   </DropdownMenuItem>
                   <div className="sm:hidden">
                     <DropdownMenuItem onClick={(e) => e.preventDefault()} className="flex items-center justify-between">
                       <div className="flex items-center">
                         <Hash className="mr-2 h-4 w-4" />
-                        <span>Theme</span>
+                        <span>{t("nav.theme")}</span>
                       </div>
                       <ModeToggle />
                     </DropdownMenuItem>
@@ -213,7 +215,7 @@ const Navbar = () => {
                 className="p-1.5 sm:px-4 sm:py-1.5 rounded-[3px] gum-border bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap"
               >
                 <LogIn size={16} />
-                <span className="hidden sm:inline font-bold">Sign In</span>
+                <span className="hidden sm:inline font-bold">{t("nav.signIn")}</span>
               </button>
             )}
 
@@ -250,7 +252,7 @@ const Navbar = () => {
               >
                 {/* Drawer Header */}
                 <div className="flex items-center justify-between p-4 border-b-2 border-border bg-secondary/30">
-                  <span className="font-black tracking-tight text-lg uppercase">Menu</span>
+                  <span className="font-black tracking-tight text-lg uppercase">{t("nav.menu")}</span>
                   <button onClick={() => setIsDrawerOpen(false)} className="p-1.5 hover:bg-secondary rounded-[3px] transition-colors gum-border bg-background shadow-sm active:translate-y-px">
                     <X size={16} />
                   </button>
@@ -277,16 +279,16 @@ const Navbar = () => {
 
                   {/* NAVIGATE */}
                   <div>
-                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase mb-2 px-1">Navigate</p>
+                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase mb-2 px-1">{t("nav.navigate")}</p>
                     <div className="space-y-0.5">
                       {[
-                        { icon: Home, label: "Feed", path: "/" },
-                        { icon: Send, label: "Whispers", path: "/whispers" },
-                        { icon: UsersRound, label: "Stranger", path: "/stranger" },
-                        { icon: Swords, label: "Play", path: "/play" },
+                        { icon: Home, label: t("nav.feed"), path: "/" },
+                        { icon: Send, label: t("nav.whispers"), path: "/whispers" },
+                        { icon: UsersRound, label: t("nav.stranger"), path: "/stranger" },
+                        { icon: Swords, label: t("nav.play"), path: "/play" },
                       ].map(({ icon: Icon, label, path }) => (
                         <button
-                          key={label}
+                          key={path}
                           onClick={() => {
                             navigate(path); setIsDrawerOpen(false);
                           }}
@@ -297,7 +299,7 @@ const Navbar = () => {
                         >
                           <div className="relative">
                             <Icon size={16} className={location.pathname === path ? "text-primary" : "text-muted-foreground"} />
-                            {label === "Whispers" && hasUnreadWhispers && (
+                            {path === "/whispers" && hasUnreadWhispers && (
                               <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary animate-pulse" />
                             )}
                           </div>
@@ -310,7 +312,7 @@ const Navbar = () => {
                   {/* ACCOUNT */}
                   {user && (
                     <div>
-                      <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase mb-2 px-1">Account</p>
+                      <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase mb-2 px-1">{t("nav.account")}</p>
                       <div className="space-y-0.5">
                         {isAdmin && (
                           <button
@@ -318,7 +320,7 @@ const Navbar = () => {
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[3px] text-sm font-medium hover:bg-secondary transition-colors"
                           >
                             <Shield size={16} className="text-muted-foreground" />
-                            Admin
+                            {t("nav.admin")}
                           </button>
                         )}
                         <button
@@ -326,14 +328,14 @@ const Navbar = () => {
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[3px] text-sm font-medium hover:bg-secondary transition-colors"
                         >
                           <User size={16} className="text-muted-foreground" />
-                          Profile
+                          {t("nav.profile")}
                         </button>
                         <button
                           onClick={() => { navigate("/settings"); setIsDrawerOpen(false); }}
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[3px] text-sm font-medium hover:bg-secondary transition-colors"
                         >
                           <Settings size={16} className="text-muted-foreground" />
-                          Settings
+                          {t("nav.settings")}
                         </button>
                       </div>
                     </div>
@@ -341,7 +343,7 @@ const Navbar = () => {
 
                   {/* DISCOVERY */}
                   <div>
-                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase mb-2 px-1">Discovery</p>
+                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase mb-2 px-1">{t("nav.discovery")}</p>
                     <Sidebar onAction={() => setIsDrawerOpen(false)} />
                   </div>
 
@@ -354,7 +356,7 @@ const Navbar = () => {
                         className="flex items-center gap-2 text-sm font-bold text-destructive hover:underline"
                       >
                         <LogOut size={14} />
-                        Sign Out
+                        {t("nav.signOut")}
                       </button>
                     )}
                   </div>

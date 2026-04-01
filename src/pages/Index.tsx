@@ -9,9 +9,11 @@ import { usePosts } from "@/hooks/usePosts";
 import { Loader2 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { PostSkeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const {
     posts,
     loading: postsLoading,
@@ -73,13 +75,13 @@ const Index = () => {
                 <div className="w-12 h-12 rounded-[3px] overflow-hidden gum-border mx-auto mb-3">
                   <img src="/fav.jpg" alt="genjutsu" className="w-full h-full object-cover" />
                 </div>
-                <h2 className="font-bold text-lg mb-1">Join the conversation</h2>
-                <p className="text-sm text-muted-foreground mb-4">Sign in to share what you're building</p>
+                <h2 className="font-bold text-lg mb-1">{t("feed.joinConversation")}</h2>
+                <p className="text-sm text-muted-foreground mb-4">{t("feed.signInToShare")}</p>
                 <button
                   onClick={() => navigate("/auth")}
                   className="gum-btn bg-primary text-primary-foreground text-sm"
                 >
-                  Get Started
+                  {t("feed.getStarted")}
                 </button>
               </div>
             )}
@@ -90,8 +92,8 @@ const Index = () => {
               </div>
             ) : posts.length === 0 ? (
               <div className="gum-card p-8 text-center border-dashed border-2">
-                <p className="text-muted-foreground text-sm font-medium">No illusions active in the world right now.</p>
-                <p className="text-xs text-muted-foreground mt-1">Be the first to cast a spell.</p>
+                <p className="text-muted-foreground text-sm font-medium">{t("feed.noIllusions")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("feed.beTheFirst")}</p>
               </div>
             ) : (
               <div className="space-y-6">

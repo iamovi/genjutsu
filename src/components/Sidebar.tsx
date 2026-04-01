@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { getNow } from "@/lib/utils";
@@ -27,6 +28,7 @@ const Sidebar = ({ onAction }: SidebarProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const isHome = location.pathname === "/";
   const [suggestedDevs, setSuggestedDevs] = useState<SuggestedProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,7 +168,7 @@ const Sidebar = ({ onAction }: SidebarProps) => {
           >
             <h3 className="font-bold text-sm flex items-center gap-2 mb-3">
               <Users size={16} />
-              Who to follow
+              {t("sidebar.whoToFollow")}
             </h3>
 
             {loading ? (
@@ -219,12 +221,12 @@ const Sidebar = ({ onAction }: SidebarProps) => {
                             : "bg-primary text-primary-foreground"
                             }`}
                         >
-                          {followingIds.has(dev.user_id) ? "Following" : "Follow"}
+                          {followingIds.has(dev.user_id) ? t("sidebar.following") : t("sidebar.follow")}
                         </button>
                       </motion.div>
                     ))
                   ) : (
-                    <p className="text-xs text-muted-foreground py-2 text-center">No suggestions found</p>
+                    <p className="text-xs text-muted-foreground py-2 text-center">{t("sidebar.noSuggestions")}</p>
                   )}
                 </AnimatePresence>
               </div>
@@ -239,7 +241,7 @@ const Sidebar = ({ onAction }: SidebarProps) => {
           >
             <h3 className="font-bold text-sm flex items-center gap-2 mb-3">
               <Hash size={16} />
-              Trending
+              {t("sidebar.trending")}
             </h3>
             <div className="space-y-3">
               {isLoadingTrending ? (
@@ -255,11 +257,11 @@ const Sidebar = ({ onAction }: SidebarProps) => {
                     className="block w-full text-left group"
                   >
                     <p className="text-sm font-bold group-hover:underline">#{tag}</p>
-                    <p className="text-[10px] text-muted-foreground">{count} echoes in 24h</p>
+                    <p className="text-[10px] text-muted-foreground">{count} {t("sidebar.echoesIn24h")}</p>
                   </button>
                 ))
               ) : (
-                <p className="text-xs text-muted-foreground py-2 text-center italic">The abyss is quiet...</p>
+                <p className="text-xs text-muted-foreground py-2 text-center italic">{t("sidebar.abyssQuiet")}</p>
               )}
             </div>
           </motion.div>
@@ -273,14 +275,14 @@ const Sidebar = ({ onAction }: SidebarProps) => {
         className="gum-card p-4 space-y-3"
       >
         <div className="flex justify-center items-center gap-1 text-xs font-bold uppercase tracking-wider">
-          <Link to="/about" onClick={() => onAction?.()} className="hover:text-primary transition-colors px-1">About</Link>
+          <Link to="/about" onClick={() => onAction?.()} className="hover:text-primary transition-colors px-1">{t("sidebar.about")}</Link>
           <span className="text-muted-foreground">·</span>
-          <Link to="/terms" onClick={() => onAction?.()} className="hover:text-primary transition-colors px-1">Terms</Link>
+          <Link to="/terms" onClick={() => onAction?.()} className="hover:text-primary transition-colors px-1">{t("sidebar.terms")}</Link>
           <span className="text-muted-foreground">·</span>
-          <Link to="/privacy" onClick={() => onAction?.()} className="hover:text-primary transition-colors px-1">Privacy</Link>
+          <Link to="/privacy" onClick={() => onAction?.()} className="hover:text-primary transition-colors px-1">{t("sidebar.privacy")}</Link>
         </div>
         <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-          © 2026 Genjutsu. Everything vanishes.
+          {t("sidebar.copyright")}
         </p>
       </motion.div>
     </aside>

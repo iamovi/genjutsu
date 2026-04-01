@@ -15,6 +15,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useTheme } from "./theme-provider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface ComposePostProps {
   onPost: (content: string, code: string, codeLanguage: string, tags: string[], media_url?: string, is_readme?: boolean) => Promise<void>;
@@ -37,6 +38,7 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
   const { profile } = useProfile();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   const currentTheme = theme === "system" 
     ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
@@ -263,7 +265,7 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
             value={content}
             onChange={handleTextareaChange}
             onPaste={handlePaste}
-            placeholder="Share what you're building... (use #tags or @mentions)"
+            placeholder={t("feed.whatAreYouBuilding")}
             id="post-content"
             name="content"
             className="w-full bg-transparent resize-none outline-none text-sm placeholder:text-muted-foreground min-h-[60px] custom-scrollbar"
@@ -412,7 +414,7 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
               className="gum-btn bg-primary text-primary-foreground text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {submitting ? <Loader2 size={14} className="animate-spin" /> : cooldown > 0 ? null : <Send size={14} />}
-              {submitting ? "Posting..." : cooldown > 0 ? `Wait ${cooldown}s` : "Post"}
+              {submitting ? "Posting..." : cooldown > 0 ? `Wait ${cooldown}s` : t("feed.castSpell")}
             </button>
           </div>
         </div>

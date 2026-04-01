@@ -5,6 +5,7 @@ import App from "./App.tsx";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import "./index.css";
+import "./i18n";
 
 // Force service worker registration for PWABuilder detection
 registerSW({ immediate: true });
