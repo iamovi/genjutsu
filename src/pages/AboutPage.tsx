@@ -48,7 +48,7 @@ const AboutPage = () => {
         {
             icon: <Trash2 className="text-primary" size={20} />,
             title: "Zero Clutter",
-            description: "No follower counts, no clout chasing, no permanent history. Start every day with a clean slate."
+            description: "No clout chasing, no permanent history. Start every day with a clean slate."
         },
         {
             icon: <Gamepad2 className="text-primary" size={20} />,
@@ -146,9 +146,9 @@ const AboutPage = () => {
                                             {feature.description}
                                         </p>
                                         {'downloadUrl' in feature && (
-                                            <a 
-                                                href={feature.downloadUrl as string} 
-                                                target="_blank" 
+                                            <a
+                                                href={feature.downloadUrl as string}
+                                                target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="gum-btn bg-primary text-primary-foreground text-[10px] px-3 py-1.5 flex items-center gap-1.5 w-fit mt-4 hover:opacity-90 transition-opacity"
                                             >
@@ -193,7 +193,7 @@ const AboutPage = () => {
                                             View on GitHub
                                         </a>
                                     </div>
-                                    
+
                                     <p className="text-xs font-mono uppercase tracking-widest text-primary/70 mb-6 border-l-2 border-primary/50 pl-3">// Author &amp; Contributors</p>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                                         {isLoadingContributors ? (
