@@ -10,6 +10,7 @@ export interface CommunityMessage {
     user_id: string;
     content: string;
     created_at: string;
+    is_ai_reply?: boolean;
     profile?: {
         username: string;
         display_name: string;
@@ -23,6 +24,7 @@ export function useCommunityChat() {
     const sb = supabase as any;
     const lastSentRef = useRef<number>(0);
     const [onlineCount, setOnlineCount] = useState(1);
+    const [isAiThinking, setIsAiThinking] = useState(false);
     const channelRef = useRef<any>(null);
 
     // Fetch messages from the last 24 hours
@@ -33,7 +35,7 @@ export function useCommunityChat() {
 
             const { data, error } = await sb
                 .from("community_messages")
-                .select("id, user_id, content, created_at")
+                .select("id, user_id, content, created_at, is_ai_reply")
                 .gt("created_at", cutoff)
                 .order("created_at", { ascending: true });
 
@@ -78,8 +80,8 @@ export function useCommunityChat() {
             });
             if (error) throw error;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["community-chat"] });
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["community-chat"] });
         },
         onError: (err: any) => {
             if (err?.message === "rate_limit") {
@@ -90,6 +92,29 @@ export function useCommunityChat() {
                 toast.error("Message failed to send. Try again.");
             }
         },
+    });
+
+    // AI Mutation (Fire and Forget)
+    const aiMutation = useMutation({
+        mutationFn: async (userMessage: string) => {
+            setIsAiThinking(true);
+            const { fetchGroqReply } = await import("@/lib/groq");
+            const replyContent = await fetchGroqReply(userMessage);
+
+            if (!user) return;
+
+            const { error } = await sb.from("community_messages").insert({
+                user_id: user.id,
+                content: replyContent,
+                is_ai_reply: true,
+            });
+
+            if (error) throw error;
+        },
+        onSettled: () => {
+            setIsAiThinking(false);
+            queryClient.invalidateQueries({ queryKey: ["community-chat"] });
+        }
     });
 
     // Delete own message
@@ -175,11 +200,20 @@ export function useCommunityChat() {
                 toast.error("You must sign in to chat.");
                 return;
             }
-            return sendMessageMutation.mutateAsync(content);
+            const res = await sendMessageMutation.mutateAsync(content);
+            
+            // If message targets AI, spin off the AI mutation with a 0.5s natural delay
+            if (content.toLowerCase().includes("@ai")) {
+                setTimeout(() => {
+                    aiMutation.mutate(content);
+                }, 500);
+            }
+            return res;
         },
         deleteMessage: async (messageId: string) => {
             return deleteMessageMutation.mutateAsync(messageId);
         },
         isSending: sendMessageMutation.isPending,
+        isAiThinking,
     };
 }

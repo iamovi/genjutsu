@@ -124,6 +124,18 @@ CREATE TABLE public.messages (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
+-- Community Messages (Public Group Chat)
+CREATE TABLE public.community_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  content TEXT NOT NULL CHECK (char_length(content) BETWEEN 1 AND 5000),
+  is_ai_reply BOOLEAN DEFAULT FALSE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_community_messages_created 
+  ON public.community_messages (created_at DESC);
+
 -- User Action Log (for rate limiting cooldowns)
 CREATE TABLE public.user_action_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -168,6 +180,7 @@ ALTER TABLE public.bookmarks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_action_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
@@ -238,6 +251,14 @@ CREATE POLICY "Users can send messages"
   ON public.messages FOR INSERT WITH CHECK ((select auth.uid()) = sender_id AND public.is_action_allowed('message'));
 CREATE POLICY "Receivers can mark messages as read"
   ON public.messages FOR UPDATE USING ((select auth.uid()) = receiver_id);
+
+-- Community Messages
+CREATE POLICY "Authenticated users can read community messages"
+  ON public.community_messages FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can send community messages"
+  ON public.community_messages FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own community messages"
+  ON public.community_messages FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
 -- Notifications
 CREATE POLICY "Users can view own notifications"
@@ -328,6 +349,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.posts;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.likes;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.comments;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.community_messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 
 

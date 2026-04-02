@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const urlRegex = /(https?:\/\/[^\s]+)/g;
 const mentionRegex = /((?:^|\s)@[a-zA-Z0-9_]+)/g;
 
-export function linkify(text: string) {
+export function linkify(text: string, isMe: boolean = false) {
     if (!text) return text;
 
     // First, split by URL
@@ -41,7 +41,7 @@ export function linkify(text: string) {
                         {leadingSpace}
                         <Link
                             to={`/u/${username}`}
-                            className="text-primary font-bold hover:underline"
+                            className={`${isMe ? "text-primary-foreground underline hover:opacity-80" : "text-primary hover:underline"} font-bold`}
                         >
                             {mention}
                         </Link>
