@@ -100,7 +100,25 @@ export function useCommunityChat() {
             setIsAiThinking(true);
             const { fetchGroqReply } = await import("@/lib/groq");
             const userName = user?.user_metadata?.display_name || user?.user_metadata?.username || "a user";
-            const replyContent = await fetchGroqReply(userMessage, userName);
+
+            const allMessages = (queryClient.getQueryData<any[]>(["community-chat"]) || []);
+
+            const aiThread = allMessages.filter(
+                (msg: any) => msg.is_ai_reply || msg.content.toLowerCase().includes("@ai")
+            );
+            const regularContext = allMessages
+                .filter((msg: any) => !msg.is_ai_reply && !msg.content.toLowerCase().includes("@ai"))
+                .slice(-5);
+
+            const combined = [...aiThread, ...regularContext]
+                .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+            const history = combined.map((msg: any) => ({
+                role: msg.is_ai_reply ? "assistant" : "user",
+                content: msg.content,
+            }));
+
+            const replyContent = await fetchGroqReply(userMessage, userName, history as any);
 
             if (!user) return;
 
