@@ -81,11 +81,15 @@ export default {
             'Content-Type': 'application/json',
             'Authorization': 'Basic ' + btoa(env.VITE_ABLY_KEY)
           },
-          body: JSON.stringify({ clientId: clientId })
+          body: JSON.stringify({
+            keyName: keyName,
+            clientId: clientId,
+            timestamp: Date.now()
+          })
         });
 
-        const tokenRequest = await ablyResponse.json();
-        return new Response(JSON.stringify(tokenRequest), {
+        const tokenDetails = await ablyResponse.json();
+        return new Response(JSON.stringify(tokenDetails), {
           status: ablyResponse.status,
           headers: {
             ...corsHeaders,
