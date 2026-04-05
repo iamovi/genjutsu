@@ -46,7 +46,7 @@ export function useStrangerMatch() {
         sessionStorage.setItem(STORAGE_KEY, clientId);
     }
 
-    let clientOptions: any = { clientId };
+    const clientOptions: any = { clientId };
 
     if (import.meta.env.DEV) {
         const ABLY_KEY = config.VITE_ABLY_KEY;
