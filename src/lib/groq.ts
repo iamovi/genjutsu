@@ -1,5 +1,7 @@
+import { getConfig } from "@/lib/config";
+
 export async function fetchGroqReply(message: string, userName: string = "a user"): Promise<string> {
-    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    const apiKey = getConfig().VITE_GROQ_API_KEY;
     if (!apiKey) {
         console.error("Missing VITE_GROQ_API_KEY in .env");
         return "System Error: Missing API Key.";

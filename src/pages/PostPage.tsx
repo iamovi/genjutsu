@@ -12,6 +12,7 @@ import { Helmet } from "react-helmet-async";
 import { formatDistanceToNow } from "date-fns";
 import { usePostActions } from "@/hooks/usePostActions";
 import { linkify } from "@/lib/linkify";
+import { getConfig } from "@/lib/config";
 import { useMentions } from "@/hooks/useMentions";
 import { AnimatePresence, motion } from "framer-motion";
 import MentionList from "@/components/MentionList";
@@ -57,7 +58,7 @@ const CommentItem = ({
         }
         try {
             setIsTranslating(true);
-            const apiUrl = import.meta.env.VITE_LANG_SERVICE;
+            const apiUrl = getConfig().VITE_LANG_SERVICE;
             const response = await fetch(`${apiUrl}/api/translate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

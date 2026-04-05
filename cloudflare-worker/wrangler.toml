@@ -1,0 +1,14 @@
+name = "genjutsu-config"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+# ============================================================
+# HOW TO ADD SECRETS (run these commands in your terminal):
+# ============================================================
+# wrangler secret put VITE_SUPABASE_URL
+# wrangler secret put VITE_SUPABASE_PUBLISHABLE_KEY
+# wrangler secret put VITE_GROQ_API_KEY
+# wrangler secret put VITE_ABLY_KEY
+# wrangler secret put VITE_ADMIN_EMAILS
+# wrangler secret put VITE_LANG_SERVICE
+# wrangler secret put VITE_SENTRY_DSN

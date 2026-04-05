@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Ably from 'ably';
+import { getConfig } from "@/lib/config";
 
 export interface Message {
   id: string;
@@ -7,8 +8,6 @@ export interface Message {
   sender: 'me' | 'stranger' | 'system';
   timestamp: number;
 }
-
-const ABLY_KEY = import.meta.env.VITE_ABLY_KEY; // Fallback for local dev only
 
 export function useStrangerMatch() {
   const [status, setStatus] = useState<'idle' | 'searching' | 'matched'>('idle');
@@ -37,6 +36,9 @@ export function useStrangerMatch() {
 
   useEffect(() => {
     mountedRef.current = true;
+    // getConfig() is safely called inside useEffect — config is guaranteed
+    // to be loaded before any component mounts (see main.tsx loadConfig().then(...))
+    const ABLY_KEY = getConfig().VITE_ABLY_KEY;
 
     if (!ABLY_KEY) {
        console.error("VITE_ABLY_KEY is missing.");

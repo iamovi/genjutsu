@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { useNavigate, Link } from "react-router-dom";
 import { getNow } from "@/lib/utils";
+import { getConfig } from "@/lib/config";
 import { linkify } from "@/lib/linkify";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -146,7 +147,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
     try {
       setIsTranslating(true);
       // Replace with your actual local server URL
-      const apiUrl = import.meta.env.VITE_LANG_SERVICE;
+      const apiUrl = getConfig().VITE_LANG_SERVICE;
       const response = await fetch(`${apiUrl}/api/translate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { getConfig } from "@/lib/config";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -10,9 +11,10 @@ let serverDrift = 0;
 export async function syncTime() {
   try {
     const start = Date.now();
-    const response = await fetch(import.meta.env.VITE_SUPABASE_URL + '/auth/v1/health', {
+    const config = getConfig();
+    const response = await fetch(config.VITE_SUPABASE_URL + '/auth/v1/health', {
       method: 'GET',
-      headers: { 'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY }
+      headers: { 'apikey': config.VITE_SUPABASE_PUBLISHABLE_KEY }
     });
     const serverDate = response.headers.get('date');
     if (!serverDate) return;
