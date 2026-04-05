@@ -37,14 +37,8 @@ export function useStrangerMatch() {
   useEffect(() => {
     mountedRef.current = true;
     // getConfig() is safely called inside useEffect — config is guaranteed
-    // to be loaded before any component mounts (see main.tsx loadConfig().then(...))
-    const ABLY_KEY = getConfig().VITE_ABLY_KEY;
-
-    if (!ABLY_KEY) {
-       console.error("VITE_ABLY_KEY is missing.");
-       safeSetMessages([{ id: 'error', text: 'Configuration error: Connection failed.', sender: 'system', timestamp: Date.now() }]);
-       return;
-    }
+    const config = getConfig();
+    
     // Initialize Ably with persistent clientId
     let clientId = sessionStorage.getItem(STORAGE_KEY);
     if (!clientId) {
@@ -52,7 +46,22 @@ export function useStrangerMatch() {
         sessionStorage.setItem(STORAGE_KEY, clientId);
     }
 
-    const client = new Ably.Realtime({ key: ABLY_KEY, clientId });
+    let clientOptions: any = { clientId };
+
+    if (import.meta.env.DEV) {
+        const ABLY_KEY = config.VITE_ABLY_KEY;
+        if (!ABLY_KEY) {
+           console.error("VITE_ABLY_KEY is missing in local .env.");
+           safeSetMessages([{ id: 'error', text: 'Configuration error: Connection failed.', sender: 'system', timestamp: Date.now() }]);
+           return;
+        }
+        clientOptions.key = ABLY_KEY;
+    } else {
+        const workerUrlPattern = import.meta.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.workers.dev/config";
+        clientOptions.authUrl = workerUrlPattern.replace("/config", `/ably-auth?clientId=${clientId}`);
+    }
+
+    const client = new Ably.Realtime(clientOptions);
     ablyRef.current = client;
 
     // Join global channel just to track active users on the page

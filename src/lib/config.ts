@@ -1,11 +1,12 @@
 export interface Config {
   VITE_SUPABASE_URL: string;
   VITE_SUPABASE_PUBLISHABLE_KEY: string;
-  VITE_GROQ_API_KEY: string;
-  VITE_ABLY_KEY: string;
   VITE_ADMIN_EMAILS: string;
   VITE_LANG_SERVICE: string;
   VITE_SENTRY_DSN: string;
+  // These are only available in DEV. In PROD, they are proxied via Cloudflare Worker.
+  VITE_GROQ_API_KEY?: string;
+  VITE_ABLY_KEY?: string;
 }
 
 let config: Config | null = null;
