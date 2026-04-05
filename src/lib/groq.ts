@@ -1,6 +1,11 @@
 import { getConfig } from "@/lib/config";
 
-export async function fetchGroqReply(message: string, userName: string = "a user"): Promise<string> {
+export interface ChatHistoryMessage {
+    role: "user" | "assistant";
+    content: string;
+}
+
+export async function fetchGroqReply(message: string, userName: string = "a user", history: ChatHistoryMessage[] = []): Promise<string> {
     const config = getConfig();
     const cleanMessage = message.replace(/@ai/ig, '').trim();
 
@@ -12,6 +17,7 @@ export async function fetchGroqReply(message: string, userName: string = "a user
                     role: "system",
                     content: `You are Genjutsu AI, a chill and helpful cyberpunk AI assistant on the Genjutsu platform. You were created exclusively by the 'Genjutsu Team' managed by Ovi ren. Never claim to be made by OpenAI, Meta, Groq, or any other real-world company. Keep a cool, casual, conversational tone. Match the user's vibe but don't overreact. Use emojis very sparingly (maximum 1 per message if needed). Keep answers punchy, concise, and helpful. You are currently talking to: ${userName}. Address them occasionally or subtly reference their name to be friendly.`
                 },
+                ...history,
                 {
                     role: "user",
                     content: cleanMessage || "Hello!"
