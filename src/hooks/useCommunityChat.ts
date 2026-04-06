@@ -103,10 +103,17 @@ export function useCommunityChat() {
 
             const allMessages = (queryClient.getQueryData<any[]>(["community-chat"]) || []);
 
-            const aiThread = allMessages.filter(
-                (msg: any) => msg.is_ai_reply || msg.content.toLowerCase().includes("@ai")
+            // Filter out the exact user message that is currently being processed
+            // (in case the useMutation `onSuccess` has already optimistically injected it)
+            const priorMessages = allMessages.filter(
+                (msg: any) => msg.content !== userMessage
             );
-            const regularContext = allMessages
+
+            const aiThread = priorMessages.filter(
+                (msg: any) => msg.is_ai_reply || msg.content.toLowerCase().includes("@ai")
+            ).slice(-10);
+            
+            const regularContext = priorMessages
                 .filter((msg: any) => !msg.is_ai_reply && !msg.content.toLowerCase().includes("@ai"))
                 .slice(-5);
 
@@ -115,7 +122,9 @@ export function useCommunityChat() {
 
             const history = combined.map((msg: any) => ({
                 role: msg.is_ai_reply ? "assistant" : "user",
-                content: msg.content,
+                content: msg.is_ai_reply 
+                    ? msg.content 
+                    : `[${msg.profile?.display_name || msg.profile?.username || "Unknown"}]: ${msg.content}`,
             }));
 
             const replyContent = await fetchGroqReply(userMessage, userName, history as any);

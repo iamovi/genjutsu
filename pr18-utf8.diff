@@ -1,0 +1,56 @@
+﻿diff --git a/src/hooks/useCommunityChat.ts b/src/hooks/useCommunityChat.ts
+index b75e625..cb803d7 100644
+--- a/src/hooks/useCommunityChat.ts
++++ b/src/hooks/useCommunityChat.ts
+@@ -100,7 +100,25 @@ export function useCommunityChat() {
+             setIsAiThinking(true);
+             const { fetchGroqReply } = await import("@/lib/groq");
+             const userName = user?.user_metadata?.display_name || user?.user_metadata?.username || "a user";
+-            const replyContent = await fetchGroqReply(userMessage, userName);
++
++            const allMessages = (queryClient.getQueryData<any[]>(["community-chat"]) || []);
++
++            const aiThread = allMessages.filter(
++                (msg: any) => msg.is_ai_reply || msg.content.toLowerCase().includes("@ai")
++            );
++            const regularContext = allMessages
++                .filter((msg: any) => !msg.is_ai_reply && !msg.content.toLowerCase().includes("@ai"))
++                .slice(-5);
++
++            const combined = [...aiThread, ...regularContext]
++                .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
++
++            const history = combined.map((msg: any) => ({
++                role: msg.is_ai_reply ? "assistant" : "user",
++                content: msg.content,
++            }));
++
++            const replyContent = await fetchGroqReply(userMessage, userName, history as any);
+ 
+             if (!user) return;
+ 
+diff --git a/src/lib/groq.ts b/src/lib/groq.ts
+index 03fc959..0bdb283 100644
+--- a/src/lib/groq.ts
++++ b/src/lib/groq.ts
+@@ -1,6 +1,11 @@
+ import { getConfig } from "@/lib/config";
+ 
+-export async function fetchGroqReply(message: string, userName: string = "a user"): Promise<string> {
++export interface ChatHistoryMessage {
++    role: "user" | "assistant";
++    content: string;
++}
++
++export async function fetchGroqReply(message: string, userName: string = "a user", history: ChatHistoryMessage[] = []): Promise<string> {
+     const config = getConfig();
+     const cleanMessage = message.replace(/@ai/ig, '').trim();
+ 
+@@ -12,6 +17,7 @@ export async function fetchGroqReply(message: string, userName: string = "a user
+                     role: "system",
+                     content: `You are Genjutsu AI, a chill and helpful cyberpunk AI assistant on the Genjutsu platform. You were created exclusively by the 'Genjutsu Team' managed by Ovi ren. Never claim to be made by OpenAI, Meta, Groq, or any other real-world company. Keep a cool, casual, conversational tone. Match the user's vibe but don't overreact. Use emojis very sparingly (maximum 1 per message if needed). Keep answers punchy, concise, and helpful. You are currently talking to: ${userName}. Address them occasionally or subtly reference their name to be friendly.`
+                 },
++                ...history,
+                 {
+                     role: "user",
+                     content: cleanMessage || "Hello!"
