@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import Navbar from "@/components/Navbar";
-import { LogOut, ArrowLeft, Shield, Settings, Check, AtSign, Globe, Palette, Moon, Sun, Monitor, Pipette, WandSparkles, Music, Volume2, VolumeX, Clock, Lock } from "lucide-react";
+import { LogOut, ArrowLeft, Shield, Settings, Check, AtSign, Globe, Palette, Moon, Sun, Monitor, Pipette, WandSparkles, Music, Volume2, VolumeX, Clock, Lock, Eye, EyeOff } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
@@ -27,7 +27,7 @@ const SettingsPage = () => {
     const { profile, changeUsername, getNextUsernameChangeDate, deleteAccount } = useProfile();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
-    const { theme, color, customColor, font, radius, animateColor, cursorTrail, grid, soundEnabled, setTheme, setColor, setCustomColor, setFont, setRadius, setAnimateColor, setCursorTrail, setGrid, setSoundEnabled } = useTheme();
+    const { theme, color, customColor, font, radius, animateColor, cursorTrail, grid, soundEnabled, shadowWalk, setTheme, setColor, setCustomColor, setFont, setRadius, setAnimateColor, setCursorTrail, setGrid, setSoundEnabled, setShadowWalk } = useTheme();
 
     const [newUsername, setNewUsername] = useState("");
     const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -598,6 +598,25 @@ const SettingsPage = () => {
                                                         className={`gum-btn px-4 py-2 text-sm font-bold flex items-center gap-2 transition-all ${cursorTrail ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground'}`}
                                                     >
                                                         {cursorTrail ? 'Enabled' : 'Disabled'}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-6 border-t border-border">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <h2 className="text-lg font-bold mb-1 flex items-center gap-2">
+                                                            {shadowWalk ? <EyeOff size={18} className="text-primary" /> : <Eye size={18} className="text-muted-foreground" />}
+                                                            Shadow Walk
+                                                            <span className="text-[10px] uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">Privacy</span>
+                                                        </h2>
+                                                        <p className="text-sm text-muted-foreground">Dims the UI, blurs avatars and usernames for public browsing. <kbd className="text-[10px] bg-secondary px-1.5 py-0.5 rounded font-mono border border-border">Ctrl+Shift+S</kbd></p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setShadowWalk(!shadowWalk)}
+                                                        className={`gum-btn px-4 py-2 text-sm font-bold flex items-center gap-2 transition-all ${shadowWalk ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground'}`}
+                                                    >
+                                                        {shadowWalk ? '🥷 Active' : 'Disabled'}
                                                     </button>
                                                 </div>
                                             </div>

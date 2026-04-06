@@ -13,6 +13,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import RequireAdmin from "@/components/RequireAdmin";
 import { CursorTrail } from "@/components/CursorTrail";
 import { SoundEngine } from "@/hooks/useSound";
+import { ShadowWalkEngine } from "@/components/ShadowWalk";
 
 import Index from "@/pages/Index";
 const AuthPage = lazy(() => import("@/pages/AuthPage"));
@@ -45,6 +46,7 @@ const App = () => {
       <ThemeProvider defaultTheme="light" storageKey="genjutsu-theme">
         <CursorTrail />
         <SoundEngine />
+        <ShadowWalkEngine />
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Toaster />

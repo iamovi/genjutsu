@@ -158,6 +158,42 @@ html.dark {
     background-image: none;
   }
 
+  /* ========= Shadow Walk Privacy Mode ========= */
+
+  /* Dark vignette overlay */
+  html[data-shadow-walk="true"] body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9990;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+  }
+
+  /* Dim the entire UI */
+  html[data-shadow-walk="true"] #root {
+    filter: brightness(0.55) contrast(0.9);
+    transition: filter 0.4s ease;
+  }
+
+  /* Blur all avatars */
+  html[data-shadow-walk="true"] img[alt],
+  html[data-shadow-walk="true"] [class*="avatar"] img {
+    filter: blur(8px) grayscale(0.5) !important;
+    transition: filter 0.3s ease;
+  }
+
+  /* Blur usernames and display names */
+  html[data-shadow-walk="true"] [class*="username"],
+  html[data-shadow-walk="true"] a[href*="/u/"],
+  html[data-shadow-walk="true"] [data-shadow-hide] {
+    filter: blur(5px) !important;
+    transition: filter 0.3s ease;
+    user-select: none;
+  }
+
+  /* ========= End Shadow Walk ========= */
+
   /* Ensure content is above the grid layer */
   #root {
     position: relative;

@@ -69,6 +69,7 @@ type ThemeProviderState = {
     animateColor: boolean;
     cursorTrail: boolean;
     soundEnabled: boolean;
+    shadowWalk: boolean;
     setTheme: (theme: Theme) => void;
     setColor: (color: ColorPreset) => void;
     setCustomColor: (hex: string) => void;
@@ -78,6 +79,7 @@ type ThemeProviderState = {
     setAnimateColor: (v: boolean) => void;
     setCursorTrail: (v: boolean) => void;
     setSoundEnabled: (v: boolean) => void;
+    setShadowWalk: (v: boolean) => void;
 };
 
 const initialState: ThemeProviderState = {
@@ -90,6 +92,7 @@ const initialState: ThemeProviderState = {
     animateColor: false,
     cursorTrail: false,
     soundEnabled: false,
+    shadowWalk: false,
     setTheme: () => null,
     setColor: () => null,
     setCustomColor: () => null,
@@ -99,6 +102,7 @@ const initialState: ThemeProviderState = {
     setAnimateColor: () => null,
     setCursorTrail: () => null,
     setSoundEnabled: () => null,
+    setShadowWalk: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -137,6 +141,9 @@ export function ThemeProvider({
     const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => {
         return localStorage.getItem(`${storageKey}-soundEnabled`) === "true";
     });
+    const [shadowWalk, setShadowWalkState] = useState<boolean>(() => {
+        return localStorage.getItem(`${storageKey}-shadowWalk`) === "true";
+    });
 
     const hueRef = useRef<number>(0);
     const rafRef = useRef<number | null>(null);
@@ -150,6 +157,7 @@ export function ThemeProvider({
     const setAnimateColor = (val: boolean) => { localStorage.setItem(`${storageKey}-animateColor`, String(val)); setAnimateColorState(val); };
     const setCursorTrail = (val: boolean) => { localStorage.setItem(`${storageKey}-cursorTrail`, String(val)); setCursorTrailState(val); };
     const setSoundEnabled = (val: boolean) => { localStorage.setItem(`${storageKey}-soundEnabled`, String(val)); setSoundEnabledState(val); };
+    const setShadowWalk = (val: boolean) => { localStorage.setItem(`${storageKey}-shadowWalk`, String(val)); setShadowWalkState(val); document.documentElement.setAttribute('data-shadow-walk', String(val)); };
 
     // Mode + static color + radius effect
     useEffect(() => {
@@ -162,6 +170,7 @@ export function ThemeProvider({
         root.classList.add(activeTheme);
         
         root.setAttribute("data-grid", grid);
+        root.setAttribute("data-shadow-walk", String(shadowWalk));
 
         // Only apply static color when animation is off
         if (!animateColor) {
@@ -184,7 +193,7 @@ export function ThemeProvider({
 
         // Apply Radius
         document.documentElement.style.setProperty('--radius', radiusPresets[radius]);
-    }, [theme, color, customColor, radius, animateColor, grid]);
+    }, [theme, color, customColor, radius, animateColor, grid, shadowWalk]);
 
     // Animated color loop — smooth 60fps hue cycling via requestAnimationFrame
     useEffect(() => {
@@ -235,8 +244,8 @@ export function ThemeProvider({
     }, [font]);
 
     const value = {
-        theme, color, customColor, font, grid, radius, animateColor, cursorTrail, soundEnabled,
-        setTheme, setColor, setCustomColor, setFont, setGrid, setRadius, setAnimateColor, setCursorTrail, setSoundEnabled
+        theme, color, customColor, font, grid, radius, animateColor, cursorTrail, soundEnabled, shadowWalk,
+        setTheme, setColor, setCustomColor, setFont, setGrid, setRadius, setAnimateColor, setCursorTrail, setSoundEnabled, setShadowWalk
     };
 
     return (
