@@ -45,9 +45,11 @@ mit - see [LICENSE](../LICENSE) file
 - create an issue for bugs or feature requests
 - join discussions in the issues tab
 
-**Support this project to keep it alive and growing! Click the image below:**
+**Support this project to keep it alive and growing or just buy me a cup of tea / coffee! Click the image below:**
 
-[![supportkori](https://www.supportkori.com/favicon.ico)](https://www.supportkori.com/iamovi)
+<a href="https://www.supportkori.com/iamovi">
+  <img src="./tea.jpg" alt="supportkori" width="250">
+</a>
 
 ---
 
