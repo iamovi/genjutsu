@@ -60,9 +60,9 @@
     "getStarted": "はじめる",
     "noIllusions": "現在、世界にアクティブな幻術はありません。",
     "beTheFirst": "最初の呪文を唱えましょう。",
-    "whatAreYouBuilding": "影で何を構築していますか？",
+    "whatAreYouBuilding": "今どんなことを考えていますか？ (ハッシュタグやメンションを使用)",
     "spellCastSuccess": "呪文の詠唱に成功しました",
-    "castSpell": "呪文を唱える"
+    "castSpell": "投稿"
   },
   "about": {
     "backToHome": "ホームに戻る",

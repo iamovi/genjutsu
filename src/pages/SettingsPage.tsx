@@ -297,7 +297,7 @@ const SettingsPage = () => {
                                                 <p className="text-sm text-muted-foreground mb-4">
                                                     {t("settings.languageDesc")}
                                                 </p>
-                                                <div className="flex gap-3">
+                                                <div className="flex flex-wrap gap-3">
                                                     <button
                                                         onClick={() => i18n.changeLanguage('en')}
                                                         className={`gum-btn px-6 py-2.5 text-sm font-bold transition-colors ${i18n.language.startsWith('en') ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground'}`}
@@ -315,6 +315,42 @@ const SettingsPage = () => {
                                                         className={`gum-btn px-6 py-2.5 text-sm font-bold transition-colors ${i18n.language.startsWith('ja') ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground'}`}
                                                     >
                                                         日本語
+                                                    </button>
+                                                    <button
+                                                        onClick={() => i18n.changeLanguage('fil')}
+                                                        className={`gum-btn px-6 py-2.5 text-sm font-bold transition-colors ${i18n.language.startsWith('fil') ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground'}`}
+                                                    >
+                                                        Tagalog
+                                                    </button>
+                                                    <button
+                                                        onClick={() => i18n.changeLanguage('hi')}
+                                                        className={`gum-btn px-6 py-2.5 text-sm font-bold transition-colors ${i18n.language.startsWith('hi') ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground'}`}
+                                                    >
+                                                        हिंदी
+                                                    </button>
+                                                    <button
+                                                        onClick={() => i18n.changeLanguage('es')}
+                                                        className={`gum-btn px-6 py-2.5 text-sm font-bold transition-colors ${i18n.language.startsWith('es') ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground'}`}
+                                                    >
+                                                        Español
+                                                    </button>
+                                                    <button
+                                                        onClick={() => i18n.changeLanguage('pt')}
+                                                        className={`gum-btn px-6 py-2.5 text-sm font-bold transition-colors ${i18n.language.startsWith('pt') ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground'}`}
+                                                    >
+                                                        Português
+                                                    </button>
+                                                    <button
+                                                        onClick={() => i18n.changeLanguage('ko')}
+                                                        className={`gum-btn px-6 py-2.5 text-sm font-bold transition-colors ${i18n.language.startsWith('ko') ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground'}`}
+                                                    >
+                                                        한국어
+                                                    </button>
+                                                    <button
+                                                        onClick={() => i18n.changeLanguage('ru')}
+                                                        className={`gum-btn px-6 py-2.5 text-sm font-bold transition-colors ${i18n.language.startsWith('ru') ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground'}`}
+                                                    >
+                                                        Русский
                                                     </button>
                                                 </div>
                                             </div>
