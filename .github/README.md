@@ -66,3 +66,7 @@ mit — see [LICENSE](../LICENSE) file
 <div align="center">
   <img src="./fav.jpg" width="65" />
 </div>
+
+<p align="center">
+  <h1>genjutsu 幻術</h1>
+</p>
