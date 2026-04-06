@@ -48,7 +48,7 @@ mit - see [LICENSE](../LICENSE) file
 **Support this project to keep it alive and growing or just buy me a cup of tea / coffee! Click the image below:**
 
 <a href="https://www.supportkori.com/iamovi">
-  <img src="./tea.jpg" alt="supportkori" width="210">
+  <img src="./tea_text.jpg" alt="supportkori" width="210">
 </a>
 
 ---
