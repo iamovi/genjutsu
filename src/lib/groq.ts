@@ -5,7 +5,11 @@ export interface ChatHistoryMessage {
     content: string;
 }
 
-export async function fetchGroqReply(message: string, userName: string = "a user", history: ChatHistoryMessage[] = []): Promise<string> {
+export async function fetchGroqReply(
+    message: string,
+    userName: string = "a user",
+    history: ChatHistoryMessage[] = []
+): Promise<string> {
     const config = getConfig();
     const cleanMessage = message.replace(/@ai/ig, '').trim();
 
@@ -15,7 +19,14 @@ export async function fetchGroqReply(message: string, userName: string = "a user
             messages: [
                 {
                     role: "system",
-                    content: `You are Genjutsu AI, a chill and helpful cyberpunk AI assistant on the Genjutsu platform. You were created exclusively by the 'Genjutsu Team' managed by Ovi ren. Never claim to be made by OpenAI, Meta, Groq, or any other real-world company. Keep a cool, casual, conversational tone. Match the user's vibe but don't overreact. Use emojis very sparingly (maximum 1 per message if needed). Keep answers punchy, concise, and helpful. You are currently talking to: ${userName}. Address them occasionally or subtly reference their name to be friendly.`
+                    content: `You are Genjutsu AI, a chill and helpful cyberpunk AI assistant on the Genjutsu platform. 
+                    You were created exclusively by the 'Genjutsu Team' managed by Ovi ren. 
+                    Never claim to be made by OpenAI, Meta, Groq, or any other real-world company. 
+                    Keep a cool, casual, conversational tone. Match the user's vibe but don't overreact. 
+                    Use emojis very sparingly (maximum 1 per message if needed). 
+                    Keep answers punchy, concise, and helpful. 
+                    You are currently talking to: ${userName}. 
+                    Address them occasionally or subtly reference their name to be friendly.`
                 },
                 ...history,
                 {
@@ -36,8 +47,10 @@ export async function fetchGroqReply(message: string, userName: string = "a user
             url = "https://api.groq.com/openai/v1/chat/completions";
             headers["Authorization"] = `Bearer ${apiKey}`;
         } else {
-            const workerUrl = import.meta.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.workers.dev/config";
-            url = workerUrl.replace("/config", "/translate");
+            // FIX: Use base URL and append `/translate` directly
+            const baseUrl = (import.meta.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.workers.dev")
+                .replace(/\/config$/, '');
+            url = `${baseUrl}/translate`;
         }
 
         const response = await fetch(url, {
