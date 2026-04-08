@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import Navbar from "@/components/Navbar";
-import { LogOut, ArrowLeft, Shield, Settings, Check, AtSign, Globe, Palette, Moon, Sun, Monitor, Pipette, WandSparkles, Music, Volume2, VolumeX, Clock, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
+import { LogOut, ArrowLeft, Shield, Settings, Check, AtSign, Globe, Palette, Moon, Sun, Monitor, Pipette, WandSparkles, Music, Volume2, VolumeX, Clock, Lock, Eye, EyeOff, KeyRound, Layout, Type, Square, Grid } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
@@ -482,7 +482,7 @@ const SettingsPage = () => {
                                     >
                                         <section className="gum-card p-6 space-y-6">
                                             <div>
-                                                <h2 className="text-lg font-bold mb-1">Theme Mode</h2>
+                                                <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Layout size={18} className="text-primary" /> Theme Mode</h2>
                                                 <p className="text-sm text-muted-foreground mb-4">Choose how you experience the illusion.</p>
                                                 <div className="flex flex-wrap gap-3">
                                                     {(["light", "dark", "system"] as const).map((m) => (
@@ -503,7 +503,7 @@ const SettingsPage = () => {
                                             <div className="pt-6 border-t border-border">
                                                 <div className="flex items-center justify-between mb-4">
                                                     <div>
-                                                        <h2 className="text-lg font-bold mb-1">Aura Color</h2>
+                                                        <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Pipette size={18} className="text-primary" /> Aura Color</h2>
                                                         <p className="text-sm text-muted-foreground">Select the primary resonance of your spells.</p>
                                                     </div>
                                                     <button
@@ -560,7 +560,7 @@ const SettingsPage = () => {
                                             </div>
 
                                             <div className="pt-6 border-t border-border">
-                                                <h2 className="text-lg font-bold mb-1">Typography</h2>
+                                                <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Type size={18} className="text-primary" /> Typography</h2>
                                                 <p className="text-sm text-muted-foreground mb-4">Set the textual vibe of the illusion.</p>
                                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                     {(['Reddit Mono', 'Inter', 'Space Grotesk', 'Fira Code', 'JetBrains Mono', 'Comic Neue'] as const).map((f) => (
@@ -577,7 +577,7 @@ const SettingsPage = () => {
                                             </div>
 
                                             <div className="pt-6 border-t border-border">
-                                                <h2 className="text-lg font-bold mb-1">Border Radius</h2>
+                                                <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Square size={18} className="text-primary" /> Border Radius</h2>
                                                 <p className="text-sm text-muted-foreground mb-4">How sharp should the edges be?</p>
                                                 <div className="flex flex-wrap gap-3">
                                                     {(['none', 'default', 'md', 'lg', 'full'] as const).map((r) => (
@@ -594,7 +594,7 @@ const SettingsPage = () => {
                                             </div>
 
                                             <div className="pt-6 border-t border-border">
-                                                <h2 className="text-lg font-bold mb-1">Background Grid</h2>
+                                                <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Grid size={18} className="text-primary" /> Background Grid</h2>
                                                 <p className="text-sm text-muted-foreground mb-4">Choose the tactical matrix for your spells.</p>
                                                 <div className="flex flex-wrap gap-3">
                                                     {(['blueprint', 'dotted', 'scanlines', 'none'] as const).map((g) => (
@@ -615,7 +615,6 @@ const SettingsPage = () => {
                                                         <h2 className="text-lg font-bold mb-1 flex items-center gap-2">
                                                             <WandSparkles size={18} className="text-primary" />
                                                             Cursor Trail
-                                                            <span className="text-[10px] uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">Beta</span>
                                                         </h2>
                                                         <p className="text-sm text-muted-foreground">Follows your mouse with a glowing trail matching your Aura color.</p>
                                                     </div>
@@ -634,7 +633,6 @@ const SettingsPage = () => {
                                                         <h2 className="text-lg font-bold mb-1 flex items-center gap-2">
                                                             {shadowWalk ? <EyeOff size={18} className="text-primary" /> : <Eye size={18} className="text-muted-foreground" />}
                                                             Shadow Walk
-                                                            <span className="text-[10px] uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">Privacy</span>
                                                         </h2>
                                                         <p className="text-sm text-muted-foreground">Dims the UI, blurs avatars and usernames for public browsing. <kbd className="text-[10px] bg-secondary px-1.5 py-0.5 rounded font-mono border border-border">Ctrl+Shift+S</kbd></p>
                                                     </div>
@@ -710,7 +708,6 @@ const SettingsPage = () => {
                                                         <h3 className="font-bold mb-1 flex items-center gap-2">
                                                             <Lock size={18} className={appLockEnabled ? "text-primary" : "text-muted-foreground"} />
                                                             App Lock
-                                                            <span className="text-[10px] uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">Privacy</span>
                                                         </h3>
                                                         <p className="text-sm text-muted-foreground">
                                                             Require a 4-digit PIN to open Genjutsu. Protects your session from casual access.
