@@ -14,6 +14,7 @@ import RequireAdmin from "@/components/RequireAdmin";
 import { CursorTrail } from "@/components/CursorTrail";
 import { SoundEngine } from "@/hooks/useSound";
 import { ShadowWalkEngine } from "@/components/ShadowWalk";
+import { AppLockGate } from "@/components/AppLockGate";
 
 import Index from "@/pages/Index";
 const AuthPage = lazy(() => import("@/pages/AuthPage"));
@@ -47,6 +48,7 @@ const App = () => {
         <CursorTrail />
         <SoundEngine />
         <ShadowWalkEngine />
+        <AppLockGate>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Toaster />
@@ -96,6 +98,7 @@ const App = () => {
             </BrowserRouter>
           </TooltipProvider>
         </QueryClientProvider>
+        </AppLockGate>
       </ThemeProvider>
     </HelmetProvider>
   );

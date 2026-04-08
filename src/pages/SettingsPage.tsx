@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import Navbar from "@/components/Navbar";
-import { LogOut, ArrowLeft, Shield, Settings, Check, AtSign, Globe, Palette, Moon, Sun, Monitor, Pipette, WandSparkles, Music, Volume2, VolumeX, Clock, Lock, Eye, EyeOff } from "lucide-react";
+import { LogOut, ArrowLeft, Shield, Settings, Check, AtSign, Globe, Palette, Moon, Sun, Monitor, Pipette, WandSparkles, Music, Volume2, VolumeX, Clock, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/components/theme-provider";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { hashPin, verifyPin, APP_LOCK_HASH_KEY, APP_LOCK_SESSION_KEY, APP_LOCK_Q1_KEY, APP_LOCK_Q2_KEY, APP_LOCK_A1_HASH_KEY, APP_LOCK_A2_HASH_KEY, PREDEFINED_QUESTIONS, formatAnswer } from "@/lib/pin";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -32,9 +34,23 @@ const SettingsPage = () => {
     const [newUsername, setNewUsername] = useState("");
     const [usernameError, setUsernameError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<"general" | "language" | "appearance" | "audio" | "danger">("general");
+    const [activeTab, setActiveTab] = useState<"general" | "language" | "appearance" | "audio" | "security" | "danger">("general");
     const [deleteConfirmation, setDeleteConfirmation] = useState("");
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // App Lock state
+    const [appLockEnabled, setAppLockEnabled] = useState(() => !!localStorage.getItem(APP_LOCK_HASH_KEY));
+    const [pinStep, setPinStep] = useState<"idle" | "set-new" | "confirm-new" | "security-questions" | "verify-current" | "change-new" | "change-confirm">("idle");
+    const [pinValue, setPinValue] = useState("");
+    const [pinConfirm, setPinConfirm] = useState("");
+    const [pinError, setPinError] = useState<string | null>(null);
+    const [pinSaving, setPinSaving] = useState(false);
+
+    // Security Questions state
+    const [q1, setQ1] = useState(PREDEFINED_QUESTIONS[0]);
+    const [q2, setQ2] = useState(PREDEFINED_QUESTIONS[1]);
+    const [a1, setA1] = useState("");
+    const [a2, setA2] = useState("");
 
     const [dangerUnlockedSession, setDangerUnlockedSession] = useState(false);
     const [dangerTimeLeft, setDangerTimeLeft] = useState<number>(0);
@@ -247,6 +263,16 @@ const SettingsPage = () => {
                             >
                                 <Music size={18} />
                                 Sound
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("security")}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[3px] text-sm transition-all ${activeTab === "security"
+                                    ? "bg-primary text-primary-foreground font-bold gum-shadow-sm"
+                                    : "hover:bg-secondary text-muted-foreground hover:text-foreground font-medium"
+                                    }`}
+                            >
+                                <KeyRound size={18} />
+                                Security
                             </button>
                             <button
                                 onClick={handleDangerClick}
@@ -657,6 +683,456 @@ const SettingsPage = () => {
                                                         </button>
                                                     </div>
                                                 </div>
+                                            </div>
+                                        </section>
+                                    </motion.div>
+                                )}
+
+                                {activeTab === "security" && (
+                                    <motion.div
+                                        key="security"
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 10 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="space-y-6"
+                                    >
+                                        <section className="gum-card p-6 space-y-6">
+                                            <div>
+                                                <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
+                                                    <KeyRound className="text-primary" />
+                                                    Security
+                                                </h2>
+
+                                                {/* App Lock Toggle */}
+                                                <div className="flex items-start justify-between bg-secondary/30 p-4 rounded-[3px] border border-border">
+                                                    <div className="pr-4">
+                                                        <h3 className="font-bold mb-1 flex items-center gap-2">
+                                                            <Lock size={18} className={appLockEnabled ? "text-primary" : "text-muted-foreground"} />
+                                                            App Lock
+                                                            <span className="text-[10px] uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">Privacy</span>
+                                                        </h3>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Require a 4-digit PIN to open Genjutsu. Protects your session from casual access.
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (appLockEnabled) {
+                                                                setPinStep("verify-current");
+                                                                setPinValue("");
+                                                                setPinError(null);
+                                                            } else {
+                                                                setPinStep("set-new");
+                                                                setPinValue("");
+                                                                setPinConfirm("");
+                                                                setPinError(null);
+                                                            }
+                                                        }}
+                                                        className={`gum-btn shrink-0 w-20 h-10 text-sm font-bold transition-all ${appLockEnabled ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground border-2 border-border'}`}
+                                                    >
+                                                        {appLockEnabled ? "ON" : "OFF"}
+                                                    </button>
+                                                </div>
+
+                                                {/* PIN Setup / Verification Flows */}
+                                                <AnimatePresence mode="wait">
+                                                    {pinStep === "set-new" && (
+                                                        <motion.div
+                                                            key="set-new"
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: "auto" }}
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="mt-4 p-4 bg-secondary/30 border border-border rounded-[3px] space-y-4"
+                                                        >
+                                                            <div>
+                                                                <p className="text-sm font-bold mb-3">Enter a 4-digit PIN</p>
+                                                                <div className="flex justify-center">
+                                                                    <InputOTP
+                                                                        maxLength={4}
+                                                                        value={pinValue}
+                                                                        onChange={(v) => { setPinValue(v); setPinError(null); }}
+                                                                        autoFocus
+                                                                    >
+                                                                        <InputOTPGroup>
+                                                                            <InputOTPSlot index={0} className="w-12 h-12 text-lg font-bold" />
+                                                                            <InputOTPSlot index={1} className="w-12 h-12 text-lg font-bold" />
+                                                                            <InputOTPSlot index={2} className="w-12 h-12 text-lg font-bold" />
+                                                                            <InputOTPSlot index={3} className="w-12 h-12 text-lg font-bold" />
+                                                                        </InputOTPGroup>
+                                                                    </InputOTP>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex gap-2 justify-end">
+                                                                <button
+                                                                    onClick={() => { setPinStep("idle"); setPinValue(""); setPinError(null); }}
+                                                                    className="gum-btn text-sm px-4 py-2 bg-secondary hover:bg-secondary/80 font-bold"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                                <button
+                                                                    disabled={pinValue.length !== 4}
+                                                                    onClick={() => { setPinStep("confirm-new"); setPinConfirm(""); }}
+                                                                    className="gum-btn text-sm px-4 py-2 bg-primary text-primary-foreground font-bold disabled:opacity-40"
+                                                                >
+                                                                    Next
+                                                                </button>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+
+                                                    {pinStep === "confirm-new" && (
+                                                        <motion.div
+                                                            key="confirm-new"
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: "auto" }}
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="mt-4 p-4 bg-secondary/30 border border-border rounded-[3px] space-y-4"
+                                                        >
+                                                            <div>
+                                                                <p className="text-sm font-bold mb-3">Confirm your PIN</p>
+                                                                <div className="flex justify-center">
+                                                                    <InputOTP
+                                                                        maxLength={4}
+                                                                        value={pinConfirm}
+                                                                        onChange={(v) => {
+                                                                            setPinConfirm(v);
+                                                                            setPinError(null);
+                                                                            if (v.length === 4) {
+                                                                                if (v !== pinValue) {
+                                                                                    setPinError("PINs don't match. Try again.");
+                                                                                    setTimeout(() => setPinConfirm(""), 500);
+                                                                                } else {
+                                                                                    setPinStep("security-questions");
+                                                                                }
+                                                                            }
+                                                                        }}
+                                                                        autoFocus
+                                                                    >
+                                                                        <InputOTPGroup>
+                                                                            <InputOTPSlot index={0} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={1} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={2} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={3} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                        </InputOTPGroup>
+                                                                    </InputOTP>
+                                                                </div>
+                                                                {pinError && <p className="text-xs text-destructive text-center font-medium mt-2">{pinError}</p>}
+                                                            </div>
+                                                            <div className="flex gap-2 justify-end">
+                                                                <button
+                                                                    onClick={() => { setPinStep("set-new"); setPinConfirm(""); setPinError(null); }}
+                                                                    className="gum-btn text-sm px-4 py-2 bg-secondary hover:bg-secondary/80 font-bold"
+                                                                >
+                                                                    Back
+                                                                </button>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+
+                                                    {pinStep === "security-questions" && (
+                                                        <motion.div
+                                                            key="security-questions"
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: "auto" }}
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="mt-4 p-4 bg-secondary/30 border border-border rounded-[3px] space-y-4"
+                                                        >
+                                                            <div>
+                                                                <p className="text-sm font-bold mb-3">Set Security Questions</p>
+                                                                <p className="text-xs text-muted-foreground mb-4">Choose two questions to recover your PIN if you forget it.</p>
+                                                                
+                                                                <div className="space-y-4">
+                                                                    <div className="space-y-2">
+                                                                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Question 1</label>
+                                                                        <select 
+                                                                            value={q1} 
+                                                                            onChange={(e) => setQ1(e.target.value)}
+                                                                            className="w-full bg-background border-2 border-border p-2 text-sm rounded-[3px] focus:outline-none focus:border-primary font-medium"
+                                                                        >
+                                                                            {PREDEFINED_QUESTIONS.map((q) => (
+                                                                                <option key={q} value={q} disabled={q === q2}>{q}</option>
+                                                                            ))}
+                                                                        </select>
+                                                                        <input 
+                                                                            type="text" 
+                                                                            value={a1} 
+                                                                            onChange={(e) => setA1(e.target.value)} 
+                                                                            placeholder="Your answer..."
+                                                                            className="w-full bg-background border-2 border-border p-2 text-sm rounded-[3px] focus:outline-none focus:border-primary placeholder:text-muted-foreground/50 transition-colors"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="space-y-2">
+                                                                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Question 2</label>
+                                                                        <select 
+                                                                            value={q2} 
+                                                                            onChange={(e) => setQ2(e.target.value)}
+                                                                            className="w-full bg-background border-2 border-border p-2 text-sm rounded-[3px] focus:outline-none focus:border-primary font-medium"
+                                                                        >
+                                                                            {PREDEFINED_QUESTIONS.map((q) => (
+                                                                                <option key={q} value={q} disabled={q === q1}>{q}</option>
+                                                                            ))}
+                                                                        </select>
+                                                                        <input 
+                                                                            type="text" 
+                                                                            value={a2} 
+                                                                            onChange={(e) => setA2(e.target.value)} 
+                                                                            placeholder="Your answer..."
+                                                                            className="w-full bg-background border-2 border-border p-2 text-sm rounded-[3px] focus:outline-none focus:border-primary placeholder:text-muted-foreground/50 transition-colors"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex gap-2 justify-end">
+                                                                <button
+                                                                    onClick={() => { setPinStep("confirm-new"); setPinConfirm(""); setPinError(null); }}
+                                                                    className="gum-btn text-sm px-4 py-2 bg-secondary hover:bg-secondary/80 font-bold"
+                                                                    disabled={pinSaving}
+                                                                >
+                                                                    Back
+                                                                </button>
+                                                                <button
+                                                                    disabled={!a1.trim() || !a2.trim() || q1 === q2 || pinSaving}
+                                                                    onClick={() => {
+                                                                        setPinSaving(true);
+                                                                        Promise.all([
+                                                                            hashPin(pinConfirm),
+                                                                            hashPin(formatAnswer(a1)),
+                                                                            hashPin(formatAnswer(a2))
+                                                                        ]).then(([pinHash, a1Hash, a2Hash]) => {
+                                                                            localStorage.setItem(APP_LOCK_HASH_KEY, pinHash);
+                                                                            localStorage.setItem(APP_LOCK_Q1_KEY, q1);
+                                                                            localStorage.setItem(APP_LOCK_Q2_KEY, q2);
+                                                                            localStorage.setItem(APP_LOCK_A1_HASH_KEY, a1Hash);
+                                                                            localStorage.setItem(APP_LOCK_A2_HASH_KEY, a2Hash);
+                                                                            sessionStorage.setItem(APP_LOCK_SESSION_KEY, "true");
+                                                                            setAppLockEnabled(true);
+                                                                            setPinStep("idle");
+                                                                            setPinValue("");
+                                                                            setPinConfirm("");
+                                                                            setA1("");
+                                                                            setA2("");
+                                                                            setPinSaving(false);
+                                                                            toast.success("App Lock enabled with recovery questions!");
+                                                                        });
+                                                                    }}
+                                                                    className="gum-btn text-sm px-4 py-2 bg-primary text-primary-foreground font-bold disabled:opacity-40"
+                                                                >
+                                                                    {pinSaving ? "Saving..." : "Save Lock"}
+                                                                </button>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+
+                                                    {pinStep === "verify-current" && (
+                                                        <motion.div
+                                                            key="verify-current"
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: "auto" }}
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="mt-4 p-4 bg-secondary/30 border border-border rounded-[3px] space-y-4"
+                                                        >
+                                                            <div>
+                                                                <p className="text-sm font-bold mb-3">Enter your current PIN to disable App Lock</p>
+                                                                <div className="flex justify-center">
+                                                                    <InputOTP
+                                                                        maxLength={4}
+                                                                        value={pinValue}
+                                                                        onChange={(v) => {
+                                                                            setPinValue(v);
+                                                                            setPinError(null);
+                                                                            if (v.length === 4) {
+                                                                                const hash = localStorage.getItem(APP_LOCK_HASH_KEY);
+                                                                                if (!hash) return;
+                                                                                verifyPin(v, hash).then((ok) => {
+                                                                                    if (ok) {
+                                                                                        localStorage.removeItem(APP_LOCK_HASH_KEY);
+                                                                                        localStorage.removeItem(APP_LOCK_Q1_KEY);
+                                                                                        localStorage.removeItem(APP_LOCK_Q2_KEY);
+                                                                                        localStorage.removeItem(APP_LOCK_A1_HASH_KEY);
+                                                                                        localStorage.removeItem(APP_LOCK_A2_HASH_KEY);
+                                                                                        sessionStorage.removeItem(APP_LOCK_SESSION_KEY);
+                                                                                        setAppLockEnabled(false);
+                                                                                        setPinStep("idle");
+                                                                                        setPinValue("");
+                                                                                        toast.success("App Lock disabled.");
+                                                                                    } else {
+                                                                                        setPinError("Wrong PIN.");
+                                                                                        setTimeout(() => setPinValue(""), 500);
+                                                                                    }
+                                                                                });
+                                                                            }
+                                                                        }}
+                                                                        autoFocus
+                                                                    >
+                                                                        <InputOTPGroup>
+                                                                            <InputOTPSlot index={0} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={1} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={2} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={3} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                        </InputOTPGroup>
+                                                                    </InputOTP>
+                                                                </div>
+                                                                {pinError && <p className="text-xs text-destructive text-center font-medium mt-2">{pinError}</p>}
+                                                            </div>
+                                                            <div className="flex gap-2 justify-end">
+                                                                <button
+                                                                    onClick={() => { setPinStep("idle"); setPinValue(""); setPinError(null); }}
+                                                                    className="gum-btn text-sm px-4 py-2 bg-secondary hover:bg-secondary/80 font-bold"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+
+                                                    {pinStep === "change-new" && (
+                                                        <motion.div
+                                                            key="change-new"
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: "auto" }}
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="mt-4 p-4 bg-secondary/30 border border-border rounded-[3px] space-y-4"
+                                                        >
+                                                            <div>
+                                                                <p className="text-sm font-bold mb-3">Enter your current PIN first</p>
+                                                                <div className="flex justify-center">
+                                                                    <InputOTP
+                                                                        maxLength={4}
+                                                                        value={pinValue}
+                                                                        onChange={(v) => {
+                                                                            setPinValue(v);
+                                                                            setPinError(null);
+                                                                            if (v.length === 4) {
+                                                                                const hash = localStorage.getItem(APP_LOCK_HASH_KEY);
+                                                                                if (!hash) return;
+                                                                                verifyPin(v, hash).then((ok) => {
+                                                                                    if (ok) {
+                                                                                        setPinStep("change-confirm");
+                                                                                        setPinValue("");
+                                                                                        setPinConfirm("");
+                                                                                        setPinError(null);
+                                                                                    } else {
+                                                                                        setPinError("Wrong PIN.");
+                                                                                        setTimeout(() => setPinValue(""), 500);
+                                                                                    }
+                                                                                });
+                                                                            }
+                                                                        }}
+                                                                        autoFocus
+                                                                    >
+                                                                        <InputOTPGroup>
+                                                                            <InputOTPSlot index={0} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={1} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={2} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={3} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                        </InputOTPGroup>
+                                                                    </InputOTP>
+                                                                </div>
+                                                                {pinError && <p className="text-xs text-destructive text-center font-medium mt-2">{pinError}</p>}
+                                                            </div>
+                                                            <div className="flex gap-2 justify-end">
+                                                                <button
+                                                                    onClick={() => { setPinStep("idle"); setPinValue(""); setPinError(null); }}
+                                                                    className="gum-btn text-sm px-4 py-2 bg-secondary hover:bg-secondary/80 font-bold"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+
+                                                    {pinStep === "change-confirm" && (
+                                                        <motion.div
+                                                            key="change-confirm"
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: "auto" }}
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="mt-4 p-4 bg-secondary/30 border border-border rounded-[3px] space-y-4"
+                                                        >
+                                                            <div>
+                                                                <p className="text-sm font-bold mb-3">
+                                                                    {pinValue.length < 4 ? "Enter your new PIN" : "Confirm your new PIN"}
+                                                                </p>
+                                                                <div className="flex justify-center">
+                                                                    <InputOTP
+                                                                        maxLength={4}
+                                                                        value={pinValue.length < 4 ? pinValue : pinConfirm}
+                                                                        onChange={(v) => {
+                                                                            setPinError(null);
+                                                                            if (pinValue.length < 4) {
+                                                                                setPinValue(v);
+                                                                            } else {
+                                                                                setPinConfirm(v);
+                                                                                if (v.length === 4) {
+                                                                                    if (v !== pinValue) {
+                                                                                        setPinError("PINs don't match. Try again.");
+                                                                                        setTimeout(() => { setPinConfirm(""); setPinValue(""); }, 500);
+                                                                                    } else {
+                                                                                        setPinSaving(true);
+                                                                                        hashPin(v).then((hash) => {
+                                                                                            localStorage.setItem(APP_LOCK_HASH_KEY, hash);
+                                                                                            setPinStep("idle");
+                                                                                            setPinValue("");
+                                                                                            setPinConfirm("");
+                                                                                            setPinSaving(false);
+                                                                                            toast.success("PIN changed successfully!");
+                                                                                        });
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }}
+                                                                        autoFocus
+                                                                    >
+                                                                        <InputOTPGroup>
+                                                                            <InputOTPSlot index={0} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={1} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={2} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                            <InputOTPSlot index={3} className={`w-12 h-12 text-lg font-bold ${pinError ? 'border-destructive' : ''}`} />
+                                                                        </InputOTPGroup>
+                                                                    </InputOTP>
+                                                                </div>
+                                                                {pinError && <p className="text-xs text-destructive text-center font-medium mt-2">{pinError}</p>}
+                                                            </div>
+                                                            <div className="flex gap-2 justify-end">
+                                                                <button
+                                                                    onClick={() => { setPinStep("idle"); setPinValue(""); setPinConfirm(""); setPinError(null); }}
+                                                                    className="gum-btn text-sm px-4 py-2 bg-secondary hover:bg-secondary/80 font-bold"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+
+                                                {/* Change PIN button (only when lock is enabled and no flow active) */}
+                                                {appLockEnabled && pinStep === "idle" && (
+                                                    <div className="mt-4 pt-4 border-t border-border">
+                                                        <div className="flex items-center justify-between">
+                                                            <div>
+                                                                <h3 className="font-bold mb-1 text-sm">Change PIN</h3>
+                                                                <p className="text-xs text-muted-foreground">Update your app lock PIN to a new one.</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setPinStep("change-new");
+                                                                    setPinValue("");
+                                                                    setPinConfirm("");
+                                                                    setPinError(null);
+                                                                }}
+                                                                className="gum-btn text-sm px-4 py-2 bg-secondary hover:bg-secondary/80 font-bold"
+                                                            >
+                                                                Change
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Info note */}
+                                                <p className="text-[11px] text-muted-foreground mt-4">
+                                                    This is a convenience lock stored in your browser. Clearing browser data will reset it.
+                                                </p>
                                             </div>
                                         </section>
                                     </motion.div>
