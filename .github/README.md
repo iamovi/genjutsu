@@ -19,11 +19,11 @@ most social platforms accumulate posts forever. your late-night takes, half-bake
 
 every post, comment, and message automatically deletes after 24 hours. this means:
 
-◆ you can post freely without worrying about your permanent record
+- you can post freely without worrying about your permanent record
 
-◆ the feed stays fresh and relevant
+- the feed stays fresh and relevant
 
-◆ performance stays fast no matter how many users join
+- performance stays fast no matter how many users join
 
 think snapchat meets twitter, but built for developers.
 
@@ -35,11 +35,11 @@ want to contribute? see [CONTRIBUTING.md](CONTRIBUTING.md) for setup and guideli
 
 building a social network is hard. building it alone is harder. by making genjutsu open source:
 
-◆ you can see exactly how your data is handled
+- you can see exactly how your data is handled
 
-◆ you can contribute features you want
+- you can contribute features you want
 
-◆ you can learn from real production code
+- you can learn from real production code
 
 plus, the best developer tools are built by developers, for developers.
 
@@ -49,9 +49,9 @@ mit — see [LICENSE](../LICENSE) file
 
 ## support
 
-◆ create an issue for bugs or feature requests
+- create an issue for bugs or feature requests
 
-◆ join discussions in the issues tab
+- join discussions in the issues tab
 
 **◆ Support this project to keep it alive and growing or just buy me a cup of tea / coffee! Click the image below:**
 
