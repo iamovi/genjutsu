@@ -40,17 +40,13 @@ const CommunityChat = () => {
         const val = e.target.value;
         setMessageText(val);
         
-        // Detect AI mention typing at the end of string (optimized)
-        // Only check last 3 chars instead of entire string for better performance
-        const len = val.length;
-        if (len === 0) {
+        // Detect AI mention typing at the end of string
+        const lowerVal = val.toLowerCase();
+        if (lowerVal.endsWith("@") || lowerVal.endsWith("@a") || lowerVal.endsWith("@ai")) {
+            setShowAiMention(true);
+        } else {
             setShowAiMention(false);
-            return;
         }
-        
-        const lastThree = val.slice(-3).toLowerCase();
-        const shouldShow = lastThree === "@ai" || lastThree.slice(-2) === "@a" || lastThree.slice(-1) === "@";
-        setShowAiMention(shouldShow);
     };
 
     const handleAiMentionSelect = () => {
