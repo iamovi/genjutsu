@@ -1,4 +1,4 @@
-import { Users, Hash } from "lucide-react";
+import { Users, Hash, Bug, Lightbulb } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -280,6 +280,29 @@ const Sidebar = ({ onAction }: SidebarProps) => {
           <Link to="/terms" onClick={() => onAction?.()} className="hover:text-primary transition-colors px-1">{t("sidebar.terms")}</Link>
           <span className="text-muted-foreground">·</span>
           <Link to="/privacy" onClick={() => onAction?.()} className="hover:text-primary transition-colors px-1">{t("sidebar.privacy")}</Link>
+        </div>
+        <div className="flex justify-center items-center gap-2 text-[11px]">
+          <a
+            href={`https://github.com/iamovi/genjutsu/issues/new?template=bug_report.yml&title=${encodeURIComponent("[BUG]: ")}&body=${encodeURIComponent(`\n\n---\n**Page:** ${window.location.href}\n**User Agent:** ${navigator.userAgent}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => onAction?.()}
+            className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors font-medium"
+          >
+            <Bug size={12} />
+            {t("sidebar.reportBug")}
+          </a>
+          <span className="text-muted-foreground">·</span>
+          <a
+            href="https://github.com/iamovi/genjutsu/issues/new?template=feature_request.yml"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => onAction?.()}
+            className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors font-medium"
+          >
+            <Lightbulb size={12} />
+            {t("sidebar.requestFeature")}
+          </a>
         </div>
         <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
           {t("sidebar.copyright")}

@@ -1,0 +1,27 @@
+name: Support / Question
+description: Ask for help or get support with genjutsu
+title: "[SUPPORT]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Need help with something? Ask away — we're happy to help.
+
+  - type: textarea
+    id: request
+    attributes:
+      label: Help Request
+      description: What do you need help with?
+      placeholder: Describe your question or issue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional Details
+      description: Any extra context that might help us assist you.
+      placeholder: Screenshots, links, error messages, etc.
+    validations:
+      required: false

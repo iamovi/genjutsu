@@ -52,7 +52,9 @@
     "about": "概要",
     "terms": "利用規約",
     "privacy": "プライバシー",
-    "copyright": "© 2026 Genjutsu. すべてが消え去る。"
+    "copyright": "© 2026 Genjutsu. すべてが消え去る。",
+    "reportBug": "バグを報告",
+    "requestFeature": "機能をリクエスト"
   },
   "feed": {
     "joinConversation": "会話に参加する",

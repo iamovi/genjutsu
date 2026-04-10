@@ -52,7 +52,9 @@
     "about": "Tungkol saan",
     "terms": "Mga Tuntunin",
     "privacy": "Privacy",
-    "copyright": "© 2026 Genjutsu. Naglalaho ang lahat."
+    "copyright": "© 2026 Genjutsu. Naglalaho ang lahat.",
+    "reportBug": "Mag-report ng Bug",
+    "requestFeature": "Humiling ng Feature"
   },
   "feed": {
     "joinConversation": "Sumali sa usapan",
