@@ -97,8 +97,8 @@ every post, comment, and message automatically deletes after 24 hours. this mean
 **languages**
 - EN · BN · HI · ES · PT · JA · KO · RU · FIL
 
-**pwa**
-- installable on mobile and desktop
+**twa**
+- installable on mobile
 
 </td>
 </tr>
