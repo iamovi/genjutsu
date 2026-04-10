@@ -6,7 +6,7 @@
 <p>
     <a href="https://genjutsu-social.vercel.app"><img src="https://img.shields.io/badge/live_app-genjutsu--social.vercel.app-9B78C2?style=flat-square" /></a>
     <a href="https://iamovi.github.io/genjutsu"><img src="https://img.shields.io/badge/download-TWA_Apk-9B78C2?style=flat-square" /></a>
-    <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-9B78C2?style=flat-square" /></a>
+    <a href="https://github.com/iamovi/genjutsu/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-9B78C2?style=flat-square" /></a>
     <a href="https://github.com/iamovi/genjutsu/releases/tag/version2"><img src="https://img.shields.io/badge/version-2-9B78C2?style=flat-square" /></a>
   </p>
 </div>
@@ -56,7 +56,7 @@ plus, the best developer tools are built by developers, for developers.
 
 ## license
 
-MIT Licensed — see [LICENSE](../LICENSE) file
+MIT Licensed — see [LICENSE](https://github.com/iamovi/genjutsu/blob/main/LICENSE) file
 
 <br />
 
