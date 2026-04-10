@@ -3,11 +3,11 @@
   <h1>genjutsu 幻術</h1>
   <p><i>a social network for developers where everything disappears after 24 hours</i></p>
 
-  <p>
-    <a href="https://genjutsu-social.vercel.app"><img src="https://img.shields.io/badge/live_app-genjutsu--social.vercel.app-black?style=flat-square" /></a>
-    <a href="https://iamovi.github.io/genjutsu"><img src="https://img.shields.io/badge/download-TWA_Apk-black?style=flat-square" /></a>
-    <img src="https://img.shields.io/badge/license-MIT-black?style=flat-square" />
-    <img src="https://img.shields.io/badge/version-2-black?style=flat-square" />
+<p>
+    <a href="https://genjutsu-social.vercel.app"><img src="https://img.shields.io/badge/live_app-genjutsu--social.vercel.app-9B78C2?style=flat-square" /></a>
+    <a href="https://iamovi.github.io/genjutsu"><img src="https://img.shields.io/badge/download-TWA_Apk-9B78C2?style=flat-square" /></a>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-9B78C2?style=flat-square" /></a>
+    <a href="https://github.com/iamovi/genjutsu/releases/tag/version2"><img src="https://img.shields.io/badge/version-2-9B78C2?style=flat-square" /></a>
   </p>
 </div>
 
