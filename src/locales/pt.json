@@ -52,7 +52,9 @@
     "about": "Sobre",
     "terms": "Termos",
     "privacy": "Privacidade",
-    "copyright": "© 2026 Genjutsu. Tudo desaparece."
+    "copyright": "© 2026 Genjutsu. Tudo desaparece.",
+    "reportBug": "Reportar Bug",
+    "requestFeature": "Solicitar Recurso"
   },
   "feed": {
     "joinConversation": "Junte-se à conversa",

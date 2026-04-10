@@ -52,7 +52,9 @@
     "about": "정보",
     "terms": "이용약관",
     "privacy": "개인정보",
-    "copyright": "© 2026 Genjutsu. 모든 것이 사라집니다."
+    "copyright": "© 2026 Genjutsu. 모든 것이 사라집니다.",
+    "reportBug": "버그 신고",
+    "requestFeature": "기능 요청"
   },
   "feed": {
     "joinConversation": "대화 참여",

@@ -52,7 +52,9 @@
     "about": "Detalles",
     "terms": "Términos",
     "privacy": "Privacidad",
-    "copyright": "© 2026 Genjutsu. Todo se desvanece."
+    "copyright": "© 2026 Genjutsu. Todo se desvanece.",
+    "reportBug": "Reportar Bug",
+    "requestFeature": "Solicitar Función"
   },
   "feed": {
     "joinConversation": "Únete al chat",

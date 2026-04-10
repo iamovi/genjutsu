@@ -52,7 +52,9 @@
     "about": "О нас",
     "terms": "Правила",
     "privacy": "Приватность",
-    "copyright": "© 2026 Genjutsu. Всё исчезает."
+    "copyright": "© 2026 Genjutsu. Всё исчезает.",
+    "reportBug": "Сообщить об ошибке",
+    "requestFeature": "Запросить функцию"
   },
   "feed": {
     "joinConversation": "Присоединяйтесь",

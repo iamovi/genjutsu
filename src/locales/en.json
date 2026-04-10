@@ -53,7 +53,9 @@
     "about": "About",
     "terms": "Terms",
     "privacy": "Privacy",
-    "copyright": "© 2026 Genjutsu. Everything vanishes."
+    "copyright": "© 2026 Genjutsu. Everything vanishes.",
+    "reportBug": "Report Bug",
+    "requestFeature": "Request Feature"
   },
   "feed": {
     "joinConversation": "Join the conversation",

@@ -52,7 +52,9 @@
     "about": "बारे में",
     "terms": "शर्तें",
     "privacy": "गोपनीयता",
-    "copyright": "© 2026 Genjutsu. सब कुछ गायब हो जाता है।"
+    "copyright": "© 2026 Genjutsu. सब कुछ गायब हो जाता है।",
+    "reportBug": "बग रिपोर्ट करें",
+    "requestFeature": "फीचर अनुरोध"
   },
   "feed": {
     "joinConversation": "चर्चा में शामिल हों",
