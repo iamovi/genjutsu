@@ -71,7 +71,7 @@ const Navbar = () => {
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <button onClick={() => navigate("/")} className="flex items-center gap-1 sm:gap-2 shrink-0">
             <div className="w-8 h-8 rounded-[3px] overflow-hidden">
-              <img src="/logo.png" alt="genjutsu" className="w-full h-full object-contain" />
+              <img src="/logo.webp" alt="genjutsu" width={32} height={32} className="w-full h-full object-contain" />
             </div>
             <span className="font-black text-lg tracking-tight text-primary">genjutsu</span>
           </button>

@@ -114,7 +114,7 @@ const AuthPage = () => {
             transition={{ duration: 0.6 }}
           >
             <div className="w-20 h-20 rounded-[3px] gum-border mb-8 overflow-hidden shadow-2xl transition-transform duration-500">
-              <img src="/fav.jpg" alt="genjutsu" className="w-full h-full object-cover" />
+              <img src="/fav.webp" alt="genjutsu" width={80} height={80} className="w-full h-full object-cover" />
             </div>
             <h1 className="text-7xl font-black tracking-tighter italic mb-6 leading-[0.9]">
               everything <br />
@@ -177,7 +177,7 @@ const AuthPage = () => {
               className="lg:hidden text-center mb-10"
             >
               <div className="w-16 h-16 rounded-[3px] gum-border mx-auto mb-6 overflow-hidden shadow-xl">
-                <img src="/fav.jpg" alt="genjutsu" className="w-full h-full object-cover" />
+                <img src="/fav.webp" alt="genjutsu" width={64} height={64} className="w-full h-full object-cover" />
               </div>
               <h1 className="text-4xl font-black tracking-tighter mb-2 italic">genjutsu</h1>
               <p className="text-muted-foreground text-sm font-medium">Everything vanishes. Social media for developers.</p>

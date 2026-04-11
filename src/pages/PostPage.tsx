@@ -445,7 +445,7 @@ const PostPage = () => {
                 <meta name="description" content={pageDesc} />
                 <meta property="og:title" content={pageTitle} />
                 <meta property="og:description" content={pageDesc} />
-                <meta property="og:image" content={post?.profiles?.avatar_url || "/fav.jpg"} />
+                <meta property="og:image" content={post?.profiles?.avatar_url || "/fav.webp"} />
             </Helmet>
             <Navbar />
             <main className="max-w-6xl mx-auto px-4 py-6">

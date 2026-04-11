@@ -28,7 +28,7 @@ const TermsPage = () => {
 
                     <div className="text-center">
                         <div className="w-16 h-16 rounded-[3px] gum-border overflow-hidden mx-auto mb-6">
-                            <img src="/fav.jpg" alt="genjutsu" className="w-full h-full object-cover" />
+                            <img src="/fav.webp" alt="genjutsu" width={64} height={64} loading="lazy" className="w-full h-full object-cover" />
                         </div>
                         <h1 className="text-4xl font-bold tracking-tighter">Terms of Service</h1>
                         <p className="text-muted-foreground mt-2">The simple rules of the genjutsu world.</p>

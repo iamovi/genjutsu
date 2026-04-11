@@ -129,7 +129,7 @@ export function AppLockGate({ children }: AppLockGateProps) {
                             transition={{ duration: 0.4 }}
                             className="flex items-center justify-center mb-2"
                         >
-                            <img src="/logo.png" alt="Genjutsu Logo" className="w-16 h-16 object-contain drop-shadow-md" />
+                            <img src="/logo.webp" alt="Genjutsu Logo" width={64} height={64} className="w-16 h-16 object-contain drop-shadow-md" />
                         </motion.div>
 
                         <div className="text-center space-y-2">

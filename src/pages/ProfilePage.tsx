@@ -338,7 +338,7 @@ const ProfilePage = () => {
                     <meta name="description" content={profile.bio || `Check out ${profile.display_name}'s profile on genjutsu.`} />
                     <meta property="og:title" content={`${profile.display_name} (u/${profile.username}) — genjutsu`} />
                     <meta property="og:description" content={profile.bio || `Check out ${profile.display_name}'s profile on genjutsu.`} />
-                    <meta property="og:image" content={profile.avatar_url || "/fav.jpg"} />
+                    <meta property="og:image" content={profile.avatar_url || "/fav.webp"} />
                 </Helmet>
             )}
             <Navbar />
