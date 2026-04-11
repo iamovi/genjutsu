@@ -50,7 +50,7 @@ export default async function handler(req) {
     try {
         let title = 'Genjutsu';
         let description = 'The 24 hour social network for developers.';
-        let image = `${APP_URL}/fav.jpg`;
+        let image = `${APP_URL}/og-image.png`;
         let targetUrl = APP_URL;
         let bodyContent = '';
 
@@ -81,7 +81,7 @@ export default async function handler(req) {
             description = post.content
                 ? (post.content.length > 200 ? post.content.substring(0, 200) + '...' : post.content)
                 : 'View this post on Genjutsu.';
-            image = post.media_url || avatarUrl || `${APP_URL}/fav.jpg`;
+            image = post.media_url || avatarUrl || `${APP_URL}/og-image.png`;
             targetUrl = `${APP_URL}/post/${postId}`;
 
             bodyContent = `
@@ -125,7 +125,7 @@ export default async function handler(req) {
                 description = profile.bio
                     ? (profile.bio.length > 160 ? profile.bio.substring(0, 160) + '...' : profile.bio)
                     : `Check out ${displayName}'s profile on Genjutsu, the 24-hour developer social network.`;
-                image = profile.avatar_url || `${APP_URL}/fav.jpg`;
+                image = profile.avatar_url || `${APP_URL}/og-image.png`;
                 targetUrl = `${APP_URL}/u/${cleanUsername}`;
 
                 bodyContent = `
