@@ -28,14 +28,14 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       registerType: "autoUpdate",
       injectRegister: "auto",
-      workbox: {
-        // PWABuilder requires a Service Worker, but we don't want to cache 
-        // the app offline so users always get the freshest network version.
-        clientsClaim: true,
-        skipWaiting: true,
-        runtimeCaching: [], // Empty caching array = no aggressive precaching
+      injectManifest: {
+        // No precaching — users always get the freshest network version
+        globPatterns: [],
       },
       manifest: {
         name: "genjutsu — everything vanishes",

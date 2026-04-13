@@ -4,6 +4,7 @@ export interface Config {
   VITE_ADMIN_EMAILS: string;
   VITE_LANG_SERVICE: string;
   VITE_SENTRY_DSN: string;
+  VITE_VAPID_PUBLIC_KEY?: string;
   // These are only available in DEV. In PROD, they are proxied via Cloudflare Worker.
   VITE_GROQ_API_KEY?: string;
   VITE_ABLY_KEY?: string;
@@ -30,6 +31,7 @@ export async function loadConfig(): Promise<Config> {
       VITE_ADMIN_EMAILS: import.meta.env.VITE_ADMIN_EMAILS || "",
       VITE_LANG_SERVICE: import.meta.env.VITE_LANG_SERVICE || "",
       VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN || "",
+      VITE_VAPID_PUBLIC_KEY: import.meta.env.VITE_VAPID_PUBLIC_KEY || "",
     };
   } else {
     try {
@@ -49,6 +51,7 @@ export async function loadConfig(): Promise<Config> {
         VITE_ADMIN_EMAILS: import.meta.env.VITE_ADMIN_EMAILS || "",
         VITE_LANG_SERVICE: import.meta.env.VITE_LANG_SERVICE || "",
         VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN || "",
+        VITE_VAPID_PUBLIC_KEY: import.meta.env.VITE_VAPID_PUBLIC_KEY || "",
       };
     }
   }

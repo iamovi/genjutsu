@@ -2,8 +2,340 @@ const ALLOWED_ORIGINS = [
   "https://genjutsu-social.vercel.app",
 ];
 
+// =============================================================================
+// Web Push Helpers (VAPID + Encryption via Web Crypto API)
+// =============================================================================
+
+function base64UrlEncode(buffer) {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64UrlDecode(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  const binary = atob(str);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+async function importVapidKeys(publicKeyB64, privateKeyB64) {
+  const publicKeyBytes = base64UrlDecode(publicKeyB64);
+  const privateKeyBytes = base64UrlDecode(privateKeyB64);
+
+  const jwk = {
+    kty: 'EC',
+    crv: 'P-256',
+    x: base64UrlEncode(publicKeyBytes.slice(1, 33)),
+    y: base64UrlEncode(publicKeyBytes.slice(33, 65)),
+    d: base64UrlEncode(privateKeyBytes),
+  };
+
+  const privateKey = await crypto.subtle.importKey(
+    'jwk', jwk,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign']
+  );
+
+  return { privateKey, publicKeyBytes };
+}
+
+async function createVapidAuthHeader(endpoint, vapidPublicKey, vapidPrivateKey, subject) {
+  const endpointUrl = new URL(endpoint);
+  const audience = `${endpointUrl.protocol}//${endpointUrl.host}`;
+
+  const { privateKey, publicKeyBytes } = await importVapidKeys(vapidPublicKey, vapidPrivateKey);
+
+  const header = { typ: 'JWT', alg: 'ES256' };
+  const payload = {
+    aud: audience,
+    exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60,
+    sub: subject,
+  };
+
+  const encodedHeader = base64UrlEncode(new TextEncoder().encode(JSON.stringify(header)));
+  const encodedPayload = base64UrlEncode(new TextEncoder().encode(JSON.stringify(payload)));
+  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
+
+  const signature = await crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    privateKey,
+    new TextEncoder().encode(unsignedToken)
+  );
+
+  // Web Crypto returns raw r||s (64 bytes) on most platforms
+  const sigBytes = new Uint8Array(signature);
+  const rawSig = sigBytes.length === 64
+    ? sigBytes
+    : (() => {
+        // DER format fallback: 0x30 <len> 0x02 <rlen> <r> 0x02 <slen> <s>
+        let offset = 2;
+        offset += 1;
+        const rLen = sigBytes[offset++];
+        const rRaw = sigBytes.slice(offset, offset + rLen);
+        offset += rLen + 1;
+        const sLen = sigBytes[offset++];
+        const sRaw = sigBytes.slice(offset, offset + sLen);
+        const r = new Uint8Array(32);
+        const s = new Uint8Array(32);
+        r.set(rRaw.length > 32 ? rRaw.slice(rRaw.length - 32) : rRaw, 32 - Math.min(rRaw.length, 32));
+        s.set(sRaw.length > 32 ? sRaw.slice(sRaw.length - 32) : sRaw, 32 - Math.min(sRaw.length, 32));
+        const out = new Uint8Array(64);
+        out.set(r, 0);
+        out.set(s, 32);
+        return out;
+      })();
+
+  const token = `${unsignedToken}.${base64UrlEncode(rawSig)}`;
+
+  return {
+    authorization: `vapid t=${token}, k=${base64UrlEncode(publicKeyBytes)}`,
+  };
+}
+
+async function encryptPayload(subscriptionKeys, payloadText) {
+  const p256dhBytes = base64UrlDecode(subscriptionKeys.p256dh);
+  const authBytes = base64UrlDecode(subscriptionKeys.auth);
+  const payloadBytes = new TextEncoder().encode(payloadText);
+
+  // Import subscriber's public key
+  const subscriberKey = await crypto.subtle.importKey(
+    'raw', p256dhBytes,
+    { name: 'ECDH', namedCurve: 'P-256' },
+    false,
+    []
+  );
+
+  // Generate ephemeral ECDH key pair
+  const localKeyPair = await crypto.subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' },
+    true,
+    ['deriveBits']
+  );
+
+  // ECDH shared secret
+  const sharedSecret = new Uint8Array(
+    await crypto.subtle.deriveBits(
+      { name: 'ECDH', public: subscriberKey },
+      localKeyPair.privateKey,
+      256
+    )
+  );
+
+  const localPublicKeyBytes = new Uint8Array(
+    await crypto.subtle.exportKey('raw', localKeyPair.publicKey)
+  );
+
+  // RFC 8291 key derivation
+  // PRK = HMAC-SHA-256(auth_secret, ecdh_secret)
+  const prkHmacKey = await crypto.subtle.importKey(
+    'raw', authBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const prk = new Uint8Array(await crypto.subtle.sign('HMAC', prkHmacKey, sharedSecret));
+
+  // key_info = "WebPush: info" || 0x00 || ua_public || as_public
+  const keyInfoBuf = new Uint8Array([
+    ...new TextEncoder().encode('WebPush: info\0'),
+    ...p256dhBytes,
+    ...localPublicKeyBytes,
+  ]);
+
+  // IKM = HMAC-SHA-256(PRK, key_info || 0x01)
+  const ikmHmacKey = await crypto.subtle.importKey(
+    'raw', prk, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const ikm = new Uint8Array(
+    await crypto.subtle.sign('HMAC', ikmHmacKey, new Uint8Array([...keyInfoBuf, 1]))
+  ).slice(0, 32);
+
+  // Generate random salt
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+
+  // Derive CEK and nonce via HKDF from IKM + salt
+  const hkdfKey = await crypto.subtle.importKey('raw', ikm, { name: 'HKDF' }, false, ['deriveBits']);
+
+  const cekInfo = new TextEncoder().encode('Content-Encoding: aes128gcm\0');
+  const nonceInfo = new TextEncoder().encode('Content-Encoding: nonce\0');
+
+  const cekBits = await crypto.subtle.deriveBits(
+    { name: 'HKDF', hash: 'SHA-256', salt, info: cekInfo },
+    hkdfKey, 128
+  );
+
+  const nonceBits = await crypto.subtle.deriveBits(
+    { name: 'HKDF', hash: 'SHA-256', salt, info: nonceInfo },
+    hkdfKey, 96
+  );
+
+  // Encrypt: payload || 0x02 (final record delimiter)
+  const record = new Uint8Array(payloadBytes.length + 1);
+  record.set(payloadBytes, 0);
+  record[payloadBytes.length] = 2;
+
+  const cek = await crypto.subtle.importKey(
+    'raw', cekBits, { name: 'AES-GCM' }, false, ['encrypt']
+  );
+
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: new Uint8Array(nonceBits), tagLength: 128 },
+    cek, record
+  );
+
+  // Build aes128gcm header: salt(16) || rs(4) || idlen(1) || keyid(65)
+  const rs = 4096;
+  const headerBuf = new Uint8Array(86); // 16 + 4 + 1 + 65
+  headerBuf.set(salt, 0);
+  new DataView(headerBuf.buffer).setUint32(16, rs);
+  headerBuf[20] = 65;
+  headerBuf.set(localPublicKeyBytes, 21);
+
+  const body = new Uint8Array(headerBuf.length + ciphertext.byteLength);
+  body.set(headerBuf, 0);
+  body.set(new Uint8Array(ciphertext), headerBuf.length);
+
+  return body;
+}
+
+async function sendWebPush(subscription, payload, vapidPublicKey, vapidPrivateKey, vapidSubject) {
+  const { authorization } = await createVapidAuthHeader(
+    subscription.endpoint, vapidPublicKey, vapidPrivateKey, vapidSubject
+  );
+
+  const encryptedBody = await encryptPayload(
+    { p256dh: subscription.p256dh, auth: subscription.auth },
+    JSON.stringify(payload)
+  );
+
+  return fetch(subscription.endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': authorization,
+      'Content-Encoding': 'aes128gcm',
+      'Content-Type': 'application/octet-stream',
+      'TTL': '86400',
+      'Urgency': 'normal',
+    },
+    body: encryptedBody,
+  });
+}
+
+// =============================================================================
+// Main Worker
+// =============================================================================
+
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    // =========================================================================
+    // /send-push — Called by Supabase pg_net trigger (no CORS, bearer auth)
+    // =========================================================================
+    if (url.pathname === "/send-push" && request.method === "POST") {
+      try {
+        const authHeader = request.headers.get("Authorization") || "";
+        const token = authHeader.replace("Bearer ", "");
+        if (!token || token !== env.PUSH_API_SECRET) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+
+        const body = await request.json();
+        const userId = body.user_id;
+        if (!userId) {
+          return new Response(JSON.stringify({ error: "missing user_id" }), { status: 400 });
+        }
+
+        // Fetch push subscriptions from Supabase
+        const supabaseUrl = env.VITE_SUPABASE_URL;
+        const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+
+        const subsResponse = await fetch(
+          `${supabaseUrl}/rest/v1/push_subscriptions?user_id=eq.${userId}&select=endpoint,p256dh,auth`,
+          {
+            headers: {
+              'apikey': serviceKey,
+              'Authorization': `Bearer ${serviceKey}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!subsResponse.ok) {
+          return new Response(JSON.stringify({ error: "Failed to fetch subscriptions" }), { status: 500 });
+        }
+
+        const subscriptions = await subsResponse.json();
+        if (!subscriptions || subscriptions.length === 0) {
+          return new Response(JSON.stringify({ sent: 0 }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        const pushPayload = {
+          title: "genjutsu",
+          body: "You got a new notification \u2014 open app to see",
+          icon: "/icon-192x192.png",
+          url: "https://genjutsu-social.vercel.app",
+        };
+
+        const vapidPublicKey = env.VAPID_PUBLIC_KEY;
+        const vapidPrivateKey = env.VAPID_PRIVATE_KEY;
+        const vapidSubject = "mailto:genjutsu@proton.me";
+
+        let sent = 0;
+        let failed = 0;
+        const staleEndpoints = [];
+
+        for (const sub of subscriptions) {
+          try {
+            const pushResponse = await sendWebPush(
+              sub, pushPayload, vapidPublicKey, vapidPrivateKey, vapidSubject
+            );
+            if (pushResponse.status === 201 || pushResponse.status === 200) {
+              sent++;
+            } else if (pushResponse.status === 404 || pushResponse.status === 410) {
+              staleEndpoints.push(sub.endpoint);
+              failed++;
+            } else {
+              failed++;
+            }
+          } catch {
+            failed++;
+          }
+        }
+
+        // Clean up stale/expired subscriptions
+        if (staleEndpoints.length > 0) {
+          for (const endpoint of staleEndpoints) {
+            await fetch(
+              `${supabaseUrl}/rest/v1/push_subscriptions?user_id=eq.${userId}&endpoint=eq.${encodeURIComponent(endpoint)}`,
+              {
+                method: 'DELETE',
+                headers: {
+                  'apikey': serviceKey,
+                  'Authorization': `Bearer ${serviceKey}`,
+                },
+              }
+            ).catch(() => {});
+          }
+        }
+
+        return new Response(JSON.stringify({ sent, failed }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+      }
+    }
+
+    // =========================================================================
+    // Browser-facing endpoints (CORS-protected)
+    // =========================================================================
     const origin = request.headers.get("Origin") || "";
     const isAllowed = ALLOWED_ORIGINS.includes(origin);
 
@@ -24,16 +356,14 @@ export default {
       return new Response("Forbidden", { status: 403 });
     }
 
-    const url = new URL(request.url);
-
     if (url.pathname === "/config" && request.method === "GET") {
-      // Keys are NOT included here anymore!
       const config = {
         VITE_SUPABASE_URL: env.VITE_SUPABASE_URL,
         VITE_SUPABASE_PUBLISHABLE_KEY: env.VITE_SUPABASE_PUBLISHABLE_KEY,
         VITE_ADMIN_EMAILS: env.VITE_ADMIN_EMAILS,
         VITE_LANG_SERVICE: env.VITE_LANG_SERVICE,
         VITE_SENTRY_DSN: env.VITE_SENTRY_DSN,
+        VITE_VAPID_PUBLIC_KEY: env.VAPID_PUBLIC_KEY,
       };
 
       return new Response(JSON.stringify(config), {
