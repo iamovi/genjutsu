@@ -34,6 +34,7 @@ export default {
         VITE_ADMIN_EMAILS: env.VITE_ADMIN_EMAILS,
         VITE_LANG_SERVICE: env.VITE_LANG_SERVICE,
         VITE_SENTRY_DSN: env.VITE_SENTRY_DSN,
+        VITE_VAPID_PUBLIC_KEY: env.VAPID_PUBLIC_KEY,
       };
 
       return new Response(JSON.stringify(config), {

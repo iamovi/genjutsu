@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import Navbar from "@/components/Navbar";
-import { LogOut, ArrowLeft, Shield, Settings, Check, AtSign, Globe, Palette, Moon, Sun, Monitor, Pipette, WandSparkles, Music, Volume2, VolumeX, Clock, Lock, Eye, EyeOff, KeyRound, Layout, Type, Square, Grid } from "lucide-react";
+import { LogOut, ArrowLeft, Shield, Settings, Check, AtSign, Globe, Palette, Moon, Sun, Monitor, Pipette, WandSparkles, Music, Volume2, VolumeX, Clock, Lock, Eye, EyeOff, KeyRound, Layout, Type, Square, Grid, Bell, BellOff } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/components/theme-provider";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { hashPin, verifyPin, APP_LOCK_HASH_KEY, APP_LOCK_SESSION_KEY, APP_LOCK_Q1_KEY, APP_LOCK_Q2_KEY, APP_LOCK_A1_HASH_KEY, APP_LOCK_A2_HASH_KEY, PREDEFINED_QUESTIONS, formatAnswer } from "@/lib/pin";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -30,6 +31,7 @@ const SettingsPage = () => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const { theme, color, customColor, font, radius, animateColor, cursorTrail, grid, soundEnabled, shadowWalk, setTheme, setColor, setCustomColor, setFont, setRadius, setAnimateColor, setCursorTrail, setGrid, setSoundEnabled, setShadowWalk } = useTheme();
+    const pushNotifications = usePushNotifications();
 
     const [newUsername, setNewUsername] = useState("");
     const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -375,6 +377,45 @@ const SettingsPage = () => {
                                                 <p className="text-[11px] text-muted-foreground mt-2">
                                                     3–20 characters. Lowercase letters, numbers, and underscores only.
                                                 </p>
+                                            </div>
+
+                                            {/* Push Notifications */}
+                                            <div className="pt-6 border-t border-border">
+                                                <h2 className="text-lg font-bold mb-1 flex items-center gap-2">
+                                                    <Bell size={20} />
+                                                    Push Notifications
+                                                </h2>
+                                                <p className="text-sm text-muted-foreground mb-4">
+                                                    Get notified when someone likes, comments, follows, or mentions you — even when the app is closed.
+                                                </p>
+                                                {!pushNotifications.isSupported ? (
+                                                    <p className="text-sm text-muted-foreground italic">Push notifications are not supported in this browser.</p>
+                                                ) : pushNotifications.permission === "denied" ? (
+                                                    <p className="text-sm text-destructive">Notifications are blocked. Please enable them in your browser settings.</p>
+                                                ) : (
+                                                    <button
+                                                        onClick={async () => {
+                                                            const { error } = await pushNotifications.toggle();
+                                                            if (error) {
+                                                                toast.error(error);
+                                                            } else {
+                                                                toast.success(pushNotifications.isSubscribed ? "Push notifications disabled" : "Push notifications enabled!");
+                                                            }
+                                                        }}
+                                                        disabled={pushNotifications.loading}
+                                                        className={`gum-btn flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold w-full sm:w-auto ${
+                                                            pushNotifications.isSubscribed
+                                                                ? "border-2 border-foreground bg-secondary hover:bg-secondary/80"
+                                                                : "bg-primary text-primary-foreground"
+                                                        }`}
+                                                    >
+                                                        {pushNotifications.isSubscribed ? (
+                                                            <><BellOff size={18} /> Disable Notifications</>
+                                                        ) : (
+                                                            <><Bell size={18} /> Enable Notifications</>
+                                                        )}
+                                                    </button>
+                                                )}
                                             </div>
 
                                             {/* Log Out Section */}
