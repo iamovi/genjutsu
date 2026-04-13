@@ -254,19 +254,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Authenticate: accept either the auto-injected service role key
-    // or the key passed from the DB trigger via Vault
-    const authHeader = req.headers.get("Authorization") || "";
-    const token = authHeader.replace("Bearer ", "");
-
+    // No custom auth check needed — JWT verify is disabled in deployment
+    // and this function is only called internally by the DB trigger via pg_net
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    // Use the service role key for DB access regardless of auth method
-    // The token from pg_net is the Vault secret; we use service role for actual work
-    if (!token) {
-      return new Response("Unauthorized", { status: 401 });
-    }
 
     const body = await req.json();
     const userId = body.user_id;
