@@ -302,7 +302,7 @@ Deno.serve(async (req) => {
     const pushPayload = {
       title: "genjutsu",
       body: "You got a new notification \u2014 open app to see",
-      icon: "/icon-192x192.png",
+      icon: "https://genjutsu-social.vercel.app/icon-192x192.png",
       url: "https://genjutsu-social.vercel.app",
     };
 

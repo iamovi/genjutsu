@@ -15,7 +15,7 @@ self.addEventListener('push', (event: any) => {
   let data = {
     title: 'genjutsu',
     body: 'You got a new notification — open app to see',
-    icon: '/icon-192x192.png',
+    icon: 'https://genjutsu-social.vercel.app/icon-192x192.png',
     url: 'https://genjutsu-social.vercel.app',
   };
 
@@ -32,7 +32,7 @@ self.addEventListener('push', (event: any) => {
     (self as any).registration.showNotification(data.title, {
       body: data.body,
       icon: data.icon,
-      badge: '/icon-192x192.png',
+      badge: 'https://genjutsu-social.vercel.app/icon-192x192.png',
       tag: 'genjutsu-notification',
       renotify: true,
       data: { url: data.url },
