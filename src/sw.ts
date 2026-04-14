@@ -29,13 +29,24 @@ self.addEventListener('push', (event: any) => {
   }
 
   event.waitUntil(
-    (self as any).registration.showNotification(data.title, {
-      body: data.body,
-      icon: data.icon,
-      badge: 'https://genjutsu-social.vercel.app/badge-96x96.png',
-      tag: `genjutsu-${Date.now()}`,
-      renotify: true,
-      data: { url: data.url },
+    (self as any).clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList: any[]) => {
+      // Check if the user is already looking at the app
+      for (const client of clientList) {
+        if (client.focused) {
+          // App is focused. Don't show OS notification (they will see it in-app).
+          return;
+        }
+      }
+
+      // App is not focused, show the OS notification
+      return (self as any).registration.showNotification(data.title, {
+        body: data.body,
+        icon: data.icon,
+        badge: 'https://genjutsu-social.vercel.app/badge-96x96.png',
+        tag: `genjutsu-${Date.now()}`,
+        renotify: true,
+        data: { url: data.url },
+      });
     })
   );
 });
