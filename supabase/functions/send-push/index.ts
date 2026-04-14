@@ -261,6 +261,9 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const userId = body.user_id;
+    const notificationType = body.type;
+    const actorId = body.actor_id;
+    const postId = body.post_id;
     if (!userId) {
       return new Response(JSON.stringify({ error: "missing user_id" }), {
         status: 400,
@@ -299,11 +302,60 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Build detailed notification message
+    let notifBody = "You got a new notification — open app to see";
+    let notifUrl = "https://genjutsu-social.vercel.app";
+
+    if (actorId && notificationType) {
+      // Look up actor's display name
+      const { data: actorProfile } = await supabase
+        .from("profiles")
+        .select("display_name, username")
+        .eq("user_id", actorId)
+        .single();
+
+      const actorName = actorProfile?.display_name || "Someone";
+      const actorUsername = actorProfile?.username;
+
+      switch (notificationType) {
+        case "like":
+          notifBody = `${actorName} resonated with your post`;
+          break;
+        case "unlike":
+          notifBody = `${actorName} stopped resonating with your post`;
+          break;
+        case "comment":
+          notifBody = `${actorName} echoed on your post`;
+          break;
+        case "uncomment":
+          notifBody = `${actorName} erased their echo on your post`;
+          break;
+        case "follow":
+          notifBody = `${actorName} started following you`;
+          break;
+        case "unfollow":
+          notifBody = `${actorName} stopped following you`;
+          break;
+        case "mention":
+          notifBody = `${actorName} mentioned you in a void`;
+          break;
+      }
+
+      // Set click URL based on notification type
+      if (notificationType === "follow" || notificationType === "unfollow") {
+        if (actorUsername) {
+          notifUrl = `https://genjutsu-social.vercel.app/u/${actorUsername}`;
+        }
+      } else if (postId) {
+        notifUrl = `https://genjutsu-social.vercel.app/post/${postId}`;
+      }
+    }
+
     const pushPayload = {
       title: "genjutsu",
-      body: "You got a new notification \u2014 open app to see",
+      body: notifBody,
       icon: "https://genjutsu-social.vercel.app/icon-192x192.png",
-      url: "https://genjutsu-social.vercel.app",
+      url: notifUrl,
     };
 
     const vapidSubject = "mailto:genjutsu@proton.me";
