@@ -33,7 +33,7 @@ self.addEventListener('push', (event: any) => {
       body: data.body,
       icon: data.icon,
       badge: 'https://genjutsu-social.vercel.app/badge-96x96.png',
-      tag: 'genjutsu-notification',
+      tag: `genjutsu-${Date.now()}`,
       renotify: true,
       data: { url: data.url },
     })
