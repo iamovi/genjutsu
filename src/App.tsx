@@ -16,6 +16,7 @@ import { SoundEngine } from "@/hooks/useSound";
 import { ShadowWalkEngine } from "@/components/ShadowWalk";
 import { AppLockGate } from "@/components/AppLockGate";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import { FloatingWhisperBubble } from "@/components/FloatingWhisperBubble";
 
 import Index from "@/pages/Index";
 const AuthPage = lazy(() => import("@/pages/AuthPage"));
@@ -63,6 +64,7 @@ const App = () => {
               <ScrollToTop />
               <GoogleAnalytics />
               <AuthProvider>
+                <FloatingWhisperBubble />
                 <Suspense
                   fallback={
                     <div className="flex h-screen items-center justify-center">
