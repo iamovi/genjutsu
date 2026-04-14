@@ -1180,7 +1180,12 @@ BEGIN
           'Content-Type', 'application/json',
           'Authorization', 'Bearer ' || v_service_key
         ),
-        body := jsonb_build_object('user_id', NEW.user_id)
+        body := jsonb_build_object(
+          'user_id', NEW.user_id,
+          'type', NEW.type,
+          'actor_id', NEW.actor_id,
+          'post_id', NEW.post_id
+        )
       );
     END IF;
   END IF;
