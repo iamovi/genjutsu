@@ -1,7 +1,7 @@
 import { precacheAndRoute } from 'workbox-precaching';
 
 // Workbox precache manifest (injected by vite-plugin-pwa)
-precacheAndRoute(self.__WB_MANIFEST);
+precacheAndRoute((self as any).__WB_MANIFEST);
 
 // Claim clients immediately so the SW activates on first install
 (self as any).skipWaiting();
@@ -32,8 +32,9 @@ self.addEventListener('push', (event: any) => {
     (self as any).clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList: any[]) => {
       // Check if the user is already looking at the app
       for (const client of clientList) {
-        if (client.focused) {
-          // App is focused. Don't show OS notification (they will see it in-app).
+        // Mobile browsers often rely on visibilityState rather than strict focus
+        if (client.focused || client.visibilityState === 'visible') {
+          // App is actively on screen. Don't show OS notification.
           return;
         }
       }
