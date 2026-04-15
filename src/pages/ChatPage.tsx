@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet-async";
 import { linkify } from "@/lib/linkify";
+import WhisperLinkPreview from "@/components/WhisperLinkPreview";
 
 const ChatPage = () => {
     const { username } = useParams<{ username: string }>();
@@ -163,7 +164,9 @@ const ChatPage = () => {
                                     }`}>
                                     <p className="whitespace-pre-wrap break-words">
                                         {linkify(whisper.content)}
-                                    </p>                                    <span className={`text-[9px] mt-1.5 block font-mono opacity-60 ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                                    </p>
+                                    <WhisperLinkPreview content={whisper.content} isMe={isMe} />
+                                    <span className={`text-[9px] mt-1.5 block font-mono opacity-60 ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                                         {new Date(whisper.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
                                 </div>

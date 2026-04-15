@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Helmet } from "react-helmet-async";
 import { linkify } from "@/lib/linkify";
 import ReactMarkdown from "react-markdown";
+import WhisperLinkPreview from "@/components/WhisperLinkPreview";
 
 function ChatInputForm({ sendMessage, isSending, user, navigate }: any) {
     const [messageText, setMessageText] = useState("");
@@ -274,9 +275,12 @@ const CommunityChat = () => {
                                                     {msg.content}
                                                 </ReactMarkdown>
                                             ) : (
-                                                <p>
-                                                    {linkify(msg.content, isMe)}
-                                                </p>
+                                                <>
+                                                    <p>
+                                                        {linkify(msg.content, isMe)}
+                                                    </p>
+                                                    <WhisperLinkPreview content={msg.content} isMe={isMe} />
+                                                </>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2 mt-1">
