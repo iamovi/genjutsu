@@ -27,9 +27,11 @@ export function FloatingWhisperBubble() {
 
   if (!user || !incoming) return null;
 
-  // Don't show if the user is already in this exact whisper chat
-  const isOnThisChat = location.pathname === `/whisper/${incoming.senderUsername}`;
-  if (isOnThisChat) return null;
+  // Don't show bubble anywhere inside whisper inbox/chat routes.
+  const isInWhisperInbox =
+    /^\/whisper(\/|$)/.test(location.pathname) ||
+    /^\/whispers(\/|$)/.test(location.pathname);
+  if (isInWhisperInbox) return null;
 
   const handleOpen = () => {
     setIsExiting(true);
