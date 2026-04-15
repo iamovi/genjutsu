@@ -23,9 +23,35 @@ User-agent: ClaudeBot
 Allow: /
 User-agent: Claude-Web
 Allow: /
+User-agent: Claude-User
+Allow: /
+User-agent: Anthropic-AI
+Allow: /
 
 # Google AI (Gemini)
 User-agent: Google-Extended
+Allow: /
+User-agent: GoogleOther
+Allow: /
+
+# Other AI assistants / crawlers
+User-agent: PerplexityBot
+Allow: /
+User-agent: YouBot
+Allow: /
+User-agent: KagiBot
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+User-agent: Meta-ExternalAgent
+Allow: /
+User-agent: meta-externalagent
+Allow: /
+User-agent: cohere-ai
+Allow: /
+User-agent: Bytespider
+Allow: /
+User-agent: Amazonbot
 Allow: /
 
 # CCBot (Common Crawl / AI datasets)
