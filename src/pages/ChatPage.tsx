@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useWhispers, Whisper } from "@/hooks/useWhispers";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, ImageIcon, X } from "lucide-react";
+import { ArrowLeft, Send, ImageIcon, X, Download } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,6 +11,12 @@ import { toast } from "sonner";
 import { Helmet } from "react-helmet-async";
 import { linkify } from "@/lib/linkify";
 import WhisperLinkPreview from "@/components/WhisperLinkPreview";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 const ChatPage = () => {
     const { username } = useParams<{ username: string }>();
@@ -19,11 +25,15 @@ const ChatPage = () => {
     const [messageText, setMessageText] = useState("");
     const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
     const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState<string | null>(null);
+    const [activeLightboxImageUrl, setActiveLightboxImageUrl] = useState<string | null>(null);
+    const [isDownloadingLightboxImage, setIsDownloadingLightboxImage] = useState(false);
+    const [isDraggingImage, setIsDraggingImage] = useState(false);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const dragDepthRef = useRef(0);
 
     // Fetch target profile first
     useEffect(() => {
@@ -140,6 +150,93 @@ const ChatPage = () => {
         }, 2000);
     };
 
+    const handleComposerDragEnter = (e: React.DragEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const hasFiles = Array.from(e.dataTransfer.types || []).includes("Files");
+        if (!hasFiles) return;
+        dragDepthRef.current += 1;
+        setIsDraggingImage(true);
+    };
+
+    const handleComposerDragOver = (e: React.DragEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const hasFiles = Array.from(e.dataTransfer.types || []).includes("Files");
+        if (!hasFiles && isDraggingImage) {
+            setIsDraggingImage(false);
+            dragDepthRef.current = 0;
+        }
+    };
+
+    const handleComposerDragLeave = (e: React.DragEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+        if (dragDepthRef.current === 0) {
+            setIsDraggingImage(false);
+        }
+    };
+
+    const handleComposerDrop = (e: React.DragEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragDepthRef.current = 0;
+        setIsDraggingImage(false);
+
+        const hasFiles = Array.from(e.dataTransfer.types || []).includes("Files");
+        if (!hasFiles) return;
+        if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+        handleImageFile(e.dataTransfer.files[0]);
+        e.dataTransfer.clearData();
+    };
+
+    const getDownloadFilename = (imageUrl: string) => {
+        try {
+            const cleanUrl = imageUrl.split("?")[0].split("#")[0];
+            const raw = cleanUrl.split("/").pop() || "whisper-image";
+            const safe = raw.replace(/[^a-zA-Z0-9._-]/g, "_");
+            return safe || "whisper-image";
+        } catch {
+            return "whisper-image";
+        }
+    };
+
+    const handleDownloadLightboxImage = async () => {
+        if (!activeLightboxImageUrl || isDownloadingLightboxImage) return;
+
+        setIsDownloadingLightboxImage(true);
+        const filename = getDownloadFilename(activeLightboxImageUrl);
+
+        try {
+            const response = await fetch(activeLightboxImageUrl);
+            if (!response.ok) throw new Error("Download failed");
+
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            URL.revokeObjectURL(blobUrl);
+            toast.success("Image downloaded.");
+        } catch {
+            // Fallback: open the file source so users can still save it manually.
+            const a = document.createElement("a");
+            a.href = activeLightboxImageUrl;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.click();
+            toast.info("Opened image in new tab. Save it from there if auto-download is blocked.");
+        } finally {
+            setIsDownloadingLightboxImage(false);
+        }
+    };
+
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if ((!messageText.trim() && !selectedImageFile) || isSending || isUploadingImage || !targetProfile) return;
@@ -247,11 +344,11 @@ const ChatPage = () => {
                                         </p>
                                     ) : null}
                                     {whisper.media_url ? (
-                                        <a
-                                            href={whisper.media_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="block mt-2 rounded-[3px] overflow-hidden border border-border/40"
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveLightboxImageUrl(whisper.media_url)}
+                                            className={`block w-full rounded-[3px] overflow-hidden border border-border/40 cursor-zoom-in ${hasText ? "mt-2" : ""}`}
+                                            aria-label="Open whisper image"
                                         >
                                             <img
                                                 src={whisper.media_url}
@@ -259,7 +356,7 @@ const ChatPage = () => {
                                                 className="w-full max-h-72 object-cover"
                                                 loading="lazy"
                                             />
-                                        </a>
+                                        </button>
                                     ) : null}
                                     {hasText ? <WhisperLinkPreview content={whisper.content} isMe={isMe} /> : null}
                                     <span className={`text-[9px] mt-1.5 block font-mono opacity-60 ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
@@ -303,8 +400,54 @@ const ChatPage = () => {
                 <div ref={messagesEndRef} className="h-4" />
             </main>
 
-            <footer className="shrink-0 bg-background/95 backdrop-blur-md border-t-2 border-border p-4 pb-safe">
-                <form onSubmit={handleSend} className="max-w-4xl mx-auto space-y-2.5">
+            <Dialog
+                open={!!activeLightboxImageUrl}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setActiveLightboxImageUrl(null);
+                        setIsDownloadingLightboxImage(false);
+                    }
+                }}
+            >
+                <DialogContent className="max-w-[90vw] max-h-[90vh] p-8 border-none bg-transparent shadow-none flex items-center justify-center">
+                    <DialogTitle className="sr-only">Whisper Image Preview</DialogTitle>
+                    <DialogDescription className="sr-only">Full size view of the whisper image</DialogDescription>
+                    {activeLightboxImageUrl ? (
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={handleDownloadLightboxImage}
+                                disabled={isDownloadingLightboxImage}
+                                className="absolute top-2 right-2 z-10 h-9 px-3 rounded-[3px] border-2 border-border bg-background/90 backdrop-blur-sm hover:bg-background transition-colors disabled:opacity-60 flex items-center gap-2 text-xs font-semibold"
+                                aria-label="Download whisper image"
+                            >
+                                {isDownloadingLightboxImage ? <FrogLoader size={12} className="" /> : <Download size={14} />}
+                                Download
+                            </button>
+                            <img
+                                src={activeLightboxImageUrl}
+                                alt="Whisper image preview"
+                                className="max-w-full max-h-[80vh] rounded-[3px] gum-border gum-shadow object-contain"
+                            />
+                        </div>
+                    ) : null}
+                </DialogContent>
+            </Dialog>
+
+            <footer className={`shrink-0 bg-background/95 backdrop-blur-md border-t-2 p-4 pb-safe transition-colors ${isDraggingImage ? "border-primary bg-primary/5" : "border-border"}`}>
+                <form
+                    onSubmit={handleSend}
+                    onDragEnter={handleComposerDragEnter}
+                    onDragOver={handleComposerDragOver}
+                    onDragLeave={handleComposerDragLeave}
+                    onDrop={handleComposerDrop}
+                    className="max-w-4xl mx-auto space-y-2.5"
+                >
+                    {isDraggingImage ? (
+                        <div className="text-center text-xs font-semibold text-primary py-1">
+                            Drop image to attach to this whisper
+                        </div>
+                    ) : null}
                     {selectedImagePreviewUrl ? (
                         <div className="relative w-24 h-24 rounded-[3px] overflow-hidden border-2 border-border">
                             <img src={selectedImagePreviewUrl} alt="Selected whisper upload" className="w-full h-full object-cover" />
