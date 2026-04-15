@@ -10,6 +10,7 @@ export interface Whisper {
     sender_id: string;
     receiver_id: string;
     content: string;
+    media_url: string | null;
     created_at: string;
     sender_profile?: {
         username: string;
@@ -43,7 +44,7 @@ export function useWhispers(targetUserId?: string) {
             if (!user) return [];
 
             const { data, error } = await sb.from("messages")
-                .select("sender_id, receiver_id, content, created_at, is_read")
+                .select("sender_id, receiver_id, content, media_url, created_at, is_read")
                 .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
                 .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
                 .order("created_at", { ascending: false });
@@ -58,9 +59,11 @@ export function useWhispers(targetUserId?: string) {
 
             (data as any[]).forEach((msg: any) => {
                 const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+                const hasText = typeof msg.content === "string" && msg.content.trim().length > 0;
+                const preview = hasText ? msg.content : (msg.media_url ? "Photo" : "...");
                 if (!groups[otherId]) {
                     groups[otherId] = {
-                        last_message: msg.content,
+                        last_message: preview,
                         last_message_at: msg.created_at,
                     };
                     otherUserIds.push(otherId);
@@ -96,7 +99,7 @@ export function useWhispers(targetUserId?: string) {
             if (!user || !targetUserId) return [];
 
             const { data, error } = await sb.from("messages")
-                .select("id, content, sender_id, receiver_id, created_at")
+                .select("id, content, media_url, sender_id, receiver_id, created_at")
                 .or(`and(sender_id.eq.${user.id},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${user.id})`)
                 .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
                 .order("created_at", { ascending: true });
@@ -133,12 +136,13 @@ export function useWhispers(targetUserId?: string) {
 
     // Send message
     const sendMessageMutation = useMutation({
-        mutationFn: async (content: string) => {
+        mutationFn: async ({ content, mediaUrl }: { content: string; mediaUrl?: string | null }) => {
             if (!user || !targetUserId) throw new Error("Not authenticated");
             const { error } = await sb.from("messages").insert({
                 sender_id: user.id,
                 receiver_id: targetUserId,
                 content: content.trim(),
+                media_url: mediaUrl || null,
             });
             if (error) throw error;
         },
@@ -269,12 +273,17 @@ export function useWhispers(targetUserId?: string) {
         loadingConversations,
         messages,
         loadingMessages,
-        sendMessage: async (content: string) => {
+        sendMessage: async (content: string, mediaUrl?: string | null) => {
             if (!user) {
                 toast.error("You must be manifest to send a whisper. Please sign in.");
                 return;
             }
-            return sendMessageMutation.mutateAsync(content);
+            const normalizedContent = content.trim();
+            if (!normalizedContent && !mediaUrl) {
+                toast.error("Write something or attach an image.");
+                return;
+            }
+            return sendMessageMutation.mutateAsync({ content: normalizedContent, mediaUrl });
         },
         isSending: sendMessageMutation.isPending,
         setTyping,

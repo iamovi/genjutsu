@@ -268,6 +268,7 @@ Deno.serve(async (req) => {
     const actorId = body.actor_id;
     const postId = body.post_id;
     const messageContent = body.message_content || "";
+    const hasMedia = Boolean(body.has_media);
     if (!userId) {
       return new Response(JSON.stringify({ error: "missing user_id" }), {
         status: 400,
@@ -345,12 +346,15 @@ Deno.serve(async (req) => {
           notifBody = `${actorName} mentioned you in a void`;
           break;
         case "whisper": {
-          const preview = messageContent.length > 100
-            ? messageContent.slice(0, 100) + "..."
-            : messageContent;
+          const cleanMessage = String(messageContent).trim();
+          const preview = cleanMessage.length > 100
+            ? cleanMessage.slice(0, 100) + "..."
+            : cleanMessage;
           notifBody = preview
             ? `${actorUsername || actorName}: ${preview}`
-            : `${actorName} sent you a whisper`;
+            : hasMedia
+              ? `${actorName} sent you a photo`
+              : `${actorName} sent you a whisper`;
           // Reuse one card for whispers from the same sender.
           if (actorId) {
             notifTag = `whisper-${actorId}`;

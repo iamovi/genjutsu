@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useWhispers, Whisper } from "@/hooks/useWhispers";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Send, ImageIcon, X } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,9 +17,13 @@ const ChatPage = () => {
     const [targetProfile, setTargetProfile] = useState<{ user_id: string; display_name: string; avatar_url: string | null; username: string } | null>(null);
     const [loadingProfile, setLoadingProfile] = useState(true);
     const [messageText, setMessageText] = useState("");
+    const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+    const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState<string | null>(null);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch target profile first
     useEffect(() => {
@@ -64,6 +68,62 @@ const ChatPage = () => {
         scrollToBottom();
     }, [messages, isOtherUserTyping]);
 
+    useEffect(() => {
+        return () => {
+            if (selectedImagePreviewUrl) {
+                URL.revokeObjectURL(selectedImagePreviewUrl);
+            }
+        };
+    }, [selectedImagePreviewUrl]);
+
+    const clearSelectedImage = () => {
+        if (selectedImagePreviewUrl) {
+            URL.revokeObjectURL(selectedImagePreviewUrl);
+        }
+        setSelectedImageFile(null);
+        setSelectedImagePreviewUrl(null);
+        if (imageInputRef.current) {
+            imageInputRef.current.value = "";
+        }
+    };
+
+    const handleImageFile = (file: File | null) => {
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            toast.error("Please select an image file.");
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Image must be under 5MB.");
+            return;
+        }
+
+        if (selectedImagePreviewUrl) {
+            URL.revokeObjectURL(selectedImagePreviewUrl);
+        }
+
+        setSelectedImageFile(file);
+        setSelectedImagePreviewUrl(URL.createObjectURL(file));
+    };
+
+    const uploadSelectedImage = async (): Promise<{ publicUrl: string; filePath: string } | null> => {
+        if (!selectedImageFile || !user) return null;
+
+        const fileExt = selectedImageFile.name.split(".").pop() || "jpg";
+        const filePath = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from("whisper-media")
+            .upload(filePath, selectedImageFile);
+
+        if (uploadError) {
+            throw uploadError;
+        }
+
+        const { data } = supabase.storage.from("whisper-media").getPublicUrl(filePath);
+        return { publicUrl: data.publicUrl, filePath };
+    };
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setMessageText(value);
@@ -82,17 +142,35 @@ const ChatPage = () => {
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!messageText.trim() || isSending || !targetProfile) return;
+        if ((!messageText.trim() && !selectedImageFile) || isSending || isUploadingImage || !targetProfile) return;
 
         // Immediately stop typing indicator on send
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         setTyping(false);
 
+        let uploadedPath: string | null = null;
         try {
-            await sendMessage(messageText.trim());
+            let mediaUrl: string | null = null;
+
+            if (selectedImageFile) {
+                setIsUploadingImage(true);
+                const uploadResult = await uploadSelectedImage();
+                if (uploadResult) {
+                    mediaUrl = uploadResult.publicUrl;
+                    uploadedPath = uploadResult.filePath;
+                }
+            }
+
+            await sendMessage(messageText.trim(), mediaUrl);
             setMessageText("");
+            clearSelectedImage();
         } catch (err) {
-            // Already handled in hook toast
+            if (uploadedPath) {
+                await supabase.storage.from("whisper-media").remove([uploadedPath]).catch(() => { });
+            }
+            // Toast handled in hook/upload handlers
+        } finally {
+            setIsUploadingImage(false);
         }
     };
 
@@ -151,6 +229,7 @@ const ChatPage = () => {
                 {messages && messages.length > 0 ? (
                     messages.map((whisper: Whisper) => {
                         const isMe = whisper.sender_id === user?.id;
+                        const hasText = typeof whisper.content === "string" && whisper.content.trim().length > 0;
                         return (
                             <motion.div
                                 key={whisper.id}
@@ -162,10 +241,27 @@ const ChatPage = () => {
                                     ? "bg-primary text-primary-foreground border-primary"
                                     : "bg-secondary text-secondary-foreground border-border"
                                     }`}>
-                                    <p className="whitespace-pre-wrap break-words">
-                                        {linkify(whisper.content)}
-                                    </p>
-                                    <WhisperLinkPreview content={whisper.content} isMe={isMe} />
+                                    {hasText ? (
+                                        <p className="whitespace-pre-wrap break-words">
+                                            {linkify(whisper.content)}
+                                        </p>
+                                    ) : null}
+                                    {whisper.media_url ? (
+                                        <a
+                                            href={whisper.media_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block mt-2 rounded-[3px] overflow-hidden border border-border/40"
+                                        >
+                                            <img
+                                                src={whisper.media_url}
+                                                alt="Whisper image"
+                                                className="w-full max-h-72 object-cover"
+                                                loading="lazy"
+                                            />
+                                        </a>
+                                    ) : null}
+                                    {hasText ? <WhisperLinkPreview content={whisper.content} isMe={isMe} /> : null}
                                     <span className={`text-[9px] mt-1.5 block font-mono opacity-60 ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                                         {new Date(whisper.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
@@ -208,25 +304,59 @@ const ChatPage = () => {
             </main>
 
             <footer className="shrink-0 bg-background/95 backdrop-blur-md border-t-2 border-border p-4 pb-safe">
-                <form onSubmit={handleSend} className="max-w-4xl mx-auto flex gap-3">
-                    <input
-                        type="text"
-                        id="whisper-input"
-                        name="whisper"
-                        value={messageText}
-                        onChange={handleInputChange}
-                        placeholder="Type a whisper... they vanish in 24h"
-                        className="flex-1 bg-secondary/50 gum-border py-2.5 px-4 outline-none focus:border-primary transition-colors text-sm"
-                        autoComplete="off"
-                    />
-                    <button
-                        type="submit"
-                        disabled={!messageText.trim() || isSending}
-                        className="gum-btn bg-primary text-primary-foreground px-5 h-10 flex items-center gap-2"
-                    >
-                        {isSending ? <FrogLoader size={16} className="" /> : <Send size={16} />}
-                        <span className="hidden sm:inline">Whisper</span>
-                    </button>
+                <form onSubmit={handleSend} className="max-w-4xl mx-auto space-y-2.5">
+                    {selectedImagePreviewUrl ? (
+                        <div className="relative w-24 h-24 rounded-[3px] overflow-hidden border-2 border-border">
+                            <img src={selectedImagePreviewUrl} alt="Selected whisper upload" className="w-full h-full object-cover" />
+                            <button
+                                type="button"
+                                onClick={clearSelectedImage}
+                                className="absolute top-1 right-1 p-1 rounded-full bg-background/85 hover:bg-background transition-colors"
+                                aria-label="Remove selected image"
+                            >
+                                <X size={12} />
+                            </button>
+                        </div>
+                    ) : null}
+
+                    <div className="flex gap-3">
+                        <input
+                            ref={imageInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleImageFile(e.target.files?.[0] || null)}
+                        />
+
+                        <button
+                            type="button"
+                            onClick={() => imageInputRef.current?.click()}
+                            className="h-10 w-10 shrink-0 gum-border bg-secondary/60 hover:bg-secondary flex items-center justify-center transition-colors"
+                            title="Attach image"
+                            aria-label="Attach image"
+                        >
+                            <ImageIcon size={16} />
+                        </button>
+
+                        <input
+                            type="text"
+                            id="whisper-input"
+                            name="whisper"
+                            value={messageText}
+                            onChange={handleInputChange}
+                            placeholder="Type a whisper... they vanish in 24h"
+                            className="flex-1 bg-secondary/50 gum-border py-2.5 px-4 outline-none focus:border-primary transition-colors text-sm"
+                            autoComplete="off"
+                        />
+                        <button
+                            type="submit"
+                            disabled={(!messageText.trim() && !selectedImageFile) || isSending || isUploadingImage}
+                            className="gum-btn bg-primary text-primary-foreground px-5 h-10 flex items-center gap-2"
+                        >
+                            {(isSending || isUploadingImage) ? <FrogLoader size={16} className="" /> : <Send size={16} />}
+                            <span className="hidden sm:inline">Whisper</span>
+                        </button>
+                    </div>
                 </form>
             </footer>
         </div>

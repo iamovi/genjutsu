@@ -120,8 +120,11 @@ CREATE TABLE public.messages (
   sender_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   receiver_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   content TEXT NOT NULL,
+  media_url TEXT,
   is_read BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  CONSTRAINT messages_content_or_media_check
+    CHECK (nullif(btrim(content), '') IS NOT NULL OR media_url IS NOT NULL)
 );
 
 -- Community Messages (Public Group Chat)
@@ -372,6 +375,11 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('banners', 'banners', true)
 ON CONFLICT (id) DO NOTHING;
 
+-- Whisper media bucket
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('whisper-media', 'whisper-media', true)
+ON CONFLICT (id) DO NOTHING;
+
 -- post-media policies
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Public Access') THEN
@@ -429,6 +437,29 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- whisper-media policies
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Public Access for Whisper Media') THEN
+    CREATE POLICY "Public Access for Whisper Media" ON storage.objects FOR SELECT USING ( bucket_id = 'whisper-media' );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Authenticated users can upload whisper media') THEN
+    CREATE POLICY "Authenticated users can upload whisper media" ON storage.objects FOR INSERT TO authenticated WITH CHECK (
+      bucket_id = 'whisper-media' AND (storage.foldername(name))[1] = auth.uid()::text
+    );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Users can delete own whisper media') THEN
+    CREATE POLICY "Users can delete own whisper media" ON storage.objects FOR DELETE TO authenticated USING (
+      bucket_id = 'whisper-media' AND (storage.foldername(name))[1] = auth.uid()::text
+    );
+  END IF;
+END $$;
+
 
 -- =============================================================================
 -- 24-HOUR EXPIRATION (CRON JOBS)
@@ -480,11 +511,49 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, net, vault, exten
 -- Delete expired whispers
 CREATE OR REPLACE FUNCTION public.delete_expired_whispers()
 RETURNS void AS $$
+DECLARE
+  expired_message RECORD;
+  file_path TEXT;
+  service_key TEXT;
+  project_url TEXT;
 BEGIN
+  project_url := current_setting('app.settings.supabase_url', true);
+  IF project_url IS NULL OR project_url = '' THEN
+    project_url := 'https://scvikrxfxijqoedfryvx.supabase.co';
+  END IF;
+
+  SELECT decrypted_secret INTO service_key
+  FROM vault.decrypted_secrets
+  WHERE name = 'supabase_service_role_key'
+  LIMIT 1;
+
+  IF service_key IS NOT NULL THEN
+    FOR expired_message IN
+      SELECT media_url
+      FROM public.messages
+      WHERE created_at < now() - INTERVAL '24 hours'
+        AND media_url IS NOT NULL
+        AND media_url <> ''
+        AND media_url LIKE '%/storage/v1/object/public/whisper-media/%'
+    LOOP
+      file_path := split_part(expired_message.media_url, 'whisper-media/', 2);
+      file_path := split_part(split_part(file_path, '?', 1), '#', 1);
+
+      IF file_path IS NOT NULL AND file_path <> '' THEN
+        PERFORM net.http_delete(
+          url := project_url || '/storage/v1/object/whisper-media/' || file_path,
+          headers := jsonb_build_object(
+            'Authorization', 'Bearer ' || service_key
+          )
+        );
+      END IF;
+    END LOOP;
+  END IF;
+
   DELETE FROM public.messages
   WHERE created_at < now() - INTERVAL '24 hours';
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, net, vault, extensions;
 
 -- Delete expired action log entries (preserve username_change for 7 days, others 48h)
 CREATE OR REPLACE FUNCTION public.delete_expired_action_logs()
@@ -1230,7 +1299,11 @@ BEGIN
           'user_id', NEW.receiver_id,
           'type', 'whisper',
           'actor_id', NEW.sender_id,
-          'message_content', LEFT(NEW.content, 150)
+          'message_content', CASE
+            WHEN nullif(btrim(NEW.content), '') IS NOT NULL THEN LEFT(NEW.content, 150)
+            ELSE ''
+          END,
+          'has_media', NEW.media_url IS NOT NULL
         )
       );
     END IF;

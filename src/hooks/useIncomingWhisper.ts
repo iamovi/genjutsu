@@ -57,10 +57,10 @@ export function useIncomingWhisper() {
 
             if (!profile || cancelled) return;
 
-            const preview =
-              msg.content.length > 80
-                ? msg.content.slice(0, 80) + "..."
-                : msg.content;
+            const hasText = typeof msg.content === "string" && msg.content.trim().length > 0;
+            const preview = hasText
+              ? (msg.content.length > 80 ? msg.content.slice(0, 80) + "..." : msg.content)
+              : (msg.media_url ? "sent a photo" : "New whisper");
 
             setIncoming({
               senderId: profile.user_id,
