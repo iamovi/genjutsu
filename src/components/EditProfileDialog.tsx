@@ -223,10 +223,24 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
                 audioRef.current.pause();
             }
             const audio = new Audio(previewUrl);
-            audio.play();
             audioRef.current = audio;
-            setPlayingPreview(previewUrl);
             audio.onended = () => setPlayingPreview(null);
+
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => setPlayingPreview(previewUrl))
+                    .catch((error: any) => {
+                        // Ignore aborts from quick toggle/close while play() is pending.
+                        if (error?.name !== "AbortError") {
+                            console.error("Preview playback failed:", error);
+                            toast.error("Couldn't play song preview.");
+                        }
+                        setPlayingPreview(null);
+                    });
+            } else {
+                setPlayingPreview(previewUrl);
+            }
         }
     };
 

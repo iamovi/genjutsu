@@ -70,10 +70,24 @@ const ProfilePage = () => {
 
         if (isPlaying) {
             audioRef.current.pause();
+            setIsPlaying(false);
         } else {
-            audioRef.current.play();
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => setIsPlaying(true))
+                    .catch((error: any) => {
+                        // Browsers throw AbortError when play() is interrupted by unmount/src change.
+                        if (error?.name !== "AbortError") {
+                            console.error("Audio playback failed:", error);
+                            toast.error("Couldn't play song preview.");
+                        }
+                        setIsPlaying(false);
+                    });
+            } else {
+                setIsPlaying(true);
+            }
         }
-        setIsPlaying(!isPlaying);
     };
 
     useEffect(() => {
