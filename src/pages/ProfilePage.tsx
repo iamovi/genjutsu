@@ -470,12 +470,12 @@ const ProfilePage = () => {
                                             </Dialog>
                                         </div>
 
-                                        <div className="flex justify-end pt-4">
+                                        <div className="flex justify-end pt-4 pl-[7.5rem] sm:pl-0">
                                             {isOwnProfile ? (
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex flex-wrap items-center justify-end gap-1.5 xs:gap-2">
                                                     <button
                                                         onClick={handleShareProfile}
-                                                        className="p-2 gum-card bg-secondary text-muted-foreground hover:text-primary transition-colors"
+                                                        className="p-1.5 xs:p-2 gum-card bg-secondary text-muted-foreground hover:text-primary transition-colors"
                                                         title="Share profile"
                                                     >
                                                         <Share size={18} />
@@ -493,7 +493,7 @@ const ProfilePage = () => {
                                                     />
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex flex-wrap items-center justify-end gap-1.5 xs:gap-2">
                                                     <button
                                                         onClick={() => {
                                                             if (!user) {
@@ -502,21 +502,21 @@ const ProfilePage = () => {
                                                             }
                                                             navigate(`/whisper/${profile.username}`);
                                                         }}
-                                                        className="p-2 gum-card bg-secondary text-muted-foreground hover:text-primary transition-colors"
+                                                        className="p-1.5 xs:p-2 gum-card bg-secondary text-muted-foreground hover:text-primary transition-colors"
                                                         title="Whisper"
                                                     >
                                                         <Send size={18} />
                                                     </button>
                                                     <button
                                                         onClick={handleShareProfile}
-                                                        className="p-2 gum-card bg-secondary text-muted-foreground hover:text-primary transition-colors"
+                                                        className="p-1.5 xs:p-2 gum-card bg-secondary text-muted-foreground hover:text-primary transition-colors"
                                                         title="Share profile"
                                                     >
                                                         <Share size={18} />
                                                     </button>
                                                     <button
                                                         onClick={toggleFollow}
-                                                        className={`gum-btn text-sm px-6 ${isFollowing ? 'bg-secondary' : 'bg-primary text-primary-foreground'}`}
+                                                        className={`gum-btn text-xs xs:text-sm px-4 xs:px-6 py-2 xs:py-2.5 whitespace-nowrap ${isFollowing ? 'bg-secondary' : 'bg-primary text-primary-foreground'}`}
                                                     >
                                                         {isFollowing ? 'Following' : 'Follow'}
                                                     </button>

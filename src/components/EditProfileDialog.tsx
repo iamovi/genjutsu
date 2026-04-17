@@ -257,8 +257,8 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <button className="gum-btn border-2 border-foreground flex items-center gap-2 text-sm">
-                    <Edit3 size={16} /> Edit Profile
+                <button className="gum-btn border-2 border-foreground flex items-center gap-1.5 xs:gap-2 text-xs xs:text-sm !px-3 !py-2 xs:!px-5 xs:!py-2.5 whitespace-nowrap">
+                    <Edit3 size={15} className="xs:w-4 xs:h-4" /> Edit Profile
                 </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-none w-full h-full max-h-none rounded-none gum-card border-none p-0 overflow-hidden flex flex-col [&>button:last-child]:hidden">
