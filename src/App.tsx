@@ -18,6 +18,7 @@ import { AppLockGate } from "@/components/AppLockGate";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { FloatingWhisperBubble } from "@/components/FloatingWhisperBubble";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
+import MfaSessionGuard from "@/components/MfaSessionGuard";
 
 import Index from "@/pages/Index";
 const AuthPage = lazy(() => import("@/pages/AuthPage"));
@@ -34,6 +35,7 @@ const PlayPage = lazy(() => import("@/pages/PlayPage"));
 const AdminPage = lazy(() => import("@/pages/AdminPage"));
 const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 const StrangerPage = lazy(() => import("@/pages/StrangerPage"));
+const MfaChallengePage = lazy(() => import("@/pages/MfaChallengePage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -65,6 +67,7 @@ const App = () => {
               <ScrollToTop />
               <GoogleAnalytics />
               <AuthProvider>
+                <MfaSessionGuard />
                 <FloatingWhisperBubble />
                 <PushNotificationPrompt />
                 <Suspense
@@ -77,6 +80,7 @@ const App = () => {
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/auth" element={<AuthPage />} />
+                    <Route path="/auth/mfa" element={<MfaChallengePage />} />
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/terms" element={<TermsPage />} />
                     <Route path="/privacy" element={<PrivacyPage />} />

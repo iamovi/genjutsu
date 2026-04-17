@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { LogOut, ArrowLeft, Shield, Settings, Check, AtSign, Globe, Palette, Moon, Sun, Monitor, Pipette, WandSparkles, Music, Volume2, VolumeX, Clock, Lock, Eye, EyeOff, KeyRound, Layout, Type, Square, Grid, Bell, BellOff, Smile } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
@@ -26,6 +27,30 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+type MfaSetupState = {
+    factorId: string;
+    qrCode: string;
+    secret: string;
+    uri: string;
+};
+
+const buildQrImageSrc = (qrCode: string) => {
+    const normalized = qrCode.trim();
+    if (!normalized) return "";
+
+    if (normalized.startsWith("data:image/")) return normalized;
+    if (normalized.startsWith("<svg") || normalized.startsWith("<?xml")) {
+        return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(normalized)}`;
+    }
+
+    const maybeBase64 = /^[A-Za-z0-9+/=\r\n]+$/.test(normalized);
+    if (maybeBase64) {
+        return `data:image/svg+xml;base64,${normalized.replace(/\s+/g, "")}`;
+    }
+
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(normalized)}`;
+};
+
 const SettingsPage = () => {
     const { user, signOut, isAdmin } = useAuth();
     const { profile, changeUsername, getNextUsernameChangeDate, deleteAccount } = useProfile();
@@ -33,6 +58,14 @@ const SettingsPage = () => {
     const { t, i18n } = useTranslation();
     const { theme, color, customColor, font, radius, emojiPack, animateColor, cursorTrail, grid, soundEnabled, shadowWalk, setTheme, setColor, setCustomColor, setFont, setRadius, setEmojiPack, setAnimateColor, setCursorTrail, setGrid, setSoundEnabled, setShadowWalk } = useTheme();
     const pushNotifications = usePushNotifications();
+    const [mfaStatusLoading, setMfaStatusLoading] = useState(false);
+    const [mfaStatusReady, setMfaStatusReady] = useState(false);
+    const [mfaStatusError, setMfaStatusError] = useState<string | null>(null);
+    const [mfaActionLoading, setMfaActionLoading] = useState(false);
+    const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+    const [mfaAalLevel, setMfaAalLevel] = useState<"aal1" | "aal2" | null>(null);
+    const [mfaSetup, setMfaSetup] = useState<MfaSetupState | null>(null);
+    const [mfaCode, setMfaCode] = useState("");
 
     const [newUsername, setNewUsername] = useState("");
     const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -191,6 +224,154 @@ const SettingsPage = () => {
         } else {
             toast.success("Account permanently deleted");
             navigate("/auth");
+        }
+    };
+
+    const loadMfaStatus = useCallback(async () => {
+        if (!user) return;
+
+        setMfaStatusLoading(true);
+        setMfaStatusReady(false);
+        setMfaStatusError(null);
+        try {
+            const [{ data: factorsData, error: factorsError }, { data: aalData, error: aalError }] = await Promise.all([
+                supabase.auth.mfa.listFactors(),
+                supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+            ]);
+
+            if (factorsError) throw factorsError;
+            if (aalError) throw aalError;
+
+            const totpFactor = factorsData?.totp?.[0] ?? null;
+            setMfaFactorId(totpFactor?.id ?? null);
+            setMfaAalLevel((aalData?.currentLevel as "aal1" | "aal2" | null) ?? null);
+            setMfaStatusReady(true);
+        } catch (error: any) {
+            console.error("Failed to load MFA status:", error);
+            toast.error("Couldn't load authenticator status.");
+            setMfaStatusError("Couldn't load authenticator status.");
+            setMfaFactorId(null);
+            setMfaAalLevel(null);
+        } finally {
+            setMfaStatusLoading(false);
+        }
+    }, [user]);
+
+    useEffect(() => {
+        if (activeTab === "security") {
+            void loadMfaStatus();
+        }
+    }, [activeTab, loadMfaStatus]);
+
+    const handleStartMfaSetup = async () => {
+        if (!mfaStatusReady || mfaStatusLoading || mfaActionLoading || !!mfaSetup) return;
+        if (mfaFactorId) {
+            toast.message("Authenticator app is already enabled.");
+            return;
+        }
+
+        setMfaActionLoading(true);
+        try {
+            const { data: factorsData, error: listError } = await supabase.auth.mfa.listFactors();
+            if (listError) throw listError;
+
+            const staleUnverifiedTotp = (factorsData?.all ?? []).filter(
+                (factor) => factor.factor_type === "totp" && factor.status === "unverified"
+            );
+
+            for (const factor of staleUnverifiedTotp) {
+                const { error } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+                if (error) {
+                    console.warn("Failed to clean stale unverified MFA factor:", error.message);
+                }
+            }
+
+            const { data, error } = await supabase.auth.mfa.enroll({
+                factorType: "totp",
+                friendlyName: "Genjutsu Authenticator",
+            });
+
+            if (error) throw error;
+            if (!data?.totp?.qr_code) throw new Error("Authenticator setup data is missing.");
+
+            setMfaSetup({
+                factorId: data.id,
+                qrCode: data.totp.qr_code,
+                secret: data.totp.secret,
+                uri: data.totp.uri,
+            });
+            setMfaCode("");
+            toast.success("Scan the QR code and enter your 6-digit code.");
+        } catch (error: any) {
+            console.error("Failed to start MFA setup:", error);
+            toast.error(error?.message || "Couldn't start authenticator setup.");
+        } finally {
+            setMfaActionLoading(false);
+        }
+    };
+
+    const handleCancelMfaSetup = async () => {
+        if (!mfaSetup) return;
+
+        setMfaActionLoading(true);
+        try {
+            const { error } = await supabase.auth.mfa.unenroll({ factorId: mfaSetup.factorId });
+            if (error) throw error;
+        } catch (error) {
+            console.warn("Failed to clean up unverified MFA factor:", error);
+        } finally {
+            setMfaSetup(null);
+            setMfaCode("");
+            setMfaActionLoading(false);
+        }
+    };
+
+    const handleVerifyMfaSetup = async () => {
+        if (!mfaSetup || mfaCode.length !== 6) return;
+
+        setMfaActionLoading(true);
+        try {
+            const { error } = await supabase.auth.mfa.challengeAndVerify({
+                factorId: mfaSetup.factorId,
+                code: mfaCode,
+            });
+
+            if (error) throw error;
+
+            toast.success("Authenticator app enabled.");
+            setMfaSetup(null);
+            setMfaCode("");
+            await loadMfaStatus();
+        } catch (error: any) {
+            console.error("Failed to verify MFA setup:", error);
+            toast.error(error?.message || "Invalid code. Please try again.");
+        } finally {
+            setMfaActionLoading(false);
+        }
+    };
+
+    const handleDisableMfa = async () => {
+        if (!mfaStatusReady || mfaStatusLoading || !mfaFactorId) return;
+
+        setMfaActionLoading(true);
+        try {
+            const { error } = await supabase.auth.mfa.unenroll({ factorId: mfaFactorId });
+            if (error) throw error;
+
+            toast.success("Authenticator app disabled.");
+            setMfaFactorId(null);
+            setMfaAalLevel("aal1");
+            await loadMfaStatus();
+        } catch (error: any) {
+            console.error("Failed to disable MFA:", error);
+            const message = String(error?.message || "").toLowerCase();
+            if (message.includes("aal2")) {
+                toast.error("Re-authenticate with 2FA before disabling it.");
+            } else {
+                toast.error(error?.message || "Couldn't disable authenticator.");
+            }
+        } finally {
+            setMfaActionLoading(false);
         }
     };
 
@@ -751,6 +932,123 @@ const SettingsPage = () => {
                                                     <KeyRound className="text-primary" />
                                                     Security
                                                 </h2>
+
+                                                {/* Authenticator App (2FA) */}
+                                                <div className="bg-secondary/30 p-4 rounded-[3px] border border-border space-y-4">
+                                                    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                                        <div className="pr-0 sm:pr-4">
+                                                            <h3 className="font-bold mb-1 flex items-center gap-2">
+                                                                <Shield size={18} className={mfaFactorId ? "text-primary" : "text-muted-foreground"} />
+                                                                Authenticator App (2FA)
+                                                            </h3>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                Add an authenticator app for 6-digit verification codes at sign in.
+                                                            </p>
+                                                            <p className="text-xs mt-2 font-medium">
+                                                                {mfaStatusLoading
+                                                                    ? "Checking status..."
+                                                                    : mfaStatusError
+                                                                        ? "Status unavailable. Please retry."
+                                                                    : !mfaStatusReady
+                                                                        ? "Checking status..."
+                                                                    : mfaFactorId
+                                                                        ? `Status: Enabled (${mfaAalLevel === "aal2" ? "verified this session" : "needs verification on next sign in"})`
+                                                                        : "Status: Disabled"}
+                                                            </p>
+                                                        </div>
+
+                                                        {!mfaFactorId ? (
+                                                            <button
+                                                                onClick={handleStartMfaSetup}
+                                                                disabled={mfaStatusLoading || !mfaStatusReady || mfaActionLoading || !!mfaSetup}
+                                                                className="gum-btn shrink-0 w-28 h-10 text-sm font-bold bg-primary text-primary-foreground disabled:opacity-50"
+                                                            >
+                                                                {mfaActionLoading ? <FrogLoader className="" size={16} /> : "Enable"}
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={handleDisableMfa}
+                                                                disabled={mfaStatusLoading || !mfaStatusReady || mfaActionLoading || mfaAalLevel !== "aal2"}
+                                                                className="gum-btn shrink-0 w-28 h-10 text-sm font-bold bg-background hover:bg-secondary disabled:opacity-50"
+                                                                title={mfaAalLevel !== "aal2" ? "Verify with 2FA first" : "Disable authenticator app"}
+                                                            >
+                                                                {mfaActionLoading ? <FrogLoader className="" size={16} /> : "Disable"}
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    {mfaStatusError && (
+                                                        <div className="flex items-center justify-between gap-3 rounded-[3px] border border-destructive/30 bg-destructive/10 px-3 py-2">
+                                                            <p className="text-xs font-medium text-destructive">{mfaStatusError}</p>
+                                                            <button
+                                                                onClick={() => void loadMfaStatus()}
+                                                                className="gum-btn bg-background px-3 py-1.5 text-xs font-bold"
+                                                                disabled={mfaStatusLoading || mfaActionLoading}
+                                                            >
+                                                                Retry
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    {mfaSetup && (
+                                                        <div className="p-4 bg-background border border-border rounded-[3px] space-y-4">
+                                                            <p className="text-sm font-bold">Step 1: Scan QR code in your authenticator app</p>
+                                                            <div className="flex flex-col sm:flex-row items-start gap-4">
+                                                                <img
+                                                                    src={buildQrImageSrc(mfaSetup.qrCode)}
+                                                                    alt="Authenticator QR code"
+                                                                    className="w-40 h-40 bg-white p-2 rounded-[3px] border border-border"
+                                                                />
+                                                                <div className="space-y-2">
+                                                                    <p className="text-xs text-muted-foreground">If you cannot scan, enter this key manually:</p>
+                                                                    <p className="text-xs font-mono bg-secondary px-2 py-1 rounded-[3px] break-all">
+                                                                        {mfaSetup.secret}
+                                                                    </p>
+                                                                    <p className="text-[11px] text-muted-foreground break-all">
+                                                                        URI: {mfaSetup.uri}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-3">
+                                                                <p className="text-sm font-bold">Step 2: Enter the 6-digit code</p>
+                                                                <div className="flex justify-center">
+                                                                    <InputOTP
+                                                                        maxLength={6}
+                                                                        value={mfaCode}
+                                                                        onChange={setMfaCode}
+                                                                    >
+                                                                        <InputOTPGroup>
+                                                                            <InputOTPSlot index={0} className="w-10 h-10 text-base font-bold" />
+                                                                            <InputOTPSlot index={1} className="w-10 h-10 text-base font-bold" />
+                                                                            <InputOTPSlot index={2} className="w-10 h-10 text-base font-bold" />
+                                                                            <InputOTPSlot index={3} className="w-10 h-10 text-base font-bold" />
+                                                                            <InputOTPSlot index={4} className="w-10 h-10 text-base font-bold" />
+                                                                            <InputOTPSlot index={5} className="w-10 h-10 text-base font-bold" />
+                                                                        </InputOTPGroup>
+                                                                    </InputOTP>
+                                                                </div>
+
+                                                                <div className="flex flex-wrap gap-2 justify-end">
+                                                                    <button
+                                                                        onClick={handleCancelMfaSetup}
+                                                                        disabled={mfaActionLoading}
+                                                                        className="gum-btn text-sm px-4 py-2 bg-secondary hover:bg-secondary/80 font-bold disabled:opacity-50"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={handleVerifyMfaSetup}
+                                                                        disabled={mfaActionLoading || mfaCode.length !== 6}
+                                                                        className="gum-btn text-sm px-4 py-2 bg-primary text-primary-foreground font-bold disabled:opacity-50"
+                                                                    >
+                                                                        {mfaActionLoading ? <FrogLoader className="" size={16} /> : "Verify & Enable"}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
 
                                                 {/* App Lock Toggle */}
                                                 <div className="flex items-start justify-between bg-secondary/30 p-4 rounded-[3px] border border-border">
