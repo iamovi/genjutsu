@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
+import { MaintenancePage } from "@/components/MaintenancePage";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -38,6 +39,8 @@ const StrangerPage = lazy(() => import("@/pages/StrangerPage"));
 const MfaChallengePage = lazy(() => import("@/pages/MfaChallengePage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
+const MAINTENANCE_MODE = true;
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -46,6 +49,14 @@ const App = () => {
     const interval = setInterval(syncTime, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
+
+  if (MAINTENANCE_MODE) {
+    return (
+      <ThemeProvider defaultTheme="light" storageKey="genjutsu-theme">
+        <MaintenancePage />
+      </ThemeProvider>
+    );
+  }
 
   return (
     <HelmetProvider>
