@@ -14,6 +14,24 @@ import { Helmet } from "react-helmet-async";
 import { usePostActions } from "@/hooks/usePostActions";
 import { getNow } from "@/lib/utils";
 
+function sanitizeSearchInput(val: string): string {
+    return val.replace(/[%_(),."'\\]/g, "").trim();
+}
+
+function doesPostMatchSearch(post: Pick<PostWithProfile, "content" | "tags">, rawQuery: string): boolean {
+    const sanitized = sanitizeSearchInput(rawQuery);
+    if (!sanitized) return true;
+
+    const normalizedQuery = sanitized.toLowerCase();
+    const tagQuery = sanitized.replace("#", "");
+    const tags = Array.isArray(post.tags) ? post.tags : [];
+
+    const contentMatches = post.content.toLowerCase().includes(normalizedQuery);
+    const tagMatches = tags.some((tag) => String(tag) === tagQuery);
+
+    return contentMatches || tagMatches;
+}
+
 const SearchPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const query = searchParams.get("q") || "";
@@ -33,7 +51,7 @@ const SearchPage = () => {
         setLoading(true);
         try {
             // Sanitize input to prevent broken PostgREST filters
-            const sanitized = val.replace(/[%_(),."'\\]/g, "");
+            const sanitized = sanitizeSearchInput(val);
             if (!sanitized.trim()) {
                 setResults({ profiles: [], posts: [] });
                 setLoading(false);
@@ -51,7 +69,7 @@ const SearchPage = () => {
             const { data: postsData } = await (supabase
                 .from("posts")
                 .select(`
-                    id, content, code, code_language, media_url, tags, created_at, user_id, is_readme, views_count,
+                    id, content, code, code_language, media_url, tags, created_at, edited_at, user_id, is_readme, views_count,
                     profiles ( username, display_name, avatar_url )
                 `) as any)
                 .or(`content.ilike.%${sanitized}%,tags.cs.{${sanitized.replace('#', '')}}`)
@@ -180,6 +198,23 @@ const SearchPage = () => {
         }
     };
 
+    const handlePostEdited = (postId: string, updated: {
+        content: string;
+        code: string;
+        code_language: string | null;
+        media_url: string | null;
+        is_readme: boolean;
+        tags: string[];
+        edited_at: string | null;
+    }) => {
+        setResults(prev => ({
+            ...prev,
+            posts: prev.posts
+                .map((p) => p.id === postId ? { ...p, ...updated } : p)
+                .filter((p) => doesPostMatchSearch(p, query)),
+        }));
+    };
+
     return (
         <div className="min-h-screen bg-background text-foreground">
             <Helmet>
@@ -247,6 +282,7 @@ const SearchPage = () => {
                                                     onLike={handleLike}
                                                     onBookmark={handleBookmark}
                                                     onDelete={handleDelete}
+                                                    onPostEdited={handlePostEdited}
                                                 />
                                             ))}
                                         </div>

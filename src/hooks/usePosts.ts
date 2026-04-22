@@ -14,6 +14,7 @@ export interface PostWithProfile {
   media_url: string | null;
   tags: string[];
   created_at: string;
+  edited_at: string | null;
   user_id: string;
   views_count: number;
   profiles: {
@@ -42,7 +43,7 @@ export function usePosts() {
     const { data: postsData, error } = await (supabase
       .from("posts")
       .select(`
-        id, content, code, code_language, media_url, tags, created_at, user_id, is_readme, views_count,
+        id, content, code, code_language, media_url, tags, created_at, edited_at, user_id, is_readme, views_count,
         profiles ( username, display_name, avatar_url )
       `) as any)
       .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())

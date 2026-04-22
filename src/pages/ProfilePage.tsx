@@ -189,7 +189,7 @@ const ProfilePage = () => {
             const { data: postsData } = await (supabase
                 .from("posts")
                 .select(`
-                  id, content, code, code_language, media_url, tags, created_at, user_id, is_readme, views_count,
+                  id, content, code, code_language, media_url, tags, created_at, edited_at, user_id, is_readme, views_count,
                   profiles ( username, display_name, avatar_url )
                 `) as any)
                 .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
@@ -274,7 +274,7 @@ const ProfilePage = () => {
             const { data: postsData } = await (supabase
                 .from("posts")
                 .select(`
-                    id, content, code, code_language, media_url, tags, created_at, user_id, is_readme, views_count,
+                    id, content, code, code_language, media_url, tags, created_at, edited_at, user_id, is_readme, views_count,
                     profiles ( username, display_name, avatar_url )
                 `) as any)
                 .in("id", postIds)
@@ -391,6 +391,19 @@ const ProfilePage = () => {
         } catch (err) {
             toast.error("Failed to delete post");
         }
+    };
+
+    const handlePostEdited = (postId: string, updated: {
+        content: string;
+        code: string;
+        code_language: string | null;
+        media_url: string | null;
+        is_readme: boolean;
+        tags: string[];
+        edited_at: string | null;
+    }) => {
+        setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, ...updated } : p));
+        setBookmarks((prev) => prev.map((p) => p.id === postId ? { ...p, ...updated } : p));
     };
 
     const initials = profile?.display_name?.substring(0, 2).toUpperCase() || "??";
@@ -749,6 +762,7 @@ const ProfilePage = () => {
                                                     onLike={handleLike}
                                                     onBookmark={handleBookmark}
                                                     onDelete={handleDelete}
+                                                    onPostEdited={handlePostEdited}
                                                 />
                                             ))
                                         )
@@ -773,6 +787,7 @@ const ProfilePage = () => {
                                                     onLike={handleLike}
                                                     onBookmark={handleBookmark}
                                                     onDelete={handleDelete}
+                                                    onPostEdited={handlePostEdited}
                                                 />
                                             ))
                                         )

@@ -206,7 +206,7 @@ const PostPage = () => {
             const { data: p, error } = await (supabase
                 .from("posts")
                 .select(`
-          id, content, code, code_language, media_url, tags, created_at, user_id, is_readme, views_count,
+          id, content, code, code_language, media_url, tags, created_at, edited_at, user_id, is_readme, views_count,
           profiles ( username, display_name, avatar_url )
         `) as any)
                 .eq("id", postId)
@@ -433,6 +433,18 @@ const PostPage = () => {
         }
     };
 
+    const handlePostEdited = (id: string, updated: {
+        content: string;
+        code: string;
+        code_language: string | null;
+        media_url: string | null;
+        is_readme: boolean;
+        tags: string[];
+        edited_at: string | null;
+    }) => {
+        setPost(prev => prev && prev.id === id ? { ...prev, ...updated } : prev);
+    };
+
     const handleDeleteComment = async (commentId: string) => {
         if (!user || deletingCommentId) return;
 
@@ -505,6 +517,7 @@ const PostPage = () => {
                                     onLike={handleLike}
                                     onBookmark={handleBookmark}
                                     onDelete={handleDelete}
+                                    onPostEdited={handlePostEdited}
                                 />
 
                                 {/* Comments Section */}

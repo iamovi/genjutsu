@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, memo, useMemo } from "react";
-import { Hash, Heart, MessageSquare, Share, Bookmark, MoreHorizontal, Trash2, Send, Languages, Eye } from "lucide-react";
+import { Hash, Heart, MessageSquare, Share, Bookmark, MoreHorizontal, Trash2, Send, Languages, Eye, Pencil } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { PostWithProfile } from "@/hooks/usePosts";
@@ -26,12 +26,22 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import EditPostDialog from "@/components/EditPostDialog";
 
 interface PostCardProps {
   post: PostWithProfile;
   onLike: (postId: string, liked: boolean) => void;
   onBookmark: (postId: string, bookmarked: boolean) => void;
   onDelete?: (postId: string) => void;
+  onPostEdited?: (postId: string, updated: {
+    content: string;
+    code: string;
+    code_language: string | null;
+    media_url: string | null;
+    is_readme: boolean;
+    tags: string[];
+    edited_at: string | null;
+  }) => void;
 }
 
 function getTimeRemaining(dateStr: string): string {
@@ -63,10 +73,11 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(days / 30)}mo`;
 }
 
-const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) => {
+const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: PostCardProps) => {
   const { user } = useAuth();
   const { recordView } = usePostViews();
   const [showMenu, setShowMenu] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement>(null);
   const articleRef = useRef<HTMLElement | null>(null);
@@ -275,6 +286,9 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
                 <span className="font-bold text-sm group-hover:underline truncate shrink-0 max-w-[140px] xs:max-w-[180px] sm:max-w-[220px]">{post.profiles?.display_name || "Unknown"}</span>
                 <span className="text-muted-foreground text-sm truncate shrink ml-1">@{post.profiles?.username || "?"}</span>
                 <span className="text-muted-foreground text-xs shrink-0 whitespace-nowrap ml-1">· {timeAgo(post.created_at)}</span>
+                {post.edited_at && (
+                  <span className="text-muted-foreground text-[10px] shrink-0 whitespace-nowrap ml-1">(edited)</span>
+                )}
               </button>
               <div className="flex items-center gap-2 sm:ml-2 mt-0.5 sm:mt-0">
                 <span className="text-primary/70 text-[9px] font-bold shrink-0 whitespace-nowrap">
@@ -297,6 +311,16 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
                 {showMenu && (
                   <div className="absolute right-0 top-8 gum-card p-1 z-10 min-w-[120px]">
                     <button
+                      onClick={() => {
+                        setIsEditDialogOpen(true);
+                        setShowMenu(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-secondary rounded-[3px] transition-colors"
+                    >
+                      <Pencil size={14} />
+                      Edit
+                    </button>
+                    <button
                       onClick={() => { onDelete?.(post.id); setShowMenu(false); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-secondary rounded-[3px] transition-colors"
                     >
@@ -308,6 +332,15 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
               </div>
             )}
           </div>
+
+          {isOwner && (
+            <EditPostDialog
+              open={isEditDialogOpen}
+              onOpenChange={setIsEditDialogOpen}
+              post={post}
+              onEdited={(updated) => onPostEdited?.(post.id, updated)}
+            />
+          )}
 
           {post.is_readme ? (
             <div className="mt-3 p-4 rounded-[3px] gum-border bg-secondary/10 prose-readme">

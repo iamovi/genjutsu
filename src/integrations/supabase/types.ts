@@ -140,6 +140,7 @@ export type Database = {
           code: string | null
           content: string
           created_at: string
+          edited_at: string | null
           id: string
           media_url: string | null
           tags: string[] | null
@@ -153,6 +154,7 @@ export type Database = {
           code?: string | null
           content: string
           created_at?: string
+          edited_at?: string | null
           id?: string
           media_url?: string | null
           tags?: string[] | null
@@ -166,6 +168,7 @@ export type Database = {
           code?: string | null
           content?: string
           created_at?: string
+          edited_at?: string | null
           id?: string
           media_url?: string | null
           tags?: string[] | null
@@ -393,6 +396,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      edit_post: {
+        Args: {
+          p_post_id: string
+          p_content: string
+          p_code?: string
+          p_tags?: string[]
+          p_media_url?: string
+          p_is_readme?: boolean
+          p_code_language?: string
+        }
+        Returns: Json
+      }
       create_post: {
         Args: {
           p_content: string
