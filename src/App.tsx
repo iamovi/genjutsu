@@ -1,3 +1,8 @@
+// Genjutsu - a social network for developers where everything disappears after 24 hours
+// Copyright (C) 2026 Ovi Ren (@iamovi) — https://github.com/iamovi/genjutsu
+// This program is licensed under the GNU Affero General Public License v3.0
+// See the LICENSE file or <https://www.gnu.org/licenses/> for details.
+
 import { lazy, Suspense, useEffect } from "react";
 import { MaintenancePage } from "@/components/MaintenancePage";
 import { FrogLoader } from "@/components/ui/FrogLoader";
