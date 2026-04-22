@@ -266,7 +266,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
           ) : initials}
         </button>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col sm:flex-row sm:items-center min-w-0 overflow-hidden">
               <button
                 onClick={() => navigate(`/u/${post.profiles?.username}`)}
@@ -276,9 +276,15 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
                 <span className="text-muted-foreground text-sm truncate shrink ml-1">@{post.profiles?.username || "?"}</span>
                 <span className="text-muted-foreground text-xs shrink-0 whitespace-nowrap ml-1">· {timeAgo(post.created_at)}</span>
               </button>
-              <span className="text-primary/70 text-[9px] font-bold shrink-0 whitespace-nowrap sm:ml-2 mt-0.5 sm:mt-0">
-                [{getTimeRemaining(post.created_at)}]
-              </span>
+              <div className="flex items-center gap-2 sm:ml-2 mt-0.5 sm:mt-0">
+                <span className="text-primary/70 text-[9px] font-bold shrink-0 whitespace-nowrap">
+                  [{getTimeRemaining(post.created_at)}]
+                </span>
+                <span className="shrink-0 inline-flex items-center gap-1 text-muted-foreground text-[10px] font-medium" title="Views">
+                  <Eye size={12} />
+                  {viewCount}
+                </span>
+              </div>
             </div>
             {isOwner && (
               <div className="relative" ref={menuRef}>
@@ -427,10 +433,10 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
           )}
 
 
-          <div className="flex items-center gap-6 mt-4 pt-3 border-t border-secondary">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-6 mt-4 pt-3 border-t border-secondary">
             <motion.button
               onClick={handleLikeClick}
-              className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${post.user_liked ? "text-red-500" : "text-muted-foreground hover:text-red-500"
+              className={`shrink-0 flex items-center gap-1.5 text-xs font-medium transition-colors ${post.user_liked ? "text-red-500" : "text-muted-foreground hover:text-red-500"
                 } relative`}
               whileTap={{ scale: 0.92 }}
               animate={isLikeAnimating ? { scale: [1, 1.18, 0.96, 1] } : { scale: 1 }}
@@ -478,15 +484,11 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
             </motion.button>
             <Link
               to={`/post/${post.id}`}
-              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+              className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
             >
               <MessageSquare size={15} />
               {post.comments_count}
             </Link>
-            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground" title="Views">
-              <Eye size={15} />
-              {viewCount}
-            </span>
             {!isOwner && (
               <button
                 onClick={() => {
@@ -496,7 +498,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
                   }
                   navigate(`/whisper/${post.profiles?.username}`);
                 }}
-                className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+                className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
                 title="Whisper to author"
               >
                 <Send size={15} />
@@ -504,7 +506,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
             )}
             <button
               onClick={() => onBookmark(post.id, post.user_bookmarked)}
-              className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${post.user_bookmarked ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500"}`}
+              className={`shrink-0 flex items-center gap-1.5 text-xs font-medium transition-colors ${post.user_bookmarked ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500"}`}
             >
               <Bookmark size={15} fill={post.user_bookmarked ? "currentColor" : "none"} />
             </button>
@@ -514,7 +516,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
               <button
                 onClick={handleTranslate}
                 disabled={isTranslating}
-                className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${isShowingTranslation ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                className={`shrink-0 flex items-center gap-1.5 text-xs font-medium transition-colors ${isShowingTranslation ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                 title={isShowingTranslation ? "Show Original" : "Translate to English"}
               >
                 {isTranslating ? (
@@ -530,7 +532,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete }: PostCardProps) =>
 
             <button
               onClick={handleShare}
-              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
               title="Share post"
             >
               <Share size={15} />
