@@ -1,7 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Play } from "lucide-react";
 import { extractFirstHttpUrl } from "@/lib/linkPreview";
+import { getVideoInfo } from "@/lib/videoUtils";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface LinkPreviewPayload {
   url: string;
@@ -49,6 +51,8 @@ function buildFallbackPreview(url: string): LinkPreviewPayload {
 
 export default function WhisperLinkPreview({ content, isMe }: WhisperLinkPreviewProps) {
   const firstUrl = useMemo(() => extractFirstHttpUrl(content), [content]);
+  const videoInfo = useMemo(() => firstUrl ? getVideoInfo(firstUrl) : null, [firstUrl]);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const { data } = useQuery<LinkPreviewPayload | null>({
     queryKey: ["whisper-link-preview", firstUrl],
@@ -86,24 +90,79 @@ export default function WhisperLinkPreview({ content, isMe }: WhisperLinkPreview
   const title = data.title || host;
   const description = data.description || "";
 
+  const renderMedia = () => {
+    if (isPlaying && videoInfo) {
+      return (
+        <AspectRatio ratio={16 / 9} className="bg-black">
+          {videoInfo.platform === 'direct' ? (
+            <video
+              src={videoInfo.directUrl}
+              controls
+              autoPlay
+              className="w-full h-full object-contain"
+            />
+          ) : (
+            <iframe
+              src={videoInfo.embedUrl}
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          )}
+        </AspectRatio>
+      );
+    }
+
+    if (data.image || videoInfo) {
+      return (
+        <div
+          className="relative group cursor-pointer w-full h-32 sm:h-36 bg-secondary/40 overflow-hidden"
+          onClick={(e) => {
+            if (videoInfo) {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsPlaying(true);
+            }
+          }}
+        >
+          {data.image ? (
+            <img src={data.image} alt={title} className="w-full h-full object-cover" loading="lazy" />
+          ) : videoInfo ? (
+             <div className="w-full h-full flex items-center justify-center bg-muted">
+                <Play className="w-8 h-8 text-primary opacity-50" />
+             </div>
+          ) : null}
+
+          {videoInfo && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+               <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <Play className="w-6 h-6 text-primary-foreground fill-current ml-1" />
+               </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
-    <a
-      href={data.url || firstUrl}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       className={`mt-2 block rounded-[3px] border overflow-hidden transition-colors ${
         isMe
-          ? "border-primary-foreground/25 bg-primary-foreground/10 hover:bg-primary-foreground/15"
-          : "border-border/80 bg-background/55 hover:bg-background/70"
+          ? "border-primary-foreground/25 bg-primary-foreground/10"
+          : "border-border/80 bg-background/55"
       }`}
     >
-      {data.image ? (
-        <div className="w-full h-32 sm:h-36 bg-secondary/40">
-          <img src={data.image} alt={title} className="w-full h-full object-cover" loading="lazy" />
-        </div>
-      ) : null}
+      {renderMedia()}
 
-      <div className="px-3 py-2.5">
+      <a
+        href={data.url || firstUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`px-3 py-2.5 block hover:bg-black/5 transition-colors ${isMe ? "hover:bg-white/5" : ""}`}
+      >
         <div className="flex items-center gap-1.5 mb-1">
           {data.favicon ? (
             <img src={data.favicon} alt="" className="w-3.5 h-3.5 rounded-[2px]" loading="lazy" />
@@ -127,7 +186,7 @@ export default function WhisperLinkPreview({ content, isMe }: WhisperLinkPreview
           <ExternalLink size={11} />
           <span className="truncate">{host}</span>
         </div>
-      </div>
-    </a>
+      </a>
+    </div>
   );
 }
