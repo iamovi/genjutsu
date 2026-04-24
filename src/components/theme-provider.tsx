@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
-export type ThemeVariant = "default" | "minecraft";
+export type ThemeVariant = "default" | "minecraft" | "vice-city" | "roblox" | "retro-90s";
 type ColorPreset = "purple" | "blue" | "green" | "orange" | "rose" | "zinc" | "custom";
 type FontPreset = "Reddit Mono" | "Inter" | "Space Grotesk" | "Fira Code" | "JetBrains Mono" | "Comic Neue";
 type RadiusPreset = "none" | "default" | "md" | "lg" | "full";

@@ -681,7 +681,7 @@ const SettingsPage = () => {
                                                 <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Layout size={18} className="text-primary" /> Theme Variant</h2>
                                                 <p className="text-sm text-muted-foreground mb-4">Select the overall aesthetic of the interface.</p>
                                                 <div className="flex flex-wrap gap-3 mb-8">
-                                                    {(["default", "minecraft"] as const).map((v) => (
+                                                    {(["default", "minecraft", "vice-city", "roblox", "retro-90s"] as const).map((v) => (
                                                         <button
                                                             key={v}
                                                             onClick={() => setThemeVariant(v)}
@@ -689,7 +689,10 @@ const SettingsPage = () => {
                                                         >
                                                             {v === "default" && <Layout size={16}/>}
                                                             {v === "minecraft" && <span className="text-lg leading-none">⛏️</span>}
-                                                            {v}
+                                                            {v === "vice-city" && <span className="text-lg leading-none">🌴</span>}
+                                                            {v === "roblox" && <span className="text-lg leading-none">🟥</span>}
+                                                            {v === "retro-90s" && <span className="text-lg leading-none">💾</span>}
+                                                            {v.replace("-", " ")}
                                                         </button>
                                                     ))}
                                                 </div>
