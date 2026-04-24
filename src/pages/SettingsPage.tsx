@@ -56,7 +56,7 @@ const SettingsPage = () => {
     const { profile, changeUsername, getNextUsernameChangeDate, deleteAccount } = useProfile();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
-    const { theme, color, customColor, font, radius, emojiPack, animateColor, cursorTrail, grid, soundEnabled, shadowWalk, setTheme, setColor, setCustomColor, setFont, setRadius, setEmojiPack, setAnimateColor, setCursorTrail, setGrid, setSoundEnabled, setShadowWalk } = useTheme();
+    const { theme, themeVariant, color, customColor, font, radius, emojiPack, animateColor, cursorTrail, grid, soundEnabled, shadowWalk, setTheme, setThemeVariant, setColor, setCustomColor, setFont, setRadius, setEmojiPack, setAnimateColor, setCursorTrail, setGrid, setSoundEnabled, setShadowWalk } = useTheme();
     const pushNotifications = usePushNotifications();
     const [mfaStatusLoading, setMfaStatusLoading] = useState(false);
     const [mfaStatusReady, setMfaStatusReady] = useState(false);
@@ -678,7 +678,23 @@ const SettingsPage = () => {
                                     >
                                         <section className="gum-card p-6 space-y-6">
                                             <div>
-                                                <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Layout size={18} className="text-primary" /> Theme Mode</h2>
+                                                <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Layout size={18} className="text-primary" /> Theme Variant</h2>
+                                                <p className="text-sm text-muted-foreground mb-4">Select the overall aesthetic of the interface.</p>
+                                                <div className="flex flex-wrap gap-3 mb-8">
+                                                    {(["default", "minecraft"] as const).map((v) => (
+                                                        <button
+                                                            key={v}
+                                                            onClick={() => setThemeVariant(v)}
+                                                            className={`gum-btn px-6 py-2.5 text-sm font-bold flex items-center gap-2 capitalize transition-all ${themeVariant === v ? 'bg-primary text-primary-foreground gum-shadow-sm scale-105' : 'bg-background hover:bg-secondary border-border/50 text-foreground'}`}
+                                                        >
+                                                            {v === "default" && <Layout size={16}/>}
+                                                            {v === "minecraft" && <span className="text-lg leading-none">⛏️</span>}
+                                                            {v}
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Moon size={18} className="text-primary" /> Theme Mode</h2>
                                                 <p className="text-sm text-muted-foreground mb-4">Choose how you experience the illusion.</p>
                                                 <div className="flex flex-wrap gap-3">
                                                     {(["light", "dark", "system"] as const).map((m) => (
