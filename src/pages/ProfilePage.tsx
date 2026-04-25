@@ -16,13 +16,7 @@ import EditProfileDialog from "@/components/EditProfileDialog";
 import FollowsList from "@/components/FollowsList";
 import { PostSkeleton } from "@/components/ui/skeleton";
 import { getNow } from "@/lib/utils";
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    DialogDescription,
-    DialogTrigger,
-} from "@/components/ui/dialog";
+import { ImagePreviewDialog } from "@/components/ImagePreviewDialog";
 
 import { useFollow } from "@/hooks/useFollow";
 import { usePostActions } from "@/hooks/usePostActions";
@@ -146,6 +140,7 @@ const ProfilePage = () => {
 
     const [followsModalOpen, setFollowsModalOpen] = useState(false);
     const [followsModalType, setFollowsModalType] = useState<"followers" | "following">("followers");
+    const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -493,32 +488,22 @@ const ProfilePage = () => {
                                     </div>
                                     <div className="px-6 pb-6 relative">
                                         <div className="absolute -top-12 left-6">
-                                            <Dialog>
-                                                <DialogTrigger asChild>
-                                                    <div className="w-24 h-24 rounded-[3px] gum-border bg-secondary flex items-center justify-center text-3xl font-bold gum-shadow overflow-hidden cursor-pointer hover:opacity-90 transition-opacity outline-none">
-                                                        {profile.avatar_url ? (
-                                                            <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
-                                                        ) : initials}
-                                                    </div>
-                                                </DialogTrigger>
-                                                <DialogContent className="max-w-[90vw] max-h-[90vh] p-8 border-none bg-transparent shadow-none flex items-center justify-center">
-                                                    <DialogTitle className="sr-only">Avatar Preview</DialogTitle>
-                                                    <DialogDescription className="sr-only">Full size view of {profile.display_name}'s avatar</DialogDescription>
-                                                    <div className="relative group">
-                                                        {profile.avatar_url ? (
-                                                            <img
-                                                                src={profile.avatar_url}
-                                                                alt={profile.username}
-                                                                className="max-w-full max-h-[80vh] rounded-[3px] gum-border gum-shadow object-contain"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-48 h-48 rounded-[3px] gum-border bg-secondary flex items-center justify-center text-6xl font-bold gum-shadow">
-                                                                {initials}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </DialogContent>
-                                            </Dialog>
+                                            <div
+                                                onClick={() => profile.avatar_url && setIsAvatarPreviewOpen(true)}
+                                                className={`w-24 h-24 rounded-[3px] gum-border bg-secondary flex items-center justify-center text-3xl font-bold gum-shadow overflow-hidden transition-opacity outline-none ${profile.avatar_url ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
+                                            >
+                                                {profile.avatar_url ? (
+                                                    <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+                                                ) : initials}
+                                            </div>
+                                            {profile.avatar_url && (
+                                                <ImagePreviewDialog
+                                                    src={profile.avatar_url}
+                                                    isOpen={isAvatarPreviewOpen}
+                                                    onOpenChange={setIsAvatarPreviewOpen}
+                                                    alt={`${profile.display_name}'s avatar`}
+                                                />
+                                            )}
                                         </div>
 
                                         <div className="flex justify-end pt-4 pl-[7.5rem] sm:pl-0">

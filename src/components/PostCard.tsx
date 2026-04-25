@@ -19,13 +19,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import vscDarkPlus from "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus";
 import oneLight from "react-syntax-highlighter/dist/esm/styles/prism/one-light";
 import { useTheme } from "@/components/theme-provider";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { ImagePreviewDialog } from "@/components/ImagePreviewDialog";
 import EditPostDialog from "@/components/EditPostDialog";
 
 interface PostCardProps {
@@ -78,6 +72,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
   const { recordView } = usePostViews();
   const [showMenu, setShowMenu] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement>(null);
   const articleRef = useRef<HTMLElement | null>(null);
@@ -397,32 +392,26 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
           )}
 
           {post.media_url && (
-            <Dialog>
-              <DialogTrigger asChild>
-                <button
-                  type="button"
-                  className="mt-3 w-full rounded-[3px] gum-border overflow-hidden bg-muted cursor-pointer hover:opacity-95 transition-opacity"
-                >
-                  <img
-                    src={post.media_url}
-                    alt="Post content"
-                    className="w-full h-auto max-h-[500px] object-contain mx-auto"
-                    loading="lazy"
-                  />
-                </button>
-              </DialogTrigger>
-              <DialogContent className="max-w-[90vw] max-h-[90vh] p-8 border-none bg-transparent shadow-none flex items-center justify-center">
-                <DialogTitle className="sr-only">Image Preview</DialogTitle>
-                <DialogDescription className="sr-only">Full size view of the post image</DialogDescription>
-                <div className="relative group">
-                  <img
-                    src={post.media_url}
-                    alt="Post content"
-                    className="max-w-full max-h-[80vh] rounded-[3px] gum-border gum-shadow object-contain"
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
+            <>
+              <button
+                type="button"
+                onClick={() => setIsImagePreviewOpen(true)}
+                className="mt-3 w-full rounded-[3px] gum-border overflow-hidden bg-muted cursor-pointer hover:opacity-95 transition-opacity"
+              >
+                <img
+                  src={post.media_url}
+                  alt="Post content"
+                  className="w-full h-auto max-h-[500px] object-contain mx-auto"
+                  loading="lazy"
+                />
+              </button>
+              <ImagePreviewDialog
+                src={post.media_url}
+                isOpen={isImagePreviewOpen}
+                onOpenChange={setIsImagePreviewOpen}
+                alt="Post content"
+              />
+            </>
           )}
 
           {post.code && (
