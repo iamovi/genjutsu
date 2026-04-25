@@ -61,7 +61,7 @@ Copyright (C) 2026 Ovi ren (iamovi) (init.ovi@gmail.com)
 Licensed under GNU Affero General Public License as stated in the [LICENSE](https://github.com/iamovi/genjutsu/blob/main/LICENSE):
 
 ```text
-Copyright (C) 2026 Ovi ren (iamovi)
+Copyright (C) 2026 Ovi ren (iamovi) (init.ovi@gmail.com)
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU Affero General Public License as published by the Free
