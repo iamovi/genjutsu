@@ -81,16 +81,12 @@
             "destination": "/api/bot-render?route=/search"
         },
         {
-            "source": "/post/:postId",
-            "destination": "/api/og?postId=:postId"
-        },
-        {
             "source": "/(auth|about|terms|privacy|search|play|admin|settings)",
             "destination": "/index.html"
         },
         {
             "source": "/stranger",
-            "destination": "/api/og?specialPage=stranger"
+            "destination": "/index.html"
         },
         {
             "source": "/whispers",
@@ -105,13 +101,8 @@
             "destination": "/index.html"
         },
         {
-            "source": "/u/:username",
-            "destination": "/api/og?username=:username"
-        },
-        {
             "source": "/((?!api/|assets/|.*\\..*).*)",
             "destination": "/index.html"
         }
     ]
 }
-

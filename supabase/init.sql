@@ -1352,14 +1352,25 @@ BEGIN
   FROM public.posts
   WHERE id = OLD.post_id;
 
-  IF v_post_owner IS NOT NULL AND v_post_owner <> OLD.user_id THEN
-    INSERT INTO public.notifications (user_id, actor_id, type, post_id)
-    VALUES (v_post_owner, OLD.user_id, 'unlike', OLD.post_id);
+  IF v_post_owner IS NULL OR v_post_owner = OLD.user_id THEN
+    RETURN OLD;
   END IF;
+
+  -- Guard against account-deletion cascades where either side may be deleted.
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = OLD.user_id) THEN
+    RETURN OLD;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = v_post_owner) THEN
+    RETURN OLD;
+  END IF;
+
+  INSERT INTO public.notifications (user_id, actor_id, type, post_id)
+  VALUES (v_post_owner, OLD.user_id, 'unlike', OLD.post_id);
 
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
 
 CREATE TRIGGER on_unlike_notify
   AFTER DELETE ON public.likes
@@ -1399,14 +1410,25 @@ BEGIN
   FROM public.posts
   WHERE id = OLD.post_id;
 
-  IF v_post_owner IS NOT NULL AND v_post_owner <> OLD.user_id THEN
-    INSERT INTO public.notifications (user_id, actor_id, type, post_id)
-    VALUES (v_post_owner, OLD.user_id, 'uncomment', OLD.post_id);
+  IF v_post_owner IS NULL OR v_post_owner = OLD.user_id THEN
+    RETURN OLD;
   END IF;
+
+  -- Guard against account-deletion cascades where either side may be deleted.
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = OLD.user_id) THEN
+    RETURN OLD;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = v_post_owner) THEN
+    RETURN OLD;
+  END IF;
+
+  INSERT INTO public.notifications (user_id, actor_id, type, post_id)
+  VALUES (v_post_owner, OLD.user_id, 'uncomment', OLD.post_id);
 
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
 
 CREATE TRIGGER on_uncomment_notify
   AFTER DELETE ON public.comments
@@ -1437,14 +1459,25 @@ BEGIN
     RETURN OLD;
   END IF;
 
-  IF OLD.follower_id <> OLD.following_id THEN
-    INSERT INTO public.notifications (user_id, actor_id, type)
-    VALUES (OLD.following_id, OLD.follower_id, 'unfollow');
+  IF OLD.follower_id = OLD.following_id THEN
+    RETURN OLD;
   END IF;
+
+  -- Guard against account-deletion cascades where either side may be deleted.
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = OLD.follower_id) THEN
+    RETURN OLD;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = OLD.following_id) THEN
+    RETURN OLD;
+  END IF;
+
+  INSERT INTO public.notifications (user_id, actor_id, type)
+  VALUES (OLD.following_id, OLD.follower_id, 'unfollow');
 
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
 
 CREATE TRIGGER on_unfollow_notify
   AFTER DELETE ON public.follows
