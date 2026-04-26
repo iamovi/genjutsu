@@ -21,6 +21,7 @@ import oneLight from "react-syntax-highlighter/dist/esm/styles/prism/one-light";
 import { useTheme } from "@/components/theme-provider";
 import { ImagePreviewDialog } from "@/components/ImagePreviewDialog";
 import EditPostDialog from "@/components/EditPostDialog";
+import PostLikesDialog from "@/components/PostLikesDialog";
 
 interface PostCardProps {
   post: PostWithProfile;
@@ -73,6 +74,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
   const [showMenu, setShowMenu] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
+  const [isLikesDialogOpen, setIsLikesDialogOpen] = useState(false);
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement>(null);
   const articleRef = useRef<HTMLElement | null>(null);
@@ -456,54 +458,67 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
 
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-6 mt-4 pt-3 border-t border-secondary">
-            <motion.button
-              onClick={handleLikeClick}
-              className={`shrink-0 flex items-center gap-1.5 text-xs font-medium transition-colors ${post.user_liked ? "text-red-500" : "text-muted-foreground hover:text-red-500"
-                } relative`}
-              whileTap={{ scale: 0.92 }}
-              animate={isLikeAnimating ? { scale: [1, 1.18, 0.96, 1] } : { scale: 1 }}
-              transition={{ duration: 0.45, ease: "easeOut" }}
-            >
-              <motion.span
-                animate={isLikeAnimating ? { rotate: [0, -14, 12, -8, 0] } : { rotate: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="inline-flex"
+            <div className="shrink-0 inline-flex items-center gap-2">
+              <motion.button
+                onClick={handleLikeClick}
+                className={`inline-flex items-center text-xs font-medium transition-colors ${post.user_liked ? "text-red-500" : "text-muted-foreground hover:text-red-500"
+                  } relative`}
+                title={post.user_liked ? "Unlike post" : "Like post"}
+                aria-label={post.user_liked ? "Unlike post" : "Like post"}
+                whileTap={{ scale: 0.92 }}
+                animate={isLikeAnimating ? { scale: [1, 1.18, 0.96, 1] } : { scale: 1 }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
               >
-                <Heart size={15} fill={post.user_liked ? "currentColor" : "none"} className={post.user_liked ? "text-red-500" : ""} />
-              </motion.span>
-              {post.likes_count}
+                <motion.span
+                  animate={isLikeAnimating ? { rotate: [0, -14, 12, -8, 0] } : { rotate: 0 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="inline-flex"
+                >
+                  <Heart size={15} fill={post.user_liked ? "currentColor" : "none"} className={post.user_liked ? "text-red-500" : ""} />
+                </motion.span>
 
-              <AnimatePresence>
-                {isLikeAnimating && (
-                  <motion.span
-                    key={`like-burst-${likeBurstId}`}
-                    initial={{ opacity: 1 }}
-                    animate={{ opacity: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.45 }}
-                    className="pointer-events-none absolute inset-0"
-                  >
-                    {[
-                      { x: -18, y: -20, delay: 0.0 },
-                      { x: 0, y: -26, delay: 0.03 },
-                      { x: 18, y: -20, delay: 0.06 },
-                      { x: -22, y: -4, delay: 0.09 },
-                      { x: 22, y: -4, delay: 0.12 },
-                    ].map((particle, idx) => (
-                      <motion.span
-                        key={`${likeBurstId}-${idx}`}
-                        initial={{ opacity: 0, x: 0, y: 0, scale: 0.5 }}
-                        animate={{ opacity: [0, 1, 0], x: particle.x, y: particle.y, scale: [0.5, 1, 0.6] }}
-                        transition={{ duration: 0.45, ease: "easeOut", delay: particle.delay }}
-                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-red-500"
-                      >
-                        <Heart size={10} fill="currentColor" />
-                      </motion.span>
-                    ))}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
+                <AnimatePresence>
+                  {isLikeAnimating && (
+                    <motion.span
+                      key={`like-burst-${likeBurstId}`}
+                      initial={{ opacity: 1 }}
+                      animate={{ opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.45 }}
+                      className="pointer-events-none absolute inset-0"
+                    >
+                      {[
+                        { x: -18, y: -20, delay: 0.0 },
+                        { x: 0, y: -26, delay: 0.03 },
+                        { x: 18, y: -20, delay: 0.06 },
+                        { x: -22, y: -4, delay: 0.09 },
+                        { x: 22, y: -4, delay: 0.12 },
+                      ].map((particle, idx) => (
+                        <motion.span
+                          key={`${likeBurstId}-${idx}`}
+                          initial={{ opacity: 0, x: 0, y: 0, scale: 0.5 }}
+                          animate={{ opacity: [0, 1, 0], x: particle.x, y: particle.y, scale: [0.5, 1, 0.6] }}
+                          transition={{ duration: 0.45, ease: "easeOut", delay: particle.delay }}
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-red-500"
+                        >
+                          <Heart size={10} fill="currentColor" />
+                        </motion.span>
+                      ))}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
+              <button
+                type="button"
+                onClick={() => setIsLikesDialogOpen(true)}
+                className={`text-xs font-medium px-1 py-0.5 rounded-[3px] underline underline-offset-2 decoration-dotted transition-colors ${post.user_liked ? "text-red-500 hover:text-red-600 hover:bg-red-500/10" : "text-muted-foreground hover:text-red-500 hover:bg-secondary"
+                  }`}
+                title="View users who liked this post"
+                aria-label="View users who liked this post"
+              >
+                {post.likes_count}
+              </button>
+            </div>
             <Link
               to={`/post/${post.id}`}
               className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
@@ -560,6 +575,11 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
               <Share size={15} />
             </button>
           </div>
+          <PostLikesDialog
+            postId={post.id}
+            isOpen={isLikesDialogOpen}
+            onOpenChange={setIsLikesDialogOpen}
+          />
         </div>
       </div>
     </motion.article>

@@ -100,6 +100,9 @@ CREATE TABLE public.likes (
   UNIQUE(user_id, post_id)
 );
 
+CREATE INDEX idx_likes_post_created_at
+  ON public.likes (post_id, created_at DESC);
+
 -- Bookmarks
 CREATE TABLE public.bookmarks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
