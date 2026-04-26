@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useWhispers, Whisper } from "@/hooks/useWhispers";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, ImageIcon, X, Download } from "lucide-react";
+import { ArrowLeft, Send, ImageIcon, X } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";

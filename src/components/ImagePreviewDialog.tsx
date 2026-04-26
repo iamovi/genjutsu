@@ -25,6 +25,16 @@ export function ImagePreviewDialog({
 }: ImagePreviewDialogProps) {
   const [isDownloading, setIsDownloading] = useState(false);
 
+  const normalizeSafeHttpUrl = (urlValue: string): string | null => {
+    try {
+      const parsed = new URL(urlValue, window.location.href);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+      return parsed.toString();
+    } catch {
+      return null;
+    }
+  };
+
   const getDownloadFilename = (imageUrl: string) => {
     try {
       const cleanUrl = imageUrl.split("?")[0].split("#")[0];
@@ -39,11 +49,17 @@ export function ImagePreviewDialog({
   const handleDownload = async () => {
     if (!src || isDownloading) return;
 
+    const safeUrl = normalizeSafeHttpUrl(src);
+    if (!safeUrl) {
+      toast.error("Unsupported image URL.");
+      return;
+    }
+
     setIsDownloading(true);
-    const filename = getDownloadFilename(src);
+    const filename = getDownloadFilename(safeUrl);
 
     try {
-      const response = await fetch(src);
+      const response = await fetch(safeUrl);
       if (!response.ok) throw new Error("Download failed");
 
       const blob = await response.blob();
@@ -62,7 +78,7 @@ export function ImagePreviewDialog({
       console.error("Download error:", error);
       // Fallback: open the file source so users can still save it manually.
       const a = document.createElement("a");
-      a.href = src;
+      a.href = safeUrl;
       a.target = "_blank";
       a.rel = "noopener noreferrer";
       a.click();
@@ -76,45 +92,45 @@ export function ImagePreviewDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-none bg-transparent shadow-none flex flex-col items-center justify-center outline-none">
+      <DialogContent className="left-0 top-0 translate-x-0 translate-y-0 w-screen h-[100dvh] max-w-none max-h-none rounded-none p-0 border-none bg-black/95 shadow-none outline-none overflow-hidden [&>button:last-child]:hidden">
         <DialogTitle className="sr-only">Image Preview</DialogTitle>
         <DialogDescription className="sr-only">Full size view of the image</DialogDescription>
 
-        <div className="relative flex flex-col items-center max-w-full max-h-full">
-          {/* Main Image */}
-          <div className="relative group max-w-full max-h-[85vh] overflow-hidden flex items-center justify-center">
-            <img
-              src={src}
-              alt={alt}
-              className="max-w-full max-h-[85vh] rounded-[3px] gum-border gum-shadow object-contain bg-background/5"
-            />
-          </div>
+        <div
+          className="relative w-full h-full overflow-hidden"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onOpenChange(false);
+          }}
+        >
+          <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between p-3 sm:p-4">
+            <button
+              onClick={() => onOpenChange(false)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-white hover:bg-black/70 transition-colors"
+              aria-label="Close image preview"
+            >
+              <X size={20} />
+            </button>
 
-          {/* Controls Bar at bottom */}
-          <div className="mt-4 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <button
               onClick={handleDownload}
               disabled={isDownloading}
               className={cn(
-                "gum-btn h-11 px-6 flex items-center gap-2 bg-background/90 backdrop-blur-md text-foreground border-2 border-foreground hover:bg-primary hover:text-primary-foreground transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none shadow-[4px_4px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_white]",
+                "inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-white hover:bg-black/70 transition-colors",
                 isDownloading && "opacity-70 cursor-not-allowed"
               )}
+              aria-label="Download image"
             >
-              {isDownloading ? (
-                <FrogLoader size={18} className="animate-spin" />
-              ) : (
-                <Download size={18} strokeWidth={2.5} />
-              )}
-              <span className="font-bold uppercase tracking-tight text-xs">Download</span>
+              {isDownloading ? <FrogLoader size={16} className="animate-spin" /> : <Download size={18} />}
             </button>
+          </div>
 
-            <button
-              onClick={() => onOpenChange(false)}
-              className="gum-btn h-11 px-6 flex items-center gap-2 bg-background/90 backdrop-blur-md text-foreground border-2 border-foreground hover:bg-secondary transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none shadow-[4px_4px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_white]"
-            >
-              <X size={18} strokeWidth={2.5} />
-              <span className="font-bold uppercase tracking-tight text-xs">Close</span>
-            </button>
+          <div className="absolute inset-0 pt-14 sm:pt-16 pb-4 px-4 sm:px-8 flex items-center justify-center min-h-0 min-w-0">
+            <img
+              src={src}
+              alt={alt}
+              className="w-auto h-auto max-w-full max-h-full object-contain select-none"
+              draggable={false}
+            />
           </div>
         </div>
       </DialogContent>
