@@ -12,6 +12,14 @@ html.dark {
   background-color: #0a0a0a;
 }
 
+html[data-theme-preset="minecraft"] {
+  background-color: hsl(32 38% 42%);
+}
+
+html.dark[data-theme-preset="minecraft"] {
+  background-color: hsl(28 22% 10%);
+}
+
 @layer base {
   :root {
     --background: 270 10% 99%;
@@ -109,6 +117,92 @@ html.dark {
     --glow: 270 50% 75%;
     --success: 142 71% 45%;
   }
+
+  :root[data-theme-preset="minecraft"] {
+    --background: 36 35% 66%;
+    --foreground: 31 29% 10%;
+
+    --card: 36 36% 73%;
+    --card-foreground: 31 29% 10%;
+
+    --popover: 36 36% 73%;
+    --popover-foreground: 31 29% 10%;
+
+    --primary: 103 44% 38%;
+    --primary-foreground: 52 24% 94%;
+
+    --secondary: 35 31% 60%;
+    --secondary-foreground: 31 23% 12%;
+
+    --muted: 34 26% 58%;
+    --muted-foreground: 30 20% 21%;
+
+    --accent: 28 35% 51%;
+    --accent-foreground: 31 24% 11%;
+
+    --border: 31 30% 19%;
+    --input: 31 30% 19%;
+    --ring: 103 30% 32%;
+
+    --shadow-gum: 4px 4px 0px hsl(31 30% 19%);
+    --shadow-gum-sm: 2px 2px 0px hsl(31 30% 19%);
+    --shadow-gum-hover: 2px 2px 0px hsl(31 30% 19%);
+    --shadow-gum-active: 0px 0px 0px hsl(31 30% 19%);
+
+    --sidebar-background: 36 36% 73%;
+    --sidebar-foreground: 31 29% 10%;
+    --sidebar-primary: 103 44% 38%;
+    --sidebar-primary-foreground: 52 24% 94%;
+    --sidebar-accent: 35 31% 60%;
+    --sidebar-accent-foreground: 31 23% 12%;
+    --sidebar-border: 31 30% 19%;
+    --sidebar-ring: 103 30% 32%;
+    --glow: 104 38% 44%;
+    --success: 110 44% 40%;
+  }
+
+  :root.dark[data-theme-preset="minecraft"] {
+    --background: 30 22% 10.5%;
+    --foreground: 40 23% 90%;
+
+    --card: 30 22% 15.5%;
+    --card-foreground: 40 23% 90%;
+
+    --popover: 30 22% 15.5%;
+    --popover-foreground: 40 23% 90%;
+
+    --primary: 104 44% 54%;
+    --primary-foreground: 104 30% 8%;
+
+    --secondary: 30 18% 22%;
+    --secondary-foreground: 40 20% 90%;
+
+    --muted: 30 12% 18%;
+    --muted-foreground: 36 15% 72%;
+
+    --accent: 27 30% 27%;
+    --accent-foreground: 40 23% 90%;
+
+    --border: 30 21% 32%;
+    --input: 30 21% 32%;
+    --ring: 104 31% 58%;
+
+    --shadow-gum: 4px 4px 0px hsl(30 21% 32%);
+    --shadow-gum-sm: 2px 2px 0px hsl(30 21% 32%);
+    --shadow-gum-hover: 2px 2px 0px hsl(30 21% 32%);
+    --shadow-gum-active: 0px 0px 0px hsl(30 21% 32%);
+
+    --sidebar-background: 30 22% 15.5%;
+    --sidebar-foreground: 40 23% 90%;
+    --sidebar-primary: 104 44% 54%;
+    --sidebar-primary-foreground: 104 30% 8%;
+    --sidebar-accent: 30 18% 22%;
+    --sidebar-accent-foreground: 40 20% 90%;
+    --sidebar-border: 30 21% 32%;
+    --sidebar-ring: 104 31% 58%;
+    --glow: 104 41% 57%;
+    --success: 110 44% 45%;
+  }
 }
 
 @layer base {
@@ -156,6 +250,32 @@ html.dark {
 
   html[data-grid="none"] body::before {
     background-image: none;
+  }
+
+  html[data-theme-preset="minecraft"] body::before {
+    background-image:
+      linear-gradient(hsl(106 42% 40% / 0.95) 0 26px, transparent 26px),
+      repeating-linear-gradient(0deg, hsl(33 39% 46% / 0.96) 0 8px, hsl(31 34% 39% / 0.96) 8px 16px),
+      repeating-linear-gradient(90deg, transparent 0 62px, hsl(30 28% 18% / 0.42) 62px 64px),
+      linear-gradient(hsl(31 26% 18% / 0.35) 2px, transparent 2px),
+      linear-gradient(90deg, hsl(31 26% 18% / 0.35) 2px, transparent 2px),
+      repeating-linear-gradient(90deg, hsl(32 28% 52% / 0.16) 0 2px, transparent 2px 4px),
+      repeating-linear-gradient(0deg, hsl(31 26% 18% / 0.12) 0 2px, transparent 2px 4px);
+    background-size: 100% 100%, 100% 100%, 64px 64px, 64px 64px, 64px 64px, 8px 8px, 8px 8px;
+    background-position: 0 0;
+  }
+
+  html.dark[data-theme-preset="minecraft"] body::before {
+    background-image:
+      linear-gradient(hsl(104 30% 23% / 0.88) 0 22px, transparent 22px),
+      repeating-linear-gradient(0deg, hsl(31 24% 19% / 0.95) 0 8px, hsl(29 20% 14% / 0.95) 8px 16px),
+      repeating-linear-gradient(90deg, transparent 0 62px, hsl(30 19% 7% / 0.56) 62px 64px),
+      linear-gradient(hsl(30 19% 7% / 0.42) 2px, transparent 2px),
+      linear-gradient(90deg, hsl(30 19% 7% / 0.42) 2px, transparent 2px),
+      repeating-linear-gradient(90deg, hsl(32 19% 28% / 0.15) 0 2px, transparent 2px 4px),
+      repeating-linear-gradient(0deg, hsl(31 18% 7% / 0.2) 0 2px, transparent 2px 4px);
+    background-size: 100% 100%, 100% 100%, 64px 64px, 64px 64px, 64px 64px, 8px 8px, 8px 8px;
+    background-position: 0 0;
   }
 
   /* ========= Shadow Walk Privacy Mode ========= */
@@ -322,6 +442,28 @@ html.dark {
   .gum-btn:active {
     box-shadow: var(--shadow-gum-active);
     transform: translate(4px, 4px);
+  }
+
+  html[data-theme-preset="minecraft"] .gum-card {
+    background-image:
+      linear-gradient(hsl(34 30% 78% / 0.22), transparent),
+      repeating-linear-gradient(90deg, hsl(31 25% 28% / 0.08) 0 2px, transparent 2px 4px),
+      repeating-linear-gradient(0deg, hsl(30 25% 22% / 0.06) 0 2px, transparent 2px 4px);
+    border-width: 3px;
+  }
+
+  html[data-theme-preset="minecraft"] .gum-btn {
+    font-family: var(--font-sans);
+    letter-spacing: normal;
+    text-shadow: none;
+    border-width: 3px;
+  }
+
+  html.dark[data-theme-preset="minecraft"] .gum-card {
+    background-image:
+      linear-gradient(hsl(31 20% 22% / 0.28), transparent),
+      repeating-linear-gradient(90deg, hsl(30 22% 40% / 0.08) 0 2px, transparent 2px 4px),
+      repeating-linear-gradient(0deg, hsl(30 22% 45% / 0.05) 0 2px, transparent 2px 4px);
   }
 
   .custom-scrollbar::-webkit-scrollbar {

@@ -56,7 +56,7 @@ const SettingsPage = () => {
     const { profile, changeUsername, getNextUsernameChangeDate, deleteAccount } = useProfile();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
-    const { theme, color, customColor, font, radius, emojiPack, animateColor, cursorTrail, grid, soundEnabled, shadowWalk, setTheme, setColor, setCustomColor, setFont, setRadius, setEmojiPack, setAnimateColor, setCursorTrail, setGrid, setSoundEnabled, setShadowWalk } = useTheme();
+    const { theme, preset, color, customColor, font, radius, emojiPack, animateColor, cursorTrail, grid, soundEnabled, shadowWalk, setTheme, setPreset, setColor, setCustomColor, setFont, setRadius, setEmojiPack, setAnimateColor, setCursorTrail, setGrid, setSoundEnabled, setShadowWalk } = useTheme();
     const pushNotifications = usePushNotifications();
     const [mfaStatusLoading, setMfaStatusLoading] = useState(false);
     const [mfaStatusReady, setMfaStatusReady] = useState(false);
@@ -224,6 +224,27 @@ const SettingsPage = () => {
         } else {
             toast.success("Account permanently deleted");
             navigate("/auth");
+        }
+    };
+
+    const handlePresetChange = (nextPreset: "default" | "minecraft") => {
+        setPreset(nextPreset);
+        setAnimateColor(false);
+
+        if (nextPreset === "default") {
+            setColor("purple");
+            setCustomColor("#8b5cf6");
+            setFont("Reddit Mono");
+            setRadius("default");
+            setGrid("blueprint");
+            return;
+        }
+
+        if (nextPreset === "minecraft") {
+            setColor("custom");
+            setCustomColor("#6ea24a");
+            setRadius("none");
+            setGrid("none");
         }
     };
 
@@ -678,6 +699,28 @@ const SettingsPage = () => {
                                     >
                                         <section className="gum-card p-6 space-y-6">
                                             <div>
+                                                <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Palette size={18} className="text-primary" /> Theme Presets</h2>
+                                                <p className="text-sm text-muted-foreground mb-4">Apply a complete look in one click, then fine-tune below.</p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <button
+                                                        onClick={() => handlePresetChange("default")}
+                                                        className={`gum-btn text-left px-4 py-3 transition-all ${preset === "default" ? "bg-primary text-primary-foreground gum-shadow-sm" : "bg-background hover:bg-secondary text-foreground"}`}
+                                                    >
+                                                        <p className="font-bold text-sm">Default</p>
+                                                        <p className={`text-xs mt-1 ${preset === "default" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>Current Genjutsu style</p>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handlePresetChange("minecraft")}
+                                                        className={`gum-btn text-left px-4 py-3 transition-all ${preset === "minecraft" ? "bg-primary text-primary-foreground gum-shadow-sm" : "bg-background hover:bg-secondary text-foreground"}`}
+                                                    >
+                                                        <p className="font-bold text-sm">Minecraft</p>
+                                                        <p className={`text-xs mt-1 ${preset === "minecraft" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>Blocky earth tones and pixel-style mood</p>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-6 border-t border-border">
+                                            <div>
                                                 <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Layout size={18} className="text-primary" /> Theme Mode</h2>
                                                 <p className="text-sm text-muted-foreground mb-4">Choose how you experience the illusion.</p>
                                                 <div className="flex flex-wrap gap-3">
@@ -694,6 +737,7 @@ const SettingsPage = () => {
                                                         </button>
                                                     ))}
                                                 </div>
+                                            </div>
                                             </div>
 
                                             <div className="pt-6 border-t border-border">
@@ -764,7 +808,13 @@ const SettingsPage = () => {
                                                             key={f}
                                                             onClick={() => setFont(f)}
                                                             className={`gum-btn px-4 py-3 text-sm font-bold truncate transition-colors ${font === f ? 'bg-primary text-primary-foreground gum-shadow-sm' : 'bg-background hover:bg-secondary text-foreground'}`}
-                                                            style={{ fontFamily: f !== 'Reddit Mono' ? `'${f}', sans-serif` : 'var(--font-sans)' }}
+                                                            style={{
+                                                                fontFamily:
+                                                                    f === 'Reddit Mono' ? "'Reddit Mono', monospace" :
+                                                                        f === 'Fira Code' || f === 'JetBrains Mono' ? `'${f}', monospace` :
+                                                                            f === 'Comic Neue' ? "'Comic Neue', cursive" :
+                                                                                `'${f}', sans-serif`,
+                                                            }}
                                                         >
                                                             {f}
                                                         </button>

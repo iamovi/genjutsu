@@ -5,6 +5,7 @@ type ColorPreset = "purple" | "blue" | "green" | "orange" | "rose" | "zinc" | "c
 type FontPreset = "Reddit Mono" | "Inter" | "Space Grotesk" | "Fira Code" | "JetBrains Mono" | "Comic Neue";
 type RadiusPreset = "none" | "default" | "md" | "lg" | "full";
 export type EmojiPack = "native" | "twemoji" | "google" | "openmoji";
+export type ThemePreset = "default" | "minecraft";
 
 /** Convert a hex color (#rrggbb) to an HSL string "H S% L%" suitable for CSS variables. */
 function hexToHsl(hex: string): string {
@@ -62,6 +63,7 @@ type GridPreset = "blueprint" | "dotted" | "scanlines" | "none";
 
 type ThemeProviderState = {
     theme: Theme;
+    preset: ThemePreset;
     color: ColorPreset;
     customColor: string;
     font: FontPreset;
@@ -73,6 +75,7 @@ type ThemeProviderState = {
     soundEnabled: boolean;
     shadowWalk: boolean;
     setTheme: (theme: Theme) => void;
+    setPreset: (preset: ThemePreset) => void;
     setColor: (color: ColorPreset) => void;
     setCustomColor: (hex: string) => void;
     setFont: (font: FontPreset) => void;
@@ -87,6 +90,7 @@ type ThemeProviderState = {
 
 const initialState: ThemeProviderState = {
     theme: "system",
+    preset: "default",
     color: "purple",
     customColor: "#8b5cf6",
     font: "Reddit Mono",
@@ -98,6 +102,7 @@ const initialState: ThemeProviderState = {
     soundEnabled: false,
     shadowWalk: false,
     setTheme: () => null,
+    setPreset: () => null,
     setColor: () => null,
     setCustomColor: () => null,
     setFont: () => null,
@@ -122,11 +127,19 @@ export function ThemeProvider({
         const stored = localStorage.getItem(`${storageKey}-theme`);
         return (stored as Theme) || defaultTheme;
     });
+    const [preset, setPresetState] = useState<ThemePreset>(() => {
+        const stored = localStorage.getItem(`${storageKey}-preset`);
+        return stored === "minecraft" ? "minecraft" : "default";
+    });
     const [color, setColorState] = useState<ColorPreset>(() => {
         return (localStorage.getItem(`${storageKey}-color`) as ColorPreset) || "purple";
     });
     const [font, setFontState] = useState<FontPreset>(() => {
-        return (localStorage.getItem(`${storageKey}-font`) as FontPreset) || "Reddit Mono";
+        const stored = localStorage.getItem(`${storageKey}-font`);
+        if (stored && Object.prototype.hasOwnProperty.call(fontFamilies, stored)) {
+            return stored as FontPreset;
+        }
+        return "Reddit Mono";
     });
     const [grid, setGridState] = useState<GridPreset>(() => {
         return (localStorage.getItem(`${storageKey}-grid`) as GridPreset) || "blueprint";
@@ -161,6 +174,7 @@ export function ThemeProvider({
     const rafRef = useRef<number | null>(null);
 
     const setTheme = (val: Theme) => { localStorage.setItem(`${storageKey}-theme`, val); setThemeState(val); };
+    const setPreset = (val: ThemePreset) => { localStorage.setItem(`${storageKey}-preset`, val); setPresetState(val); };
     const setColor = (val: ColorPreset) => { localStorage.setItem(`${storageKey}-color`, val); setColorState(val); };
     const setCustomColor = (hex: string) => { localStorage.setItem(`${storageKey}-customColor`, hex); setCustomColorState(hex); };
     const setFont = (val: FontPreset) => { localStorage.setItem(`${storageKey}-font`, val); setFontState(val); };
@@ -181,7 +195,8 @@ export function ThemeProvider({
             activeTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         }
         root.classList.add(activeTheme);
-        
+
+        root.setAttribute("data-theme-preset", preset);
         root.setAttribute("data-grid", grid);
         root.setAttribute("data-emoji-pack", emojiPack);
         root.setAttribute("data-shadow-walk", String(shadowWalk));
@@ -207,7 +222,7 @@ export function ThemeProvider({
 
         // Apply Radius
         document.documentElement.style.setProperty('--radius', radiusPresets[radius]);
-    }, [theme, color, customColor, radius, emojiPack, animateColor, grid, shadowWalk]);
+    }, [theme, preset, color, customColor, radius, emojiPack, animateColor, grid, shadowWalk]);
 
     // Animated color loop — smooth 60fps hue cycling via requestAnimationFrame
     useEffect(() => {
@@ -258,8 +273,8 @@ export function ThemeProvider({
     }, [font]);
 
     const value = {
-        theme, color, customColor, font, grid, radius, emojiPack, animateColor, cursorTrail, soundEnabled, shadowWalk,
-        setTheme, setColor, setCustomColor, setFont, setGrid, setRadius, setEmojiPack, setAnimateColor, setCursorTrail, setSoundEnabled, setShadowWalk
+        theme, preset, color, customColor, font, grid, radius, emojiPack, animateColor, cursorTrail, soundEnabled, shadowWalk,
+        setTheme, setPreset, setColor, setCustomColor, setFont, setGrid, setRadius, setEmojiPack, setAnimateColor, setCursorTrail, setSoundEnabled, setShadowWalk
     };
 
     return (
