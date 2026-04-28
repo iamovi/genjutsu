@@ -38,7 +38,9 @@ every post, comment, and message automatically deletes after 24 hours. this mean
 
 ## genjutsu feed api
 
-want to use public genjutsu feed posts in your own app or website?
+![api preview](./api_preview.png)
+
+**want to use public genjutsu feed posts in your own app or website?**
 
 visit the docs site: [https://iamovi.github.io/genjutsu/api](https://iamovi.github.io/genjutsu/api)
 
