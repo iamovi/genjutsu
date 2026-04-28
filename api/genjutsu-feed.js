@@ -5,16 +5,21 @@ const MAX_LIMIT = 50;
 const DEFAULT_LIMIT = 10;
 const DEFAULT_PAGE = 1;
 const FEED_WINDOW_HOURS = 24;
+const LIVE_POLL_BUCKET_SECONDS = 30;
+const DEFAULT_CACHE_CONTROL = "public, max-age=30, s-maxage=300, stale-while-revalidate=600";
+const LIVE_CACHE_CONTROL = "public, max-age=5, s-maxage=25, stale-while-revalidate=30";
 
 let SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 let SUPABASE_PUBLISHABLE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-function jsonResponse(payload, status = 200, cacheControl = "public, max-age=15, s-maxage=15") {
+function jsonResponse(payload, status = 200, cacheControl = DEFAULT_CACHE_CONTROL) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": cacheControl,
+      "CDN-Cache-Control": cacheControl,
+      "Vercel-CDN-Cache-Control": cacheControl,
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
@@ -55,6 +60,15 @@ function parsePositiveInt(input, fallback) {
   return n;
 }
 
+function floorToPollBucket(date) {
+  const bucketMs = LIVE_POLL_BUCKET_SECONDS * 1000;
+  return new Date(Math.floor(date.getTime() / bucketMs) * bucketMs);
+}
+
+function getServerTimeIso() {
+  return floorToPollBucket(new Date()).toISOString();
+}
+
 function buildCutoffIso(sinceParam) {
   const defaultCutoff = new Date(Date.now() - FEED_WINDOW_HOURS * 60 * 60 * 1000);
   if (!sinceParam) return defaultCutoff.toISOString();
@@ -63,7 +77,13 @@ function buildCutoffIso(sinceParam) {
   if (Number.isNaN(parsed.getTime())) return null;
 
   // Never allow older than the public 24h feed retention window.
-  return (parsed > defaultCutoff ? parsed : defaultCutoff).toISOString();
+  return floorToPollBucket(parsed > defaultCutoff ? parsed : defaultCutoff).toISOString();
+}
+
+function getCacheControl({ page, hasSince }) {
+  if (hasSince) return LIVE_CACHE_CONTROL;
+  if (page <= 2) return DEFAULT_CACHE_CONTROL;
+  return "public, max-age=30, s-maxage=120, stale-while-revalidate=300";
 }
 
 function aggregateCounts(rows = []) {
@@ -119,6 +139,8 @@ export default async function handler(req) {
   const page = rawPage;
   const since = url.searchParams.get("since");
   const cutoffIso = buildCutoffIso(since);
+  const serverTimeIso = getServerTimeIso();
+  const cacheControl = getCacheControl({ page, hasSince: Boolean(since) });
 
   if (cutoffIso === null) {
     return jsonResponse(
@@ -181,7 +203,6 @@ export default async function handler(req) {
     }
 
     const posts = pagePosts.map((post) => normalizePost(post, likesCounts, commentsCounts));
-    const nowIso = new Date().toISOString();
 
     return jsonResponse({
       ok: true,
@@ -189,12 +210,13 @@ export default async function handler(req) {
         page,
         limit,
         has_more: hasMore,
-        since: since || null,
+        since: since ? cutoffIso : null,
         window_hours: FEED_WINDOW_HOURS,
-        server_time: nowIso,
+        server_time: serverTimeIso,
+        poll_bucket_seconds: LIVE_POLL_BUCKET_SECONDS,
       },
       posts,
-    });
+    }, 200, cacheControl);
   } catch {
     return jsonResponse({ ok: false, error: "Unexpected server error" }, 500, "no-store");
   }

@@ -92,6 +92,9 @@ CREATE TABLE public.posts (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
+CREATE INDEX idx_posts_created_at_desc
+  ON public.posts (created_at DESC);
+
 -- Post Views (dedupe per viewer/post)
 CREATE TABLE public.post_views (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -142,6 +145,9 @@ CREATE TABLE public.comments (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+CREATE INDEX idx_comments_post_id
+  ON public.comments (post_id);
 
 -- Messages (Whispers)
 CREATE TABLE public.messages (

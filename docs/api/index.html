@@ -40,7 +40,7 @@
         <li>Send a <code>GET</code> request using browser fetch, backend code, or cURL.</li>
         <li>Check <code>ok === true</code> before reading <code>posts</code>.</li>
         <li>Render each post card using <code>content</code>, <code>media_url</code>, counts, and <code>profile</code>.</li>
-        <li>For live updates, save <code>meta.server_time</code> and send it back as <code>since</code>.</li>
+        <li>For live updates, save <code>meta.server_time</code> and send it back as <code>since</code>. It is bucketed for shared cache efficiency.</li>
       </ol>
       <p>If your site is static HTML/CSS/JS, you can use fetch directly in the browser. If your site is server-rendered, call this API on your backend and render from there.</p>
     </section>
@@ -82,6 +82,7 @@
         <li><code>page</code> must be a positive integer.</li>
         <li><code>limit</code> must be a positive integer and is capped at <code>50</code>.</li>
         <li><code>since</code> must be a valid ISO timestamp like <code>2026-04-28T10:30:00.000Z</code>.</li>
+        <li>For best cache reuse, pass back <code>meta.server_time</code> instead of generating your own fresh timestamp.</li>
       </ul>
     </section>
 
@@ -95,7 +96,8 @@
     "has_more": true,
     "since": null,
     "window_hours": 24,
-    "server_time": "2026-04-28T10:35:00.000Z"
+    "server_time": "2026-04-28T10:35:00.000Z",
+    "poll_bucket_seconds": 30
   },
   "posts": [
     {
@@ -251,6 +253,16 @@
         </tbody>
       </table>
       <p>All error responses follow a JSON shape with <code>ok: false</code> and an <code>error</code> message.</p>
+    </section>
+
+    <section class="card">
+      <h2>Caching Behavior</h2>
+      <p>The public API is tuned for shared edge caching. Common feed pages can stay cached a bit longer, while <code>since</code>-based refreshes use shorter cache windows.</p>
+      <ul>
+        <li>Reuse <code>meta.server_time</code> as your next <code>since</code> value.</li>
+        <li>Avoid generating a brand new timestamp on every poll.</li>
+        <li>Use small limits for live refreshes whenever possible.</li>
+      </ul>
     </section>
 
     <section class="card">
