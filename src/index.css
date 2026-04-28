@@ -20,6 +20,14 @@ html.dark[data-theme-preset="minecraft"] {
   background-color: hsl(28 22% 10%);
 }
 
+html[data-theme-preset="win95"] {
+  background-color: #008080;
+}
+
+html.dark[data-theme-preset="win95"] {
+  background-color: #004040;
+}
+
 @layer base {
   :root {
     --background: 270 10% 99%;
@@ -203,6 +211,73 @@ html.dark[data-theme-preset="minecraft"] {
     --glow: 104 41% 57%;
     --success: 110 44% 45%;
   }
+
+  :root[data-theme-preset="win95"] {
+    --background: 180 100% 25%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 75%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 75%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 210 100% 20%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 75%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 60%;
+    --muted-foreground: 0 0% 20%;
+    --accent: 0 0% 80%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 100% 30%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 0%;
+    --input: 0 0% 100%;
+    --ring: 0 0% 0%;
+    --radius: 0px;
+    --shadow-gum: none;
+    --shadow-gum-sm: none;
+    --shadow-gum-hover: none;
+    --shadow-gum-active: none;
+    --sidebar-background: 0 0% 75%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 210 100% 20%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 80%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 0%;
+    --sidebar-ring: 0 0% 0%;
+    --glow: 210 100% 20%;
+    --success: 120 100% 20%;
+  }
+
+  :root.dark[data-theme-preset="win95"] {
+    --background: 180 100% 10%;
+    --foreground: 0 0% 90%;
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 90%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 90%;
+    --primary: 210 100% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 0 0% 25%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 0 0% 30%;
+    --accent-foreground: 0 0% 90%;
+    --border: 0 0% 100%;
+    --input: 0 0% 5%;
+    --ring: 0 0% 100%;
+    --sidebar-background: 0 0% 15%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 210 100% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 30%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: 0 0% 100%;
+    --glow: 210 100% 40%;
+    --success: 120 100% 40%;
+  }
 }
 
 @layer base {
@@ -276,6 +351,10 @@ html.dark[data-theme-preset="minecraft"] {
       repeating-linear-gradient(0deg, hsl(31 18% 7% / 0.2) 0 2px, transparent 2px 4px);
     background-size: 100% 100%, 100% 100%, 64px 64px, 64px 64px, 64px 64px, 8px 8px, 8px 8px;
     background-position: 0 0;
+  }
+
+  html[data-theme-preset="win95"] body::before {
+    background-image: none;
   }
 
   /* ========= Shadow Walk Privacy Mode ========= */
@@ -464,6 +543,62 @@ html.dark[data-theme-preset="minecraft"] {
       linear-gradient(hsl(31 20% 22% / 0.28), transparent),
       repeating-linear-gradient(90deg, hsl(30 22% 40% / 0.08) 0 2px, transparent 2px 4px),
       repeating-linear-gradient(0deg, hsl(30 22% 45% / 0.05) 0 2px, transparent 2px 4px);
+  }
+
+  /* Windows 95 Bevels */
+  html[data-theme-preset="win95"] .gum-card {
+    border: 1px solid #dfdfdf;
+    border-right-color: #000;
+    border-bottom-color: #000;
+    box-shadow: inset 1px 1px #fff, inset -1px -1px #808080;
+    background-color: hsl(var(--card));
+    border-radius: 0;
+    padding: 2px;
+  }
+
+  html[data-theme-preset="win95"] .gum-btn {
+    border: 1px solid #dfdfdf;
+    border-right-color: #000;
+    border-bottom-color: #000;
+    box-shadow: inset 1px 1px #fff, inset -1px -1px #808080;
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    border-radius: 0;
+    transform: none !important;
+  }
+
+  html[data-theme-preset="win95"] .gum-btn:hover {
+    transform: none !important;
+    box-shadow: inset 1px 1px #fff, inset -1px -1px #808080;
+  }
+
+  html[data-theme-preset="win95"] .gum-btn:active {
+    box-shadow: inset 1px 1px #000, inset -1px -1px #fff;
+    border: 1px solid #808080;
+    border-right-color: #dfdfdf;
+    border-bottom-color: #dfdfdf;
+    transform: none !important;
+  }
+
+  html.dark[data-theme-preset="win95"] .gum-card {
+    border: 1px solid #444;
+    border-right-color: #000;
+    border-bottom-color: #000;
+    box-shadow: inset 1px 1px #666, inset -1px -1px #222;
+  }
+
+  html.dark[data-theme-preset="win95"] .gum-btn {
+    border: 1px solid #444;
+    border-right-color: #000;
+    border-bottom-color: #000;
+    box-shadow: inset 1px 1px #666, inset -1px -1px #222;
+  }
+
+  html.dark[data-theme-preset="win95"] .gum-btn:active {
+    box-shadow: inset 1px 1px #000, inset -1px -1px #666;
+    border: 1px solid #222;
+    border-right-color: #444;
+    border-bottom-color: #444;
   }
 
   .custom-scrollbar::-webkit-scrollbar {

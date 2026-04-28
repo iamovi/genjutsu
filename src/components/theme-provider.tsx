@@ -5,7 +5,7 @@ type ColorPreset = "purple" | "blue" | "green" | "orange" | "rose" | "zinc" | "c
 type FontPreset = "Reddit Mono" | "Inter" | "Space Grotesk" | "Fira Code" | "JetBrains Mono" | "Comic Neue";
 type RadiusPreset = "none" | "default" | "md" | "lg" | "full";
 export type EmojiPack = "native" | "twemoji" | "google" | "openmoji";
-export type ThemePreset = "default" | "minecraft";
+export type ThemePreset = "default" | "minecraft" | "win95";
 
 /** Convert a hex color (#rrggbb) to an HSL string "H S% L%" suitable for CSS variables. */
 function hexToHsl(hex: string): string {
@@ -133,7 +133,10 @@ export function ThemeProvider({
     });
     const [preset, setPresetState] = useState<ThemePreset>(() => {
         const stored = localStorage.getItem(`${storageKey}-preset`);
-        return stored === "minecraft" ? "minecraft" : "default";
+        if (stored === "minecraft" || stored === "win95") {
+            return stored as ThemePreset;
+        }
+        return "default";
     });
     const [color, setColorState] = useState<ColorPreset>(() => {
         return (localStorage.getItem(`${storageKey}-color`) as ColorPreset) || "purple";
