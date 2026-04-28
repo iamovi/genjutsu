@@ -96,6 +96,7 @@
         <li><code>limit</code> must be a positive integer and is capped at <code>50</code>.</li>
         <li><code>since</code> must be a valid ISO timestamp like <code>2026-04-28T10:30:00.000Z</code>.</li>
         <li>For best cache reuse, pass back <code>meta.server_time</code> instead of generating your own fresh timestamp.</li>
+        <li>If you send <code>since</code>, the API may round it to a short server bucket and return the normalized value in <code>meta.since</code>.</li>
       </ul>
     </section>
 
@@ -261,7 +262,7 @@
           <tr>
             <td><code>502</code></td>
             <td>Upstream data fetch issue while building feed or counts.</td>
-            <td><code>{ "ok": false, "error": "Failed to fetch posts" }</code></td>
+            <td><code>{ "ok": false, "error": "Failed to fetch posts" }</code> or <code>{ "ok": false, "error": "Failed to fetch feed counts" }</code></td>
           </tr>
         </tbody>
       </table>
@@ -329,11 +330,14 @@ console.log(data.posts);</code></pre>
 
     <section class="card">
       <h2>Live Feed Polling Example</h2>
-      <pre><code>let since = new Date().toISOString();
+      <pre><code>let since = null;
 
 async function pollFeed() {
   const url = new URL("https://genjutsu-social.vercel.app/api/genjutsu-feed");
-  url.searchParams.set("since", since);
+  if (since) {
+    // Reuse server bucket time for better shared cache hits.
+    url.searchParams.set("since", since);
+  }
   url.searchParams.set("limit", "20");
 
   const res = await fetch(url.toString());
