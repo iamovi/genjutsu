@@ -227,7 +227,7 @@ const SettingsPage = () => {
         }
     };
 
-    const handlePresetChange = (nextPreset: "default" | "minecraft" | "win95") => {
+    const handlePresetChange = (nextPreset: "default" | "minecraft" | "win95" | "papyrus") => {
         setPreset(nextPreset);
         setAnimateColor(false);
 
@@ -251,6 +251,14 @@ const SettingsPage = () => {
         if (nextPreset === "win95") {
             setColor("custom");
             setCustomColor("#008080");
+            setRadius("none");
+            setGrid("none");
+            return;
+        }
+
+        if (nextPreset === "papyrus") {
+            setColor("custom");
+            setCustomColor("#7c2d12");
             setRadius("none");
             setGrid("none");
         }
@@ -740,6 +748,13 @@ const SettingsPage = () => {
                                                     >
                                                         <p className="font-bold text-sm">Windows 95</p>
                                                         <p className={`text-xs mt-1 ${preset === "win95" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>Classic PC aesthetic with 3D beveled edges</p>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handlePresetChange("papyrus")}
+                                                        className={`gum-btn text-left px-4 py-3 transition-all ${preset === "papyrus" ? "bg-primary text-primary-foreground gum-shadow-sm" : "bg-background hover:bg-secondary text-foreground"}`}
+                                                    >
+                                                        <p className="font-bold text-sm">Papyrus/Ink</p>
+                                                        <p className={`text-xs mt-1 ${preset === "papyrus" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>Old manuscript with parchment texture</p>
                                                     </button>
                                                 </div>
                                             </div>

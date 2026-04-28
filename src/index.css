@@ -654,3 +654,128 @@ img.twemoji {
   vertical-align: -0.15em;
   display: inline-block;
 }
+
+/* Papyrus/Ink Theme Preset */
+html[data-theme-preset="papyrus"] {
+  background-color: #e5d3b3;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, transparent 100%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-blend-mode: overlay;
+}
+
+html.dark[data-theme-preset="papyrus"] {
+  background-color: #2b261e;
+}
+
+:root[data-theme-preset="papyrus"] {
+  --background: 40 40% 80%;
+  --foreground: 30 50% 10%;
+  --card: 40 40% 85%;
+  --card-foreground: 30 50% 15%;
+  --popover: 40 40% 85%;
+  --popover-foreground: 30 50% 15%;
+  --primary: 15 80% 25%; /* Wax Seal Red */
+  --primary-foreground: 40 40% 95%;
+  --secondary: 40 30% 75%;
+  --secondary-foreground: 30 50% 15%;
+  --muted: 40 20% 65%;
+  --muted-foreground: 30 30% 30%;
+  --accent: 40 40% 70%;
+  --accent-foreground: 30 50% 10%;
+  --destructive: 0 80% 30%;
+  --destructive-foreground: 40 40% 95%;
+  --border: 30 50% 20%;
+  --input: 40 50% 90%;
+  --ring: 15 80% 25%;
+  --radius: 0px;
+  --shadow-gum: 2px 2px 0px rgba(0,0,0,0.1);
+  --sidebar-background: 40 40% 80%;
+  --sidebar-foreground: 30 50% 10%;
+  --sidebar-primary: 15 80% 25%;
+  --sidebar-primary-foreground: 40 40% 95%;
+  --sidebar-accent: 40 30% 75%;
+  --sidebar-accent-foreground: 30 50% 10%;
+  --sidebar-border: 30 50% 20%;
+  --glow: 15 80% 25%;
+}
+
+:root.dark[data-theme-preset="papyrus"] {
+  --background: 30 20% 15%;
+  --foreground: 40 30% 85%;
+  --card: 30 20% 20%;
+  --card-foreground: 40 30% 90%;
+  --primary: 15 60% 40%;
+  --primary-foreground: 40 30% 95%;
+  --secondary: 30 15% 25%;
+  --secondary-foreground: 40 30% 85%;
+  --muted: 30 10% 35%;
+  --muted-foreground: 40 20% 70%;
+  --accent: 30 20% 30%;
+  --accent-foreground: 40 30% 90%;
+  --border: 40 30% 30%;
+  --input: 30 20% 10%;
+}
+
+html[data-theme-preset="papyrus"] body::before {
+  background-image: none;
+}
+
+html[data-theme-preset="papyrus"] .gum-card {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.3);
+  box-shadow:
+    1px 1px 0px hsl(var(--border) / 0.1),
+    -1px -1px 0px hsl(var(--background) / 0.5),
+    2px 2px 5px rgba(0,0,0,0.05);
+  border-radius: 2px !important;
+  position: relative;
+  overflow: hidden;
+}
+
+html[data-theme-preset="papyrus"] .gum-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+html[data-theme-preset="papyrus"] .gum-btn {
+  background-color: hsl(var(--secondary));
+  border: 1px solid hsl(var(--border) / 0.4);
+  color: hsl(var(--secondary-foreground));
+  border-radius: 1px !important;
+  box-shadow: 1px 1px 0px rgba(0,0,0,0.1);
+  transition: transform 0.1s;
+}
+
+html[data-theme-preset="papyrus"] .gum-btn:hover {
+  background-color: hsl(var(--accent));
+  transform: translateY(-1px);
+}
+
+html[data-theme-preset="papyrus"] .gum-btn:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+html[data-theme-preset="papyrus"] .bg-primary {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border: none !important;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.2) !important;
+}
+
+html[data-theme-preset="papyrus"] input,
+html[data-theme-preset="papyrus"] textarea {
+  background-color: hsl(var(--input)) !important;
+  border: 1px solid hsl(var(--border) / 0.3) !important;
+  border-bottom: 2px solid hsl(var(--border) / 0.5) !important;
+  border-radius: 0 !important;
+}
+
+html[data-theme-preset="papyrus"] .text-primary {
+  color: hsl(var(--primary)) !important;
+  font-weight: 700 !important;
+}
