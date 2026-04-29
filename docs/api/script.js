@@ -20,7 +20,6 @@ function renderJson(data) {
 function buildRequestUrl() {
   const baseUrl = (baseUrlInput.value || "").trim().replace(/\/+$/, "");
   const page = (document.getElementById("page").value || "1").trim();
-  const limit = (document.getElementById("limit").value || "10").trim();
   const since = (document.getElementById("since").value || "").trim();
 
   if (!/^https?:\/\//i.test(baseUrl)) {
@@ -29,7 +28,6 @@ function buildRequestUrl() {
 
   const url = new URL("/api/genjutsu-feed", `${baseUrl}/`);
   url.searchParams.set("page", page);
-  url.searchParams.set("limit", limit);
   if (since) url.searchParams.set("since", since);
   return url;
 }

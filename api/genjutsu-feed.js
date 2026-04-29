@@ -1,18 +1,24 @@
 export const config = { runtime: "edge" };
 
 const APP_URL = "https://genjutsu-social.vercel.app";
-const MAX_LIMIT = 50;
-const DEFAULT_LIMIT = 10;
+const FEED_LIMIT = 5;
 const DEFAULT_PAGE = 1;
+const MAX_PUBLIC_PAGE = 3;
 const FEED_WINDOW_HOURS = 24;
 const LIVE_POLL_BUCKET_SECONDS = 30;
 const DEFAULT_CACHE_CONTROL = "public, max-age=30, s-maxage=300, stale-while-revalidate=600";
-const LIVE_CACHE_CONTROL = "public, max-age=5, s-maxage=25, stale-while-revalidate=30";
+const LIVE_CACHE_CONTROL = "public, max-age=15, s-maxage=90, stale-while-revalidate=120";
+
+// Basic in-memory rate limiting (best effort per edge instance)
+const RATE_LIMIT_MAX_REQUESTS = 12;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const rateLimitStore = new Map();
+let lastCleanupAt = 0;
 
 let SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 let SUPABASE_PUBLISHABLE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-function jsonResponse(payload, status = 200, cacheControl = DEFAULT_CACHE_CONTROL) {
+function jsonResponse(payload, status = 200, cacheControl = DEFAULT_CACHE_CONTROL, extraHeaders = {}) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
@@ -23,6 +29,7 @@ function jsonResponse(payload, status = 200, cacheControl = DEFAULT_CACHE_CONTRO
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
+      ...extraHeaders,
     },
   });
 }
@@ -51,6 +58,38 @@ function supabaseHeaders() {
     Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
     "Content-Type": "application/json",
   };
+}
+
+
+function getClientIp(req) {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  return req.headers.get("x-real-ip") || "unknown";
+}
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+
+  if (now - lastCleanupAt > RATE_LIMIT_WINDOW_MS) {
+    for (const [key, value] of rateLimitStore.entries()) {
+      const hasRecentHit = (value.hits || []).some((ts) => ts > now - RATE_LIMIT_WINDOW_MS);
+      if (!hasRecentHit) rateLimitStore.delete(key);
+    }
+    lastCleanupAt = now;
+  }
+  const windowStart = now - RATE_LIMIT_WINDOW_MS;
+  const entry = rateLimitStore.get(ip) || { hits: [] };
+  entry.hits = entry.hits.filter((ts) => ts > windowStart);
+
+  if (entry.hits.length >= RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((entry.hits[0] + RATE_LIMIT_WINDOW_MS - now) / 1000));
+    rateLimitStore.set(ip, entry);
+    return { allowed: false, retryAfterSeconds, remaining: 0 };
+  }
+
+  entry.hits.push(now);
+  rateLimitStore.set(ip, entry);
+  return { allowed: true, retryAfterSeconds: 0, remaining: RATE_LIMIT_MAX_REQUESTS - entry.hits.length };
 }
 
 function parsePositiveInt(input, fallback) {
@@ -132,11 +171,30 @@ export default async function handler(req) {
     return jsonResponse({ ok: false, error: "Server configuration error" }, 500, "no-store");
   }
 
+  const clientIp = getClientIp(req);
+  const rateLimit = checkRateLimit(clientIp);
+  if (!rateLimit.allowed) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Rate limit exceeded. Please retry shortly.",
+        retry_after_seconds: rateLimit.retryAfterSeconds,
+      },
+      429,
+      "no-store",
+      {
+        "Retry-After": String(rateLimit.retryAfterSeconds),
+        "X-RateLimit-Limit": String(RATE_LIMIT_MAX_REQUESTS),
+        "X-RateLimit-Remaining": "0",
+        "X-RateLimit-Reset": String(Math.ceil(Date.now() / 1000) + rateLimit.retryAfterSeconds),
+      }
+    );
+  }
+
   const url = new URL(req.url);
-  const rawLimit = parsePositiveInt(url.searchParams.get("limit"), DEFAULT_LIMIT);
   const rawPage = parsePositiveInt(url.searchParams.get("page"), DEFAULT_PAGE);
-  const limit = Math.min(rawLimit, MAX_LIMIT);
-  const page = rawPage;
+  const limit = FEED_LIMIT;
+  const page = Math.min(rawPage, MAX_PUBLIC_PAGE);
   const since = url.searchParams.get("since");
   const cutoffIso = buildCutoffIso(since);
   const serverTimeIso = getServerTimeIso();
@@ -209,6 +267,12 @@ export default async function handler(req) {
       meta: {
         page,
         limit,
+        max_public_page: MAX_PUBLIC_PAGE,
+        rate_limit: {
+          max_requests: RATE_LIMIT_MAX_REQUESTS,
+          window_seconds: Math.floor(RATE_LIMIT_WINDOW_MS / 1000),
+          remaining: rateLimit.remaining,
+        },
         has_more: hasMore,
         since: since ? cutoffIso : null,
         window_hours: FEED_WINDOW_HOURS,

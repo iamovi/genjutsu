@@ -41,7 +41,7 @@
       <ul>
         <li>Public-only feed data</li>
         <li>24-hour retention window</li>
-        <li>Pagination via <code>page</code> and <code>limit</code></li>
+        <li>Pagination via <code>page</code> (fixed 5 posts per response)</li>
         <li>Live polling support via <code>since</code></li>
       </ul>
     </section>
@@ -50,7 +50,7 @@
       <h2>Beginner Setup (Step by Step)</h2>
       <ol>
         <li>Choose your base URL: <code>https://genjutsu-social.vercel.app</code></li>
-        <li>Build the endpoint URL: <code>/api/genjutsu-feed?page=1&amp;limit=10</code></li>
+        <li>Build the endpoint URL: <code>/api/genjutsu-feed?page=1</code></li>
         <li>Send a <code>GET</code> request using browser fetch, backend code, or cURL.</li>
         <li>Check <code>ok === true</code> before reading <code>posts</code>.</li>
         <li>Render each post card using <code>content</code>, <code>media_url</code>, counts, and <code>profile</code>.</li>
@@ -75,13 +75,7 @@
             <td><code>page</code></td>
             <td>number</td>
             <td>1</td>
-            <td>Page number (1-based).</td>
-          </tr>
-          <tr>
-            <td><code>limit</code></td>
-            <td>number</td>
-            <td>10</td>
-            <td>Posts per page (max 50).</td>
+            <td>Page number (1-based), capped at 3 for public traffic safety.</td>
           </tr>
           <tr>
             <td><code>since</code></td>
@@ -94,7 +88,7 @@
       <p>Validation rules:</p>
       <ul>
         <li><code>page</code> must be a positive integer.</li>
-        <li><code>limit</code> must be a positive integer and is capped at <code>50</code>.</li>
+        <li>Each response is fixed at <code>5</code> posts (the <code>limit</code> query parameter is ignored).</li>
         <li><code>since</code> must be a valid ISO timestamp like <code>2026-04-28T10:30:00.000Z</code>.</li>
         <li>For best cache reuse, pass back <code>meta.server_time</code> instead of generating your own fresh timestamp.</li>
       </ul>
@@ -106,7 +100,13 @@
   "ok": true,
   "meta": {
     "page": 1,
-    "limit": 10,
+    "limit": 5,
+    "max_public_page": 3,
+    "rate_limit": {
+      "max_requests": 12,
+      "window_seconds": 60,
+      "remaining": 11
+    },
     "has_more": true,
     "since": null,
     "window_hours": 24,
@@ -264,6 +264,11 @@
             <td>Upstream data fetch issue while building feed or counts.</td>
             <td><code>{ "ok": false, "error": "Failed to fetch posts" }</code></td>
           </tr>
+          <tr>
+            <td><code>429</code></td>
+            <td>Rate limit exceeded for this IP on this edge instance.</td>
+            <td><code>{ "ok": false, "error": "Rate limit exceeded...", "retry_after_seconds": 12 }</code></td>
+          </tr>
         </tbody>
       </table>
       <p>All error responses follow a JSON shape with <code>ok: false</code> and an <code>error</code> message.</p>
@@ -275,7 +280,7 @@
       <ul>
         <li>Reuse <code>meta.server_time</code> as your next <code>since</code> value.</li>
         <li>Avoid generating a brand new timestamp on every poll.</li>
-        <li>Use small limits for live refreshes whenever possible.</li>
+        <li>Feed size is fixed to 5 posts per request for consistent cache behavior and lower backend load.</li>
       </ul>
     </section>
 
@@ -283,24 +288,24 @@
       <h2>Rate Limits & Fair Use</h2>
       <p>There is no dedicated API key or public per-user quota yet, but consumers should use reasonable polling and caching behavior.</p>
       <ul>
-        <li>Recommended polling interval for live updates: every <strong>10 to 30 seconds</strong>.</li>
+        <li>Recommended polling interval for live updates: every <strong>10 to 30 seconds</strong> (avoid tighter loops).</li>
         <li>Avoid high-frequency loops (for example sub-second polling).</li>
         <li>Use <code>since</code> to fetch only new posts instead of repeatedly requesting large pages.</li>
         <li>Respect caching headers returned by the endpoint when possible.</li>
       </ul>
-      <p>Future versions may enforce hard rate limits and API key-based access controls.</p>
+      <p>The endpoint now enforces a best-effort per-IP rate limit of <code>12 requests / 60 seconds</code> per edge instance, and caps public page requests at <code>page=3</code>.</p>
     </section>
 
     <section class="card">
       <h2>Quick Start</h2>
-      <pre><code>const res = await fetch("https://genjutsu-social.vercel.app/api/genjutsu-feed?limit=10&page=1");
+      <pre><code>const res = await fetch("https://genjutsu-social.vercel.app/api/genjutsu-feed?page=1");
 const data = await res.json();
 console.log(data.posts);</code></pre>
     </section>
 
     <section class="card">
       <h2>cURL Example</h2>
-      <pre><code>curl "https://genjutsu-social.vercel.app/api/genjutsu-feed?page=1&amp;limit=10"</code></pre>
+      <pre><code>curl "https://genjutsu-social.vercel.app/api/genjutsu-feed?page=1"</code></pre>
     </section>
 
     <section class="card">
@@ -309,7 +314,7 @@ console.log(data.posts);</code></pre>
 
 &lt;script&gt;
   async function loadFeed() {
-    const res = await fetch("https://genjutsu-social.vercel.app/api/genjutsu-feed?page=1&amp;limit=10");
+    const res = await fetch("https://genjutsu-social.vercel.app/api/genjutsu-feed?page=1");
     const data = await res.json();
     if (!data.ok) return;
 
@@ -335,8 +340,7 @@ console.log(data.posts);</code></pre>
 async function pollFeed() {
   const url = new URL("https://genjutsu-social.vercel.app/api/genjutsu-feed");
   url.searchParams.set("since", since);
-  url.searchParams.set("limit", "20");
-
+  
   const res = await fetch(url.toString());
   const data = await res.json();
   if (!data.ok) return;
@@ -357,7 +361,7 @@ setInterval(pollFeed, 10000);</code></pre>
       <h2>Common Mistakes</h2>
       <ul>
         <li>Passing invalid <code>since</code> format (must be ISO timestamp).</li>
-        <li>Requesting <code>limit</code> over <code>50</code> and expecting more than the cap.</li>
+        <li>Expecting custom page size via <code>limit</code> (this endpoint always returns up to 5 posts).</li>
         <li>Assuming this endpoint returns data older than 24 hours.</li>
         <li>Not checking <code>ok</code> before reading <code>posts</code>.</li>
         <li>Rendering <code>media_url</code> without null checks.</li>
@@ -383,9 +387,6 @@ setInterval(pollFeed, 10000);</code></pre>
         </label>
         <label>Page
           <input id="page" type="number" min="1" value="1" />
-        </label>
-        <label>Limit
-          <input id="limit" type="number" min="1" max="50" value="10" />
         </label>
         <label>Since (optional)
           <input id="since" type="text" placeholder="2026-04-28T10:30:00.000Z" />
