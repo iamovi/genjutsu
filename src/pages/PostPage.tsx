@@ -487,7 +487,7 @@ const PostPage = () => {
             <Navbar />
             <main className="max-w-6xl mx-auto px-4 py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-                    <div>
+                    <div className="min-w-0">
                         <button
                             onClick={() => navigate("/")}
                             className="inline-flex items-center gap-2 px-3 py-1.5 gum-card bg-secondary text-xs font-bold hover:bg-primary hover:text-primary-foreground transition-colors w-fit mb-6"

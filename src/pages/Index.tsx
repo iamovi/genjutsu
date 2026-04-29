@@ -67,7 +67,7 @@ const Index = () => {
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-          <div>
+          <div className="min-w-0">
             {user ? (
               <ComposePost onPost={createPost} />
             ) : (

@@ -223,7 +223,7 @@ const SearchPage = () => {
             <Navbar />
             <main className="max-w-6xl mx-auto px-4 py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-                    <div className="space-y-6">
+                    <div className="space-y-6 min-w-0">
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => navigate(-1)}

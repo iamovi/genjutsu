@@ -352,7 +352,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
                         style={highlighterTheme}
                         language={match[1]}
                         PreTag="div"
-                        className="rounded-[3px] my-4"
+                        className="rounded-[3px] my-4 max-w-full overflow-x-auto"
                         {...props}
                       >
                         {String(children).replace(/\n$/, "")}
