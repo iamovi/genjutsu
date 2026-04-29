@@ -6,7 +6,6 @@ const CONTROLLER_PATH = path.join(process.cwd(), "controller", "main.json");
 const defaults = {
   maintenance: false,
   maintenanceMessage: "",
-  readOnlyMode: false,
   apiOff: false,
   feedApiOff: false,
   botRenderApiOff: false,
@@ -19,7 +18,6 @@ export async function getControllerSettings() {
     return {
       maintenance: Boolean(data?.maintenance),
       maintenanceMessage: typeof data?.maintenanceMessage === "string" ? data.maintenanceMessage : "",
-      readOnlyMode: Boolean(data?.readOnlyMode),
       apiOff: Boolean(data?.apiOff),
       feedApiOff: Boolean(data?.feedApiOff),
       botRenderApiOff: Boolean(data?.botRenderApiOff),

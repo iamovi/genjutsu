@@ -3,7 +3,7 @@
 // This program is licensed under the GNU Affero General Public License v3.0
 // See the LICENSE file or <https://www.gnu.org/licenses/> for details.
 
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
 import { MaintenancePage } from "@/components/MaintenancePage";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { Toaster } from "@/components/ui/toaster";
@@ -26,6 +26,41 @@ import { FloatingWhisperBubble } from "@/components/FloatingWhisperBubble";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import MfaSessionGuard from "@/components/MfaSessionGuard";
 
+const lazyWithRetry = <T extends { default: ComponentType<any> }>(
+  importer: () => Promise<T>,
+  key: string
+) =>
+  lazy(async () => {
+    try {
+      return await importer();
+    } catch (error) {
+      const err = error as Error;
+      const message = err?.message || "";
+      const isChunkError =
+        message.includes("Importing a module script failed") ||
+        message.includes("Failed to fetch dynamically imported module");
+
+      if (isChunkError && typeof window !== "undefined") {
+        try {
+          const reloadKey = `lazy-retried-${key}`;
+          const hasRetried = sessionStorage.getItem(reloadKey) === "1";
+
+          if (!hasRetried) {
+            sessionStorage.setItem(reloadKey, "1");
+            window.location.reload();
+          } else {
+            sessionStorage.removeItem(reloadKey);
+          }
+        } catch {
+          // If storage is unavailable (private mode/policy), still attempt one refresh.
+          window.location.reload();
+        }
+      }
+
+      throw error;
+    }
+  });
+
 import Index from "@/pages/Index";
 const AuthPage = lazy(() => import("@/pages/AuthPage"));
 const PostPage = lazy(() => import("@/pages/PostPage"));
@@ -37,7 +72,7 @@ const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const WhispersPage = lazy(() => import("@/pages/WhispersPage"));
 const ChatPage = lazy(() => import("@/pages/ChatPage"));
 const CommunityChat = lazy(() => import("@/pages/CommunityChat"));
-const PlayPage = lazy(() => import("@/pages/PlayPage"));
+const PlayPage = lazyWithRetry(() => import("@/pages/PlayPage"), "play-page");
 const AdminPage = lazy(() => import("@/pages/AdminPage"));
 const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 const StrangerPage = lazy(() => import("@/pages/StrangerPage"));
@@ -47,7 +82,6 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 interface RuntimeController {
   maintenance?: boolean;
   maintenanceMessage?: string;
-  readOnlyMode?: boolean;
 }
 
 const queryClient = new QueryClient();
@@ -55,7 +89,6 @@ const queryClient = new QueryClient();
 const App = () => {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState("");
-  const [readOnlyMode, setReadOnlyMode] = useState(false);
 
   useEffect(() => {
     syncTime();
@@ -72,12 +105,10 @@ const App = () => {
         const data = (await res.json()) as RuntimeController;
         setMaintenanceMode(Boolean(data?.maintenance));
         setMaintenanceMessage(typeof data?.maintenanceMessage === "string" ? data.maintenanceMessage : "");
-        setReadOnlyMode(Boolean(data?.readOnlyMode));
       })
       .catch(() => {
         setMaintenanceMode(false);
         setMaintenanceMessage("");
-        setReadOnlyMode(false);
       });
   }, []);
 
@@ -108,11 +139,6 @@ const App = () => {
             >
               <ScrollToTop />
               <GoogleAnalytics />
-              {readOnlyMode ? (
-                <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-500/95 text-black text-xs sm:text-sm font-semibold text-center py-2 px-3">
-                  Read-only mode is active. Creating or editing content may be temporarily disabled.
-                </div>
-              ) : null}
               <AuthProvider>
                 <MfaSessionGuard />
                 <FloatingWhisperBubble />
