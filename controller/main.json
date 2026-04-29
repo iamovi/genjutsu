@@ -1,8 +1,8 @@
 {
   "maintenance": false,
   "maintenanceMessage": "We are doing maintenance. Please check back soon.",
-  "readOnlyMode": false,
+  "readOnlyMode": true,
   "apiOff": false,
-  "feedApiOff": false,
+  "feedApiOff": true,
   "botRenderApiOff": false
 }
