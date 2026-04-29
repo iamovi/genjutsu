@@ -1,4 +1,4 @@
-export const config = { runtime: "edge" };
+import { getControllerSettings } from "./_controller.js";
 
 const APP_URL = "https://genjutsu-social.vercel.app";
 const CONFIG_WORKER_URL = process.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.workers.dev/config";
@@ -347,6 +347,11 @@ async function renderPost(route) {
 }
 
 export default async function handler(req) {
+  const controller = await getControllerSettings();
+  if (controller.apiOff || controller.botRenderApiOff) {
+    return new Response("API is temporarily disabled", { status: 503 });
+  }
+
   const reqUrl = new URL(req.url);
   const route = normalizeRoute(reqUrl.searchParams.get("route") || "/");
 

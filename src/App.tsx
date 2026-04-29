@@ -3,7 +3,7 @@
 // This program is licensed under the GNU Affero General Public License v3.0
 // See the LICENSE file or <https://www.gnu.org/licenses/> for details.
 
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { MaintenancePage } from "@/components/MaintenancePage";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { Toaster } from "@/components/ui/toaster";
@@ -44,23 +44,47 @@ const StrangerPage = lazy(() => import("@/pages/StrangerPage"));
 const MfaChallengePage = lazy(() => import("@/pages/MfaChallengePage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
-////////////////////////////////////////////////////////////////
-const MAINTENANCE_MODE = false; 
-///////////////////////////////////////////////////////////////////////////////////////////////
+interface RuntimeController {
+  maintenance?: boolean;
+  maintenanceMessage?: string;
+  readOnlyMode?: boolean;
+}
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState("");
+  const [readOnlyMode, setReadOnlyMode] = useState(false);
+
   useEffect(() => {
     syncTime();
     const interval = setInterval(syncTime, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
-  if (MAINTENANCE_MODE) {
+  useEffect(() => {
+    const controllerUrl = `/api/controller?t=${Date.now()}`;
+
+    fetch(controllerUrl, { cache: "no-store" })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json()) as RuntimeController;
+        setMaintenanceMode(Boolean(data?.maintenance));
+        setMaintenanceMessage(typeof data?.maintenanceMessage === "string" ? data.maintenanceMessage : "");
+        setReadOnlyMode(Boolean(data?.readOnlyMode));
+      })
+      .catch(() => {
+        setMaintenanceMode(false);
+        setMaintenanceMessage("");
+        setReadOnlyMode(false);
+      });
+  }, []);
+
+  if (maintenanceMode) {
     return (
       <ThemeProvider defaultTheme="light" storageKey="genjutsu-theme">
-        <MaintenancePage />
+        <MaintenancePage message={maintenanceMessage} />
       </ThemeProvider>
     );
   }
@@ -84,6 +108,11 @@ const App = () => {
             >
               <ScrollToTop />
               <GoogleAnalytics />
+              {readOnlyMode ? (
+                <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-500/95 text-black text-xs sm:text-sm font-semibold text-center py-2 px-3">
+                  Read-only mode is active. Creating or editing content may be temporarily disabled.
+                </div>
+              ) : null}
               <AuthProvider>
                 <MfaSessionGuard />
                 <FloatingWhisperBubble />

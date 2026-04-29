@@ -1,4 +1,4 @@
-export const config = { runtime: "edge" };
+import { getControllerSettings } from "./_controller.js";
 
 const APP_URL = "https://genjutsu-social.vercel.app";
 const FEED_LIMIT = 5;
@@ -164,6 +164,11 @@ function normalizePost(post, likesCounts, commentsCounts) {
 
 export default async function handler(req) {
   if (req.method === "OPTIONS") return jsonResponse({}, 200, "no-store");
+  const controller = await getControllerSettings();
+  if (controller.apiOff || controller.feedApiOff) {
+    return jsonResponse({ ok: false, error: "API is temporarily disabled" }, 503, "no-store");
+  }
+
   if (req.method !== "GET") return jsonResponse({ ok: false, error: "Method Not Allowed" }, 405, "no-store");
 
   const hasConfig = await ensureSupabaseConfig();
