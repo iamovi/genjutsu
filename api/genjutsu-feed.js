@@ -1,3 +1,4 @@
+import maintenanceConfig from "../maintenance.json" assert { type: "json" };
 export const config = { runtime: "edge" };
 
 const APP_URL = "https://genjutsu-social.vercel.app";
@@ -124,6 +125,12 @@ function normalizePost(post, likesCounts, commentsCounts) {
 }
 
 export default async function handler(req) {
+  if (maintenanceConfig.enabled) {
+    return new Response(JSON.stringify({ ok: false, error: "Service temporarily unavailable" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
   if (req.method === "OPTIONS") return jsonResponse({}, 200, "no-store");
   if (req.method !== "GET") return jsonResponse({ ok: false, error: "Method Not Allowed" }, 405, "no-store");
 

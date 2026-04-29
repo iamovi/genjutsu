@@ -1,3 +1,4 @@
+import maintenanceConfig from "../maintenance.json" assert { type: "json" };
 export const config = { runtime: "edge" };
 
 function jsonResponse(payload, status = 200) {
@@ -14,6 +15,12 @@ function jsonResponse(payload, status = 200) {
 }
 
 export default async function handler(req) {
+  if (maintenanceConfig.enabled) {
+    return new Response(JSON.stringify({ ok: false, error: "Service temporarily unavailable" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
   if (req.method === "OPTIONS") return jsonResponse({}, 200);
   if (req.method !== "GET") return jsonResponse({ error: "Method Not Allowed" }, 405);
 

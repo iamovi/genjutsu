@@ -1,3 +1,4 @@
+import maintenanceConfig from "../maintenance.json" assert { type: "json" };
 export const config = { runtime: 'edge' };
 
 let SUPABASE_URL = process.env.VITE_SUPABASE_URL;
@@ -16,6 +17,12 @@ function escapeHtml(str) {
 }
 
 export default async function handler(req) {
+    if (maintenanceConfig.enabled) {
+        return new Response(JSON.stringify({ ok: false, error: "Service temporarily unavailable" }), {
+            status: 503,
+            headers: { "Content-Type": "application/json" }
+        });
+    }
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
         const workerUrl = process.env.VITE_CONFIG_WORKER_URL || 'https://genjutsu-config.workers.dev/config';
         try {

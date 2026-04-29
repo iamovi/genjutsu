@@ -25,6 +25,7 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { FloatingWhisperBubble } from "@/components/FloatingWhisperBubble";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import MfaSessionGuard from "@/components/MfaSessionGuard";
+import maintenanceConfig from "../maintenance.json";
 
 import Index from "@/pages/Index";
 const AuthPage = lazy(() => import("@/pages/AuthPage"));
@@ -45,7 +46,7 @@ const MfaChallengePage = lazy(() => import("@/pages/MfaChallengePage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 ////////////////////////////////////////////////////////////////
-const MAINTENANCE_MODE = false; 
+const MAINTENANCE_MODE = maintenanceConfig.enabled;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 const queryClient = new QueryClient();

@@ -1,3 +1,4 @@
+import maintenanceConfig from "../maintenance.json" assert { type: "json" };
 export const config = { runtime: "edge" };
 
 const APP_URL = "https://genjutsu-social.vercel.app";
@@ -347,6 +348,12 @@ async function renderPost(route) {
 }
 
 export default async function handler(req) {
+  if (maintenanceConfig.enabled) {
+    return new Response(JSON.stringify({ ok: false, error: "Service temporarily unavailable" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
   const reqUrl = new URL(req.url);
   const route = normalizeRoute(reqUrl.searchParams.get("route") || "/");
 
