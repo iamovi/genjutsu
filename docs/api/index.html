@@ -111,7 +111,7 @@
     "since": null,
     "window_hours": 24,
     "server_time": "2026-04-28T10:35:00.000Z",
-    "poll_bucket_seconds": 30
+    "poll_bucket_seconds": 60
   },
   "posts": [
     {
@@ -283,7 +283,7 @@
       <h2>Rate Limits & Fair Use</h2>
       <p>There is no dedicated API key or public per-user quota yet, but consumers should use reasonable polling and caching behavior.</p>
       <ul>
-        <li>Recommended polling interval for live updates: every <strong>10 to 30 seconds</strong>.</li>
+        <li>Recommended polling interval for live updates: every <strong>60 seconds</strong> (matching the server bucket).</li>
         <li>Avoid high-frequency loops (for example sub-second polling).</li>
         <li>Use <code>since</code> to fetch only new posts instead of repeatedly requesting large pages.</li>
         <li>Respect caching headers returned by the endpoint when possible.</li>

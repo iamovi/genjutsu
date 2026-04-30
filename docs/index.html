@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Genjutsu Docs</title>
-    <link rel="icon" href="https://raw.githubusercontent.com/iamovi/genjutsu/refs/heads/main/public/fav.jpg">
+    <link rel="icon" href="https://raw.githubusercontent.com/iamovi/genjutsu/4bf370f11509043eb3a9dac16340425c61ce0d34/public/main-fav.png">
     <meta name="theme-color" content="#070708">
     <meta name="description"
         content="Genjutsu Docs — Everything you need to know about Genjutsu, the 24-hour ephemeral social network built for developers.">
@@ -17,7 +17,7 @@
     <meta property="og:description"
         content="A fast-paced social network for developers. Everything vanishes in 24 hours. Download the Android APK.">
     <meta property="og:image"
-        content="https://raw.githubusercontent.com/iamovi/genjutsu/refs/heads/main/public/fav.jpg">
+        content="https://raw.githubusercontent.com/iamovi/genjutsu/4bf370f11509043eb3a9dac16340425c61ce0d34/public/main-fav.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
@@ -26,7 +26,7 @@
     <meta property="twitter:description"
         content="A fast-paced social network for developers. Everything vanishes in 24 hours. Download the Android APK.">
     <meta property="twitter:image"
-        content="https://raw.githubusercontent.com/iamovi/genjutsu/refs/heads/main/public/fav.jpg">
+        content="https://raw.githubusercontent.com/iamovi/genjutsu/4bf370f11509043eb3a9dac16340425c61ce0d34/public/main-fav.png">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -164,7 +164,7 @@
     <nav class="site-nav w-full fixed top-0 z-50 px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
         <!-- Logo -->
         <a href="#hero" class="flex items-center gap-2 sm:gap-3 min-w-0">
-            <img src="https://raw.githubusercontent.com/iamovi/genjutsu/refs/heads/main/public/fav.jpg"
+            <img src="https://raw.githubusercontent.com/iamovi/genjutsu/4bf370f11509043eb3a9dac16340425c61ce0d34/public/main-fav.png"
                 alt="Genjutsu Logo" class="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0 gum-border rounded-[3px]">
             <span class="text-base sm:text-xl font-bold tracking-tight uppercase truncate"
                 style="color: rgba(136, 107, 171, 1)">genjutsu</span>
@@ -184,8 +184,9 @@
                 class="nav-link hover:underline text-muted-custom hover:text-[var(--fg)] transition-colors">Open
                 Source</a>
 
-            <a href="https://genjutsu-social.vercel.app" target="_blank" class="hover:underline transition-colors">Web
-                App</a>
+            <a href="./api/" target="_blank"
+                class="nav-link hover:underline text-muted-custom hover:text-[var(--fg)] transition-colors">API</a>
+
         </div>
 
         <!-- Right: toggle + mobile menu btn -->
@@ -239,10 +240,11 @@
             <a href="#stack" class="mobile-nav-link">Tech Stack</a>
             <a href="#commits" class="mobile-nav-link">Commits</a>
             <a href="#opensource" class="mobile-nav-link">Open Source</a>
+            <a href="./api/" target="_blank" class="mobile-nav-link">API Reference ↗</a>
             <a href="https://genjutsu-social.vercel.app" target="_blank" class="mobile-nav-link">
                 Web App / Enter <i class="ri-external-link-line ml-1"></i>
             </a>
-            <a href="https://github.com/iamovi/genjutsu/releases/download/version2/genjutsu.apk"
+            <a href="https://github.com/iamovi/genjutsu/releases/download/v2.1.0/genjutsu-release.apk"
                 class="gum-btn flex items-center justify-center gap-2 px-4 py-3 font-bold text-sm uppercase tracking-wide mt-4">
                 <i class="ri-android-fill text-xl"></i> Download APK
             </a>
@@ -260,13 +262,13 @@
         <div class="relative w-32 h-32 mb-8">
             <div class="absolute inset-0 rounded-[3px] translate-x-3 translate-y-3"
                 style="background-color: var(--border-col)"></div>
-            <img src="https://raw.githubusercontent.com/iamovi/genjutsu/refs/heads/main/public/fav.jpg" alt="App Icon"
+            <img src="https://raw.githubusercontent.com/iamovi/genjutsu/4bf370f11509043eb3a9dac16340425c61ce0d34/public/main-fav.png" alt="App Icon"
                 class="relative w-full h-full object-cover rounded-[3px] gum-border z-10">
         </div>
 
         <div
             class="badge inline-flex items-center gap-2 px-3 py-1 rounded-[3px] text-xs font-bold tracking-widest uppercase mb-4">
-            Release version2
+            Release v2.1.0
         </div>
 
         <div class="flex flex-wrap items-center justify-center gap-2 mb-6">
@@ -290,13 +292,13 @@
         </h1>
 
         <div class="flex flex-col sm:flex-row items-center gap-4 w-full justify-center mt-4">
-            <a href="https://github.com/iamovi/genjutsu/releases/download/version2/genjutsu.apk"
+            <a href="https://github.com/iamovi/genjutsu/releases/download/v2.1.0/genjutsu-release.apk"
                 class="gum-btn inline-flex items-center justify-center gap-3 px-8 py-4 font-bold text-lg w-full sm:w-auto uppercase tracking-wide">
                 <div class="flex items-center gap-3">
                     <i class="ri-android-fill text-3xl"></i>
                     <div class="flex flex-col items-start leading-none">
                         <span class="text-sm font-bold uppercase tracking-tighter opacity-70">Download</span>
-                        <span class="text-xl font-bold uppercase">APK (1.58 MB)</span>
+                        <span class="text-xl font-bold uppercase">APK (2.94 MB)</span>
                     </div>
                 </div>
             </a>
@@ -321,7 +323,7 @@
         </p>
 
         <p class="mt-4 text-xs text-muted-custom font-mono">
-            > Requires Android 6.0+ // Native TWA
+            > Requires Android 5.0+ (SDK 21) // TWA (Trusted Web Activity)
         </p>
 
     </main>
@@ -625,6 +627,7 @@
             <div class="flex items-center gap-6">
                 <a href="https://genjutsu-social.vercel.app" target="_blank"
                     class="font-bold hover:underline">WEB_APP</a>
+                <a href="./api/" target="_blank" class="font-bold hover:underline">API_DOCS</a>
                 <a href="https://github.com/iamovi/genjutsu" target="_blank"
                     class="font-bold hover:underline">GITHUB_SOURCE</a>
             </div>
