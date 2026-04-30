@@ -280,13 +280,6 @@ const SettingsPage = () => {
             return;
         }
 
-        if (nextPreset === "vicecity") {
-            setColor("custom");
-            setCustomColor("#ff00ff");
-            setRadius("none");
-            setGrid("none");
-            return;
-        }
 
         if (nextPreset === "gameboy") {
             setColor("custom");
@@ -818,13 +811,6 @@ const SettingsPage = () => {
                                                     >
                                                         <p className="font-bold text-sm">Windows XP</p>
                                                         <p className={`text-xs mt-1 ${preset === "winxp" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>The legendary Luna aesthetic with blue gradients</p>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handlePresetChange("vicecity")}
-                                                        className={`gum-btn text-left px-4 py-3 transition-all ${preset === "vicecity" ? "bg-primary text-primary-foreground gum-shadow-sm" : "bg-background hover:bg-secondary text-foreground"}`}
-                                                    >
-                                                        <p className="font-bold text-sm">Vice City</p>
-                                                        <p className={`text-xs mt-1 ${preset === "vicecity" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>80s Miami neon with hot pink and cyan</p>
                                                     </button>
                                                     <button
                                                         onClick={() => handlePresetChange("gameboy")}

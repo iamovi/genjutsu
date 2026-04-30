@@ -133,9 +133,8 @@ export function usePostActions() {
                 toast.error("Couldn't resonate with this post. Try again!");
             }
         },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ["posts"] });
-        },
+        // No onSettled invalidation — optimistic update in onMutate handles UI state.
+        // Invalidating here would trigger a full 3-query re-fetch after every like.
     });
 
     const toggleBookmarkMutation = useMutation({
@@ -193,9 +192,7 @@ export function usePostActions() {
                 toast.error("Couldn't preserve this memory. Try again!");
             }
         },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ["posts"] });
-        },
+        // No onSettled invalidation — optimistic update in onMutate handles UI state.
     });
 
     const deletePostMutation = useMutation({

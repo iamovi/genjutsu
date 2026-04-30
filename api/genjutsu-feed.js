@@ -1,4 +1,4 @@
-// need some work!!!
+// Public feed API — Vercel Edge Function
 
 export const config = { runtime: "edge" };
 
@@ -7,9 +7,11 @@ const MAX_LIMIT = 50;
 const DEFAULT_LIMIT = 10;
 const DEFAULT_PAGE = 1;
 const FEED_WINDOW_HOURS = 24;
-const LIVE_POLL_BUCKET_SECONDS = 30;
+// Bumped from 30s → 60s: halves DB hits from any polling clients
+const LIVE_POLL_BUCKET_SECONDS = 60;
 const DEFAULT_CACHE_CONTROL = "public, max-age=30, s-maxage=300, stale-while-revalidate=600";
-const LIVE_CACHE_CONTROL = "public, max-age=5, s-maxage=25, stale-while-revalidate=30";
+// Bumped min-age from 5s → 10s so CDN absorbs more repeat requests
+const LIVE_CACHE_CONTROL = "public, max-age=10, s-maxage=55, stale-while-revalidate=60";
 
 let SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 let SUPABASE_PUBLISHABLE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -34,9 +36,7 @@ async function ensureSupabaseConfig() {
 
   const workerUrl = process.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.workers.dev/config";
   try {
-    const configRes = await fetch(workerUrl, {
-      headers: { Origin: APP_URL },
-    });
+    const configRes = await fetch(workerUrl, { headers: { Origin: APP_URL } });
     if (!configRes.ok) return false;
     const configData = await configRes.json();
     SUPABASE_URL = configData?.VITE_SUPABASE_URL;
@@ -47,7 +47,7 @@ async function ensureSupabaseConfig() {
   }
 }
 
-function supabaseHeaders() {
+function supabaseReadHeaders() {
   return {
     apikey: SUPABASE_PUBLISHABLE_KEY,
     Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
@@ -74,11 +74,9 @@ function getServerTimeIso() {
 function buildCutoffIso(sinceParam) {
   const defaultCutoff = new Date(Date.now() - FEED_WINDOW_HOURS * 60 * 60 * 1000);
   if (!sinceParam) return defaultCutoff.toISOString();
-
   const parsed = new Date(sinceParam);
   if (Number.isNaN(parsed.getTime())) return null;
-
-  // Never allow older than the public 24h feed retention window.
+  // Never allow older than the 24h retention window.
   return floorToPollBucket(parsed > defaultCutoff ? parsed : defaultCutoff).toISOString();
 }
 
@@ -125,6 +123,23 @@ function normalizePost(post, likesCounts, commentsCounts) {
   };
 }
 
+/**
+ * Fetches per-post counts from a given table.
+ * Selects only the post_id column so Postgres reads minimal data from disk.
+ * Returns null on fetch failure so caller can propagate a 502.
+ */
+async function fetchCountsForPosts(table, postIds) {
+  if (!postIds.length) return Object.create(null);
+  const inClause = `(${postIds.map((id) => `"${String(id).replace(/"/g, '\\"')}"`).join(",")})`;
+  const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
+  url.searchParams.set("select", "post_id");
+  url.searchParams.set("post_id", `in.${inClause}`);
+  const res = await fetch(url.toString(), { headers: supabaseReadHeaders() });
+  if (!res.ok) return null;
+  const rows = await res.json();
+  return aggregateCounts(Array.isArray(rows) ? rows : []);
+}
+
 export default async function handler(req) {
   if (req.method === "OPTIONS") return jsonResponse({}, 200, "no-store");
   if (req.method !== "GET") return jsonResponse({ ok: false, error: "Method Not Allowed" }, 405, "no-store");
@@ -145,14 +160,7 @@ export default async function handler(req) {
   const cacheControl = getCacheControl({ page, hasSince: Boolean(since) });
 
   if (cutoffIso === null) {
-    return jsonResponse(
-      {
-        ok: false,
-        error: "Invalid `since` parameter. Use ISO date format.",
-      },
-      400,
-      "no-store"
-    );
+    return jsonResponse({ ok: false, error: "Invalid `since` parameter. Use ISO date format." }, 400, "no-store");
   }
 
   const from = (page - 1) * limit;
@@ -166,7 +174,7 @@ export default async function handler(req) {
   postsUrl.searchParams.set("limit", String(limit + 1));
 
   try {
-    const postsRes = await fetch(postsUrl.toString(), { headers: supabaseHeaders() });
+    const postsRes = await fetch(postsUrl.toString(), { headers: supabaseReadHeaders() });
     if (!postsRes.ok) {
       return jsonResponse({ ok: false, error: "Failed to fetch posts" }, 502, "no-store");
     }
@@ -181,27 +189,18 @@ export default async function handler(req) {
     let commentsCounts = Object.create(null);
 
     if (postIds.length > 0) {
-      const inClause = `(${postIds.map((id) => `"${String(id).replace(/"/g, '\\"')}"`).join(",")})`;
-      const likesUrl = new URL(`${SUPABASE_URL}/rest/v1/likes`);
-      likesUrl.searchParams.set("select", "post_id");
-      likesUrl.searchParams.set("post_id", `in.${inClause}`);
-
-      const commentsUrl = new URL(`${SUPABASE_URL}/rest/v1/comments`);
-      commentsUrl.searchParams.set("select", "post_id");
-      commentsUrl.searchParams.set("post_id", `in.${inClause}`);
-
-      const [likesRes, commentsRes] = await Promise.all([
-        fetch(likesUrl.toString(), { headers: supabaseHeaders() }),
-        fetch(commentsUrl.toString(), { headers: supabaseHeaders() }),
+      // Run in parallel — each only reads the post_id column, minimizing disk IO
+      const [likesResult, commentsResult] = await Promise.all([
+        fetchCountsForPosts("likes", postIds),
+        fetchCountsForPosts("comments", postIds),
       ]);
 
-      if (!likesRes.ok || !commentsRes.ok) {
+      if (likesResult === null || commentsResult === null) {
         return jsonResponse({ ok: false, error: "Failed to fetch feed counts" }, 502, "no-store");
       }
 
-      const [likesData, commentsData] = await Promise.all([likesRes.json(), commentsRes.json()]);
-      likesCounts = aggregateCounts(Array.isArray(likesData) ? likesData : []);
-      commentsCounts = aggregateCounts(Array.isArray(commentsData) ? commentsData : []);
+      likesCounts = likesResult;
+      commentsCounts = commentsResult;
     }
 
     const posts = pagePosts.map((post) => normalizePost(post, likesCounts, commentsCounts));

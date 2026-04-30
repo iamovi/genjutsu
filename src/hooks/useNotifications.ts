@@ -24,7 +24,10 @@ export function useNotifications() {
     const queryClient = useQueryClient();
     const sb = supabase as any;
 
-    // Fetch notifications with actor profiles
+    // Fetch notifications with actor profiles.
+    // Note: actor_id FK points to auth.users (not profiles), so PostgREST
+    // embedded selects can't resolve profiles through it. We fetch notifications
+    // first, then batch-fetch unique actor profiles in one additional query.
     const { data: notifications, isLoading } = useQuery({
         queryKey: ["notifications", user?.id],
         queryFn: async () => {
@@ -40,7 +43,7 @@ export function useNotifications() {
             if (error) throw error;
             if (!data || data.length === 0) return [];
 
-            // Fetch actor profiles
+            // Batch-fetch unique actor profiles in one query
             const actorIds = [...new Set((data as any[]).map((n: any) => n.actor_id))];
             const { data: profiles } = await sb
                 .from("profiles")
@@ -48,9 +51,7 @@ export function useNotifications() {
                 .in("user_id", actorIds);
 
             const profileMap: Record<string, any> = {};
-            (profiles || []).forEach((p: any) => {
-                profileMap[p.user_id] = p;
-            });
+            (profiles || []).forEach((p: any) => { profileMap[p.user_id] = p; });
 
             return (data as any[]).map((n: any) => ({
                 ...n,
@@ -58,6 +59,8 @@ export function useNotifications() {
             })) as NotificationWithActor[];
         },
         enabled: !!user,
+        staleTime: 30_000,           // Don't re-fetch for 30s
+        refetchOnWindowFocus: false,  // Tab switches don't trigger a DB re-fetch
     });
 
     // Unread count

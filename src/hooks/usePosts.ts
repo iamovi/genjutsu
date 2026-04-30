@@ -56,15 +56,20 @@ export function usePosts() {
     const postIds = (postsData as any[]).map(p => p.id);
     if (postIds.length === 0) return [];
 
-    // Fetch likes counts
-    const [{ data: likesData }, { data: commentsData }] = await Promise.all([
-      supabase.from("likes").select("post_id").in("post_id", postIds),
+    // Fetch likes counts + user-specific likes in a single query
+    const [{ data: likesData }, { data: commentsData }, { data: myBookmarksData }] = await Promise.all([
+      supabase.from("likes").select("post_id, user_id").in("post_id", postIds),
       supabase.from("comments").select("post_id").in("post_id", postIds),
+      user
+        ? supabase.from("bookmarks").select("post_id").eq("user_id", user.id).in("post_id", postIds)
+        : Promise.resolve({ data: [] }),
     ]);
 
     const likesCounts: Record<string, number> = {};
+    const userLikes = new Set<string>();
     (likesData || []).forEach((l: any) => {
       likesCounts[l.post_id] = (likesCounts[l.post_id] || 0) + 1;
+      if (user && l.user_id === user.id) userLikes.add(l.post_id);
     });
 
     const commentsCounts: Record<string, number> = {};
@@ -72,18 +77,9 @@ export function usePosts() {
       commentsCounts[c.post_id] = (commentsCounts[c.post_id] || 0) + 1;
     });
 
-    // Fetch user's likes & bookmarks
-    let userLikes = new Set<string>();
-    let userBookmarks = new Set<string>();
-
-    if (user) {
-      const [{ data: myLikes }, { data: myBookmarks }] = await Promise.all([
-        supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", postIds),
-        supabase.from("bookmarks").select("post_id").eq("user_id", user.id).in("post_id", postIds),
-      ]);
-      userLikes = new Set((myLikes || []).map(l => l.post_id));
-      userBookmarks = new Set((myBookmarks || []).map(b => b.post_id));
-    }
+    const userBookmarks = new Set<string>(
+      (myBookmarksData || []).map((b: any) => b.post_id)
+    );
 
     return postsData.map((p: any) => ({
       ...p,
@@ -109,6 +105,9 @@ export function usePosts() {
     getNextPageParam: (lastPage, allPages) => {
       return lastPage.length === PAGE_SIZE ? allPages.length : undefined;
     },
+    staleTime: 60_000,      // Don't re-fetch for 60s — kills the cascade refetch on tab focus
+    gcTime: 5 * 60_000,     // Keep pages in memory for 5 min to avoid cold reloads
+    refetchOnWindowFocus: false, // Prevent refetch on every tab switch
   });
 
   const posts = data?.pages.flat() ?? [];
