@@ -27,17 +27,29 @@ const Index = () => {
   } = usePosts();
   const navigate = useNavigate();
   const observerRef = useRef<HTMLDivElement>(null);
+  const paginationRequestInFlightRef = useRef(false);
+
+  useEffect(() => {
+    paginationRequestInFlightRef.current = isFetchingNextPage;
+  }, [isFetchingNextPage]);
 
   useEffect(() => {
     if (!hasNextPage || isFetchingNextPage) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          fetchNextPage();
-        }
+        if (!entries[0]?.isIntersecting) return;
+        if (paginationRequestInFlightRef.current) return;
+
+        paginationRequestInFlightRef.current = true;
+        void fetchNextPage().finally(() => {
+          paginationRequestInFlightRef.current = false;
+        });
       },
-      { threshold: 0.1 }
+      {
+        threshold: 0,
+        rootMargin: "0px 0px 600px 0px",
+      }
     );
 
     if (observerRef.current) {
@@ -106,6 +118,14 @@ const Index = () => {
                     onDelete={deletePost}
                   />
                 ))}
+
+                {isFetchingNextPage && (
+                  <div className="space-y-4" aria-hidden="true">
+                    {[1, 2].map((i) => (
+                      <PostSkeleton key={`next-page-skeleton-${i}`} />
+                    ))}
+                  </div>
+                )}
 
                 <div ref={observerRef} className="h-10 flex justify-center items-center">
                   {isFetchingNextPage && <FrogLoader className=" text-muted-foreground" size={20} />}
