@@ -13,6 +13,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { GlobalAudioProvider } from "@/hooks/useGlobalAudio";
 import { ThemeProvider } from "@/components/theme-provider";
 import { syncTime } from "@/lib/utils";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -23,6 +24,7 @@ import { ShadowWalkEngine } from "@/components/ShadowWalk";
 import { AppLockGate } from "@/components/AppLockGate";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { FloatingWhisperBubble } from "@/components/FloatingWhisperBubble";
+import { MusicPlayer } from "@/components/MusicPlayer";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import MfaSessionGuard from "@/components/MfaSessionGuard";
 
@@ -85,8 +87,10 @@ const App = () => {
               <ScrollToTop />
               <GoogleAnalytics />
               <AuthProvider>
+                <GlobalAudioProvider>
                 <MfaSessionGuard />
                 <FloatingWhisperBubble />
+                <MusicPlayer />
                 <PushNotificationPrompt />
                 <Suspense
                   fallback={
@@ -122,6 +126,7 @@ const App = () => {
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
+                </GlobalAudioProvider>
               </AuthProvider>
             </BrowserRouter>
           </TooltipProvider>

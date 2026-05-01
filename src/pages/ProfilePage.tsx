@@ -18,6 +18,7 @@ import { PostSkeleton } from "@/components/ui/skeleton";
 import { getNow } from "@/lib/utils";
 import { ImagePreviewDialog } from "@/components/ImagePreviewDialog";
 import DataSaverImage from "@/components/DataSaverImage";
+import { useGlobalAudio } from "@/hooks/useGlobalAudio";
 
 import { useFollow } from "@/hooks/useFollow";
 import { usePostActions } from "@/hooks/usePostActions";
@@ -62,6 +63,7 @@ const ProfilePage = () => {
     const playAttemptIdRef = useRef(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
+    const { requestPlay, notifyStop } = useGlobalAudio();
 
     const disposeAudio = (resetUi = true) => {
         if (!audioRef.current) return;
@@ -114,7 +116,16 @@ const ProfilePage = () => {
         if (currentlyPlaying) {
             playAttemptIdRef.current += 1;
             audio.pause();
+            notifyStop("profile-song");
         } else {
+            const canPlay = requestPlay("profile-song", () => {
+                playAttemptIdRef.current += 1;
+                audio.pause();
+                setIsPlaying(false);
+            });
+
+            if (!canPlay) return;
+
             const attemptId = ++playAttemptIdRef.current;
             // Reflect intent instantly so the button flips on first click.
             setIsPlaying(true);
@@ -132,6 +143,7 @@ const ProfilePage = () => {
                         // Keep UI in sync with actual element state.
                         if (audio.paused || audio.ended) {
                             setIsPlaying(false);
+                            notifyStop("profile-song");
                         }
                     });
             }

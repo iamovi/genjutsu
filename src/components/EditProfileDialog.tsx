@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Edit3, Camera, Link as LinkIcon, ChevronDown, ChevronUp, Music, Search, Play, Pause, X } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { toast } from "sonner";
+import { useGlobalAudio } from "@/hooks/useGlobalAudio";
 import { supabase } from "@/integrations/supabase/client";
 import { getNow } from "@/lib/utils";
 import DataSaverImage from "@/components/DataSaverImage";
@@ -94,6 +95,7 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const previewAttemptIdRef = useRef(0);
     const [playingPreview, setPlayingPreview] = useState<string | null>(null);
+    const { requestPlay, notifyStop } = useGlobalAudio();
 
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -399,7 +401,16 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
             previewAttemptIdRef.current += 1;
             audioRef.current?.pause();
             setPlayingPreview(null);
+            notifyStop("profile-song");
         } else {
+            const canPlay = requestPlay("profile-song", () => {
+                previewAttemptIdRef.current += 1;
+                audioRef.current?.pause();
+                setPlayingPreview(null);
+            });
+
+            if (!canPlay) return;
+
             if (audioRef.current) {
                 previewAttemptIdRef.current += 1;
                 audioRef.current.pause();
@@ -410,6 +421,7 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
             audio.onended = () => {
                 if (attemptId !== previewAttemptIdRef.current) return;
                 setPlayingPreview(null);
+                notifyStop("profile-song");
             };
             // Reflect intent instantly so the icon flips on first click.
             setPlayingPreview(previewUrl);
@@ -426,6 +438,7 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
                             toast.error("Couldn't play song preview.");
                         }
                         setPlayingPreview(null);
+                        notifyStop("profile-song");
                     });
             }
         }
