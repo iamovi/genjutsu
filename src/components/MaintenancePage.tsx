@@ -4,8 +4,8 @@ export function MaintenancePage() {
       <div className="flex flex-col items-center gap-4 text-center px-6">
         <span className="text-5xl">:(</span>
         <h1 className="text-2xl font-bold tracking-tight">Genjutsu is temporarily unavailable</h1>
-        <p className="text-muted-foreground text-sm">creator's decision</p>
-        <p className="text-muted-foreground text-xs">see you again when the creator is happy</p>
+        <p className="text-muted-foreground text-sm">Backend is restarting</p>
+        <p className="text-muted-foreground text-xs">see you again in 10 - 15 minutes! 💜</p>
       </div>
     </div>
   );
