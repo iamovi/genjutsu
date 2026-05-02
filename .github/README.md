@@ -7,7 +7,7 @@
     <a href="https://genjutsu-social.vercel.app"><img src="https://img.shields.io/badge/live_app-genjutsu--social.vercel.app-9B78C2?style=flat-square" /></a>
     <a href="https://iamovi.github.io/genjutsu"><img src="https://img.shields.io/badge/download-TWA_Apk-9B78C2?style=flat-square" /></a>
     <a href="https://github.com/iamovi/genjutsu/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-9B78C2?style=flat-square" /></a>
-    <a href="https://github.com/iamovi/genjutsu/releases/tag/version2"><img src="https://img.shields.io/badge/version-2-9B78C2?style=flat-square" /></a>
+    <a href="https://github.com/iamovi/genjutsu/releases/tag/v2.1.0"><img src="https://img.shields.io/badge/version-2.1.0-9B78C2?style=flat-square" /></a>
   </p>
 </div>
 
