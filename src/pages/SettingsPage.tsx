@@ -303,6 +303,16 @@ const SettingsPage = () => {
             setRadius("none");
             setGrid("scanlines");
             setFont("Reddit Mono");
+            return;
+        }
+
+        if (nextPreset === "vibrant") {
+            setColor("custom");
+            setCustomColor("#d946ef");
+            setRadius("lg");
+            setGrid("none");
+            setFont("Inter");
+            return;
         }
     };
 
@@ -832,6 +842,13 @@ const SettingsPage = () => {
                                                     >
                                                         <p className="font-bold text-sm">Terminal</p>
                                                         <p className={`text-xs mt-1 ${preset === "terminal" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>Neon green matrix aesthetic with scanlines</p>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handlePresetChange("vibrant")}
+                                                        className={`gum-btn text-left px-4 py-3 transition-all ${preset === "vibrant" ? "bg-primary text-primary-foreground gum-shadow-sm" : "bg-background hover:bg-secondary text-foreground"}`}
+                                                    >
+                                                        <p className="font-bold text-sm">Vibrant Night</p>
+                                                        <p className={`text-xs mt-1 ${preset === "vibrant" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>Modern dark theme with neon magenta accents</p>
                                                     </button>
                                                 </div>
                                             </div>

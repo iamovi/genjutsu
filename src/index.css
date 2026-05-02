@@ -278,6 +278,70 @@ html.dark[data-theme-preset="win95"] {
     --glow: 210 100% 40%;
     --success: 120 100% 40%;
   }
+
+  /* --- Vibrant Night Preset --- */
+  :root[data-theme-preset="vibrant"] {
+    --background: 300 10% 98%;
+    --foreground: 300 10% 3.9%;
+    --card: 300 10% 98%;
+    --card-foreground: 300 10% 3.9%;
+    --popover: 300 10% 98%;
+    --popover-foreground: 300 10% 3.9%;
+    --primary: 300 83% 61%; /* #D946EF Magenta */
+    --primary-foreground: 300 10% 98%;
+    --secondary: 300 10% 90%;
+    --secondary-foreground: 300 10% 3.9%;
+    --muted: 300 10% 95%;
+    --muted-foreground: 300 5% 40%;
+    --accent: 300 10% 90%;
+    --accent-foreground: 300 10% 3.9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 300 10% 85%;
+    --input: 300 10% 85%;
+    --ring: 300 83% 61%;
+    --radius: 16px;
+    --shadow-gum: none;
+    --sidebar-background: 300 10% 98%;
+    --sidebar-foreground: 300 10% 3.9%;
+    --sidebar-primary: 300 83% 61%;
+    --sidebar-primary-foreground: 300 10% 98%;
+    --sidebar-accent: 300 10% 90%;
+    --sidebar-accent-foreground: 300 10% 3.9%;
+    --sidebar-border: 300 10% 85%;
+    --sidebar-ring: 300 83% 61%;
+    --glow: 300 83% 61%;
+    --success: 142 71% 45%;
+  }
+
+  :root.dark[data-theme-preset="vibrant"] {
+    --background: 240 10% 3.9%; /* #09090b */
+    --foreground: 0 0% 98%;
+    --card: 240 6% 10%; /* #18181b */
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 300 83% 61%; /* #D946EF Magenta */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 6% 15%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 6% 15%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 240 6% 15%;
+    --accent-foreground: 0 0% 98%;
+    --border: 240 6% 20%;
+    --input: 240 6% 20%;
+    --ring: 300 83% 61%;
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 300 83% 61%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 6% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 6% 20%;
+    --sidebar-ring: 300 83% 61%;
+    --glow: 300 83% 61%;
+  }
 }
 
 @layer base {
@@ -1250,3 +1314,49 @@ html[data-theme-preset="terminal"] ::selection {
   background-color: #00ff41 !important;
   color: #000 !important;
 }
+
+  /* --- Vibrant Night Overrides --- */
+  html[data-theme-preset="vibrant"] body::before {
+    background: radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.15) 0%, transparent 50%) !important;
+    opacity: 1 !important;
+  }
+
+  html[data-theme-preset="vibrant"] .gum-card {
+    border: 1px solid hsl(var(--border)) !important;
+    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.1), 0 8px 16px -1px rgba(0, 0, 0, 0.1) !important;
+    background-color: hsl(var(--card)) !important;
+    border-radius: 16px !important;
+  }
+
+  html[data-theme-preset="vibrant"] .gum-btn {
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: 1px solid transparent !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  html[data-theme-preset="vibrant"] .gum-btn:hover {
+    transform: translateY(-1px) scale(1.02) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  html[data-theme-preset="vibrant"] .gum-btn.bg-primary {
+    background-color: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+    box-shadow: 0 4px 14px 0 hsl(var(--primary) / 0.39) !important;
+  }
+
+  html[data-theme-preset="vibrant"] input,
+  html[data-theme-preset="vibrant"] textarea {
+    border-radius: 12px !important;
+    border: 1px solid hsl(var(--border)) !important;
+    background-color: hsl(var(--background)) !important;
+    transition: all 0.2s ease !important;
+  }
+
+  html[data-theme-preset="vibrant"] input:focus,
+  html[data-theme-preset="vibrant"] textarea:focus {
+    border-color: hsl(var(--primary)) !important;
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.1) !important;
+  }
