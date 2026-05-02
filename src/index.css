@@ -28,6 +28,14 @@ html.dark[data-theme-preset="win95"] {
   background-color: #004040;
 }
 
+html[data-theme-preset="nature"] {
+  background-color: #0b1a11;
+}
+
+html.dark[data-theme-preset="nature"] {
+  background-color: #050a07;
+}
+
 @layer base {
   :root {
     --background: 270 10% 99%;
@@ -278,6 +286,73 @@ html.dark[data-theme-preset="win95"] {
     --glow: 210 100% 40%;
     --success: 120 100% 40%;
   }
+
+  :root[data-theme-preset="nature"] {
+    --background: 143 20% 98%;
+    --foreground: 143 40% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 143 40% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 143 40% 10%;
+    --primary: 143 60% 44%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 143 20% 95%;
+    --secondary-foreground: 143 40% 15%;
+    --muted: 143 10% 90%;
+    --muted-foreground: 143 20% 40%;
+    --accent: 143 30% 90%;
+    --accent-foreground: 143 40% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 143 30% 85%;
+    --input: 143 30% 85%;
+    --ring: 143 60% 44%;
+    --radius: 2rem;
+    --shadow-gum: 0 10px 25px -5px rgba(45, 179, 97, 0.1), 0 8px 10px -6px rgba(45, 179, 97, 0.1);
+    --shadow-gum-sm: 0 4px 6px -1px rgba(45, 179, 97, 0.1);
+    --shadow-gum-hover: 0 10px 15px -3px rgba(45, 179, 97, 0.1);
+    --shadow-gum-active: 0 0px 0px transparent;
+    --sidebar-background: 143 20% 98%;
+    --sidebar-foreground: 143 40% 10%;
+    --sidebar-primary: 143 60% 44%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 143 20% 95%;
+    --sidebar-accent-foreground: 143 40% 10%;
+    --sidebar-border: 143 30% 85%;
+    --sidebar-ring: 143 60% 44%;
+    --glow: 143 60% 44%;
+    --success: 142 71% 45%;
+  }
+
+  :root.dark[data-theme-preset="nature"] {
+    --background: 143 30% 4%;
+    --foreground: 143 20% 95%;
+    --card: 143 25% 8%;
+    --card-foreground: 143 10% 98%;
+    --popover: 143 25% 8%;
+    --popover-foreground: 143 10% 98%;
+    --primary: 143 60% 50%;
+    --primary-foreground: 143 10% 5%;
+    --secondary: 143 20% 12%;
+    --secondary-foreground: 143 20% 90%;
+    --muted: 143 20% 15%;
+    --muted-foreground: 143 10% 60%;
+    --accent: 143 20% 15%;
+    --accent-foreground: 143 10% 98%;
+    --border: 143 20% 18%;
+    --input: 143 20% 18%;
+    --ring: 143 60% 50%;
+    --shadow-gum: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    --sidebar-background: 143 30% 3%;
+    --sidebar-foreground: 143 10% 98%;
+    --sidebar-primary: 143 60% 50%;
+    --sidebar-primary-foreground: 143 10% 4%;
+    --sidebar-accent: 143 20% 12%;
+    --sidebar-accent-foreground: 143 10% 98%;
+    --sidebar-border: 143 20% 18%;
+    --sidebar-ring: 143 60% 50%;
+    --glow: 143 60% 50%;
+  }
 }
 
 @layer base {
@@ -355,6 +430,18 @@ html.dark[data-theme-preset="win95"] {
 
   html[data-theme-preset="win95"] body::before {
     background-image: none;
+  }
+
+  html[data-theme-preset="nature"] body::before {
+    background-image: linear-gradient(rgba(11, 26, 17, 0.6), rgba(11, 26, 17, 0.6)), url('https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&q=80&w=2000') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    opacity: 1 !important;
+  }
+
+  html.dark[data-theme-preset="nature"] body::before {
+    background-image: linear-gradient(rgba(5, 10, 7, 0.8), rgba(5, 10, 7, 0.8)), url('https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&q=80&w=2000') !important;
+    background-size: cover !important;
   }
 
   /* ========= Shadow Walk Privacy Mode ========= */
@@ -1249,4 +1336,52 @@ html[data-theme-preset="terminal"] .bg-primary {
 html[data-theme-preset="terminal"] ::selection {
   background-color: #00ff41 !important;
   color: #000 !important;
+}
+
+/* --- Nature Theme Overrides --- */
+html[data-theme-preset="nature"] .gum-card {
+  border: 1px solid hsl(var(--border) / 0.5) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  background-color: hsl(var(--card)) !important;
+}
+
+html[data-theme-preset="nature"] .gum-btn {
+  border-radius: 2rem !important;
+  border: none !important;
+  box-shadow: 0 4px 14px 0 rgba(45, 179, 97, 0.3) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transform: none !important;
+}
+
+html[data-theme-preset="nature"] .gum-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(45, 179, 97, 0.2) !important;
+  filter: brightness(1.05);
+}
+
+html[data-theme-preset="nature"] .gum-btn:active {
+  transform: translateY(1px) !important;
+  box-shadow: 0 2px 10px rgba(45, 179, 97, 0.2) !important;
+}
+
+html[data-theme-preset="nature"] .gum-btn.bg-primary {
+  background-color: hsl(var(--primary)) !important;
+  color: white !important;
+}
+
+html[data-theme-preset="nature"] input,
+html[data-theme-preset="nature"] textarea {
+  border-radius: 1rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  background-color: hsl(var(--background)) !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+html[data-theme-preset="nature"] .text-primary {
+  color: #2DB361 !important;
+}
+
+html[data-theme-preset="nature"] .bg-primary {
+  background-color: #2DB361 !important;
 }
