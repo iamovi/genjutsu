@@ -175,6 +175,33 @@ const AboutPage = () => {
                                 </Link>
                             </section>
 
+                            {/* Support Section */}
+                            <section className="mt-12 text-foreground">
+                                <p className="text-xs font-mono uppercase tracking-widest text-primary/70 mb-6 border-l-2 border-primary/50 pl-3">
+                                    {t("about.supportSubtitle")}
+                                </p>
+                                <div className="gum-card p-6 md:p-8 text-center">
+                                    <h3 className="text-2xl font-bold uppercase tracking-tight mb-3">
+                                        {t("about.supportTitle")}
+                                    </h3>
+                                    <p className="text-sm text-foreground/80 font-medium max-w-2xl mx-auto leading-relaxed mb-8">
+                                        {t("about.supportDesc")}
+                                    </p>
+                                    <a
+                                        href="https://www.supportkori.com/iamovi"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-block hover:opacity-90 transition-opacity"
+                                    >
+                                        <img
+                                            src="https://raw.githubusercontent.com/iamovi/genjutsu/refs/heads/main/.github/tea_text.jpg"
+                                            alt="Support the developer"
+                                            className="w-52 mx-auto gum-border rounded-[3px]"
+                                        />
+                                    </a>
+                                </div>
+                            </section>
+
                             {/* Open Source & Contributors Section */}
                             <section className="mt-12 mb-4 text-foreground">
                                 <p className="text-xs font-mono uppercase tracking-widest text-primary/70 mb-6 border-l-2 border-primary/50 pl-3">{t("about.osSubtitle")}</p>
