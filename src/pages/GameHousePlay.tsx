@@ -48,7 +48,35 @@ export default function GameHousePlay() {
 
         if (error) throw error;
         if (blob) {
-          const htmlText = await blob.text();
+          let htmlText = await blob.text();
+          
+          // Inject responsive scaling CSS to prevent canvas cut-offs
+          const scaleCSS = `
+<style>
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background-color: #000 !important;
+  }
+  canvas {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+  }
+</style>
+`;
+          if (htmlText.includes('<head>')) {
+            htmlText = htmlText.replace('<head>', '<head>' + scaleCSS);
+          } else {
+            htmlText = scaleCSS + htmlText;
+          }
+
           setIframeHtml(htmlText);
         }
       } catch (err: any) {
@@ -78,7 +106,6 @@ export default function GameHousePlay() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col">
-        <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <FrogLoader size={48} />
         </div>
@@ -89,7 +116,6 @@ export default function GameHousePlay() {
   if (isError || !game) {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col">
-        <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
           <AlertTriangle className="w-12 h-12 text-destructive mb-4" />
           <h2 className="text-xl font-black uppercase tracking-tight mb-2">Game Not Found</h2>
@@ -106,26 +132,23 @@ export default function GameHousePlay() {
   // We can still let them preview it.
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors duration-500 animate-in fade-in zoom-in-95">
       <Helmet>
         <title>{game.title} — genjutsu</title>
       </Helmet>
-      <Navbar />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-0 sm:px-6 py-0 sm:py-6 flex flex-col">
         <div className="flex items-center justify-between p-4 sm:p-0 sm:mb-4 bg-background z-10 border-b border-border sm:border-none">
-          <Button 
-            variant="ghost" 
-            size="sm"
+          <button
             onClick={() => navigate(-1)}
-            className="text-muted-foreground hover:text-foreground -ml-2"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground gum-btn px-2.5 sm:px-3 py-1.5 border border-border bg-background hover:bg-secondary rounded-[3px] transition-all w-fit shadow-[2px_2px_0_theme(colors.border)] active:translate-y-[2px] active:shadow-none"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft size={16} />
             <span className="hidden sm:inline">Back</span>
-          </Button>
+          </button>
 
           <div className="text-center flex-1 sm:flex-none">
-            <h1 className="text-base sm:text-lg font-black uppercase tracking-tight italic line-clamp-1">{game.title}</h1>
+            <h1 className="text-base sm:text-lg font-black uppercase tracking-tight italic line-clamp-1 pr-1">{game.title}</h1>
             <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
               By @{game.profiles?.username || game.profiles?.display_name || "unknown"}
             </p>
@@ -143,7 +166,7 @@ export default function GameHousePlay() {
           </Button>
         </div>
 
-        <div className="flex-1 w-full bg-black relative border-y sm:border-2 border-border sm:rounded-[3px] gum-shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+        <div className="flex-1 w-full bg-black relative border-y sm:border-2 border-border sm:rounded-[3px] gum-shadow-sm overflow-hidden">
           {!iframeHtml ? (
             <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-20 text-white">
               <div className="flex flex-col items-center gap-4">
@@ -155,7 +178,7 @@ export default function GameHousePlay() {
             <iframe
               id="game-iframe"
               srcDoc={iframeHtml}
-              className="w-full h-full border-none bg-white"
+              className="absolute inset-0 w-full h-full border-none bg-white"
               title={game.title}
               sandbox="allow-scripts"
               allowFullScreen

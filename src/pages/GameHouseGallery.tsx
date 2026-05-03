@@ -8,6 +8,7 @@ import { Gamepad2, Plus, Play, User as UserIcon } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { ArrowLeft } from "lucide-react";
 
 interface GameHouseItem {
   id: string;
@@ -43,13 +44,20 @@ export default function GameHouseGallery() {
   });
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-500 animate-in fade-in zoom-in-95">
       <Helmet>
         <title>Game House — genjutsu</title>
       </Helmet>
-      <Navbar />
-
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
+        <div className="mb-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground gum-btn px-2.5 sm:px-3 py-1.5 border border-border bg-background hover:bg-secondary rounded-[3px] transition-all w-fit shadow-[2px_2px_0_theme(colors.border)] active:translate-y-[2px] active:shadow-none"
+          >
+            <ArrowLeft size={16} />
+            <span>Back</span>
+          </button>
+        </div>
         <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border pb-8">
           <div className="space-y-2">
             <h1 className="text-2xl sm:text-4xl font-black tracking-tighter uppercase italic flex items-center gap-3">

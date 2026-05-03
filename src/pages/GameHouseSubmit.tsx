@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,15 @@ export default function GameHouseSubmit() {
   const [description, setDescription] = useState("");
   const [htmlCode, setHtmlCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      toast.error("You must be logged in to submit a game.");
+      navigate("/auth");
+    }
+  }, [user, navigate]);
+
+  if (!user) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,21 +87,20 @@ export default function GameHouseSubmit() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-500 animate-in fade-in zoom-in-95">
       <Helmet>
         <title>Submit Game — genjutsu</title>
       </Helmet>
-      <Navbar />
-
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate("/game-house")}
-          className="text-muted-foreground hover:text-foreground -ml-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Arcade
-        </Button>
+        <div className="mb-4">
+          <button
+            onClick={() => navigate("/game-house")}
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground gum-btn px-2.5 sm:px-3 py-1.5 border border-border bg-background hover:bg-secondary rounded-[3px] transition-all w-fit shadow-[2px_2px_0_theme(colors.border)] active:translate-y-[2px] active:shadow-none"
+          >
+            <ArrowLeft size={16} />
+            <span>Back to Arcade</span>
+          </button>
+        </div>
 
         <header className="space-y-2">
           <h1 className="text-2xl sm:text-4xl font-black tracking-tighter uppercase italic">
