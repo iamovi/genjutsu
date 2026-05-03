@@ -43,6 +43,17 @@ export default function GameHouseSubmit() {
       return;
     }
 
+    // Basic HTML Validation
+    const lowerHtml = htmlCode.toLowerCase();
+    if (!lowerHtml.includes("<html") || !lowerHtml.includes("</html>")) {
+      toast.error("Invalid code: Your game must include proper <html> and </html> tags.");
+      return;
+    }
+    if (!lowerHtml.includes("<body") || !lowerHtml.includes("</body>")) {
+      toast.error("Invalid code: Your game must include proper <body> and </body> tags.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // 1. Generate unique file path
