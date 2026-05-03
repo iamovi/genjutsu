@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Maximize2, AlertTriangle } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 export default function GameHousePlay() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [iframeHtml, setIframeHtml] = useState<string | null>(null);
 
   const { data: game, isLoading, isError } = useQuery({
@@ -38,8 +39,14 @@ export default function GameHousePlay() {
       if (!game || !game.html_storage_path) return;
 
       try {
-        // Increment play count (fire and forget)
-        void (supabase as any).rpc("increment_game_play_count", { p_game_id: game.id });
+        // Increment play count (fire and forget, but log errors)
+        supabase.rpc("increment_game_play_count", { p_game_id: game.id }).then(({ error }) => {
+          if (error) {
+            console.error("Play count increment failed:", error);
+          } else {
+            queryClient.invalidateQueries({ queryKey: ["game_house_approved"] });
+          }
+        });
 
         // Download the file directly as a Blob (works for both public and private buckets)
         const { data: blob, error } = await supabase.storage
