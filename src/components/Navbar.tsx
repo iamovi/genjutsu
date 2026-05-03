@@ -1,4 +1,4 @@
-import { Home, Search, User, LogOut, Settings, Palette, X, Send, Swords, UsersRound, LogIn, Bell, Shield, Menu, Gamepad2 } from "lucide-react";
+import { Home, Search, User, LogOut, Settings, Palette, X, MessageCircle, Swords, UsersRound, LogIn, Bell, Shield, Menu, Gamepad2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -83,7 +83,7 @@ const Navbar = () => {
             {[
               { icon: Home, label: t("nav.feed"), path: "/" },
               { icon: Search, label: t("nav.search"), path: "/search" },
-              { icon: Send, label: t("nav.whispers"), path: "/whispers" },
+              { icon: MessageCircle, label: t("nav.whispers"), path: "/whispers" },
               { icon: UsersRound, label: t("nav.stranger"), path: "/stranger" },
               { icon: Swords, label: t("nav.play"), path: "/play" },
               { icon: Gamepad2, label: t("nav.gameHouse"), path: "/game-house" },
@@ -127,7 +127,7 @@ const Navbar = () => {
               className="md:hidden relative p-1.5 sm:p-2 rounded-[3px] hover:bg-secondary text-muted-foreground transition-colors gum-border"
               title={t("nav.whispers")}
             >
-              <Send size={16} />
+              <MessageCircle size={16} />
               {hasUnreadWhispers && (
                 <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary animate-pulse border-2 border-background" />
               )}
