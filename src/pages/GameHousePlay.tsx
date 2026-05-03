@@ -95,7 +95,7 @@ export default function GameHousePlay() {
     if (game) {
       loadGameUrl();
     }
-  }, [game]);
+  }, [game, queryClient]);
 
   const toggleFullscreen = () => {
     const iframe = document.getElementById("game-iframe");
