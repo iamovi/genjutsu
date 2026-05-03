@@ -423,6 +423,47 @@ export type Database = {
         }
         Relationships: []
       }
+      game_house: {
+        Row: {
+          id: string
+          title: string
+          description: string
+          html_storage_path: string
+          submitted_by: string
+          status: string
+          play_count: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description: string
+          html_storage_path: string
+          submitted_by: string
+          status?: string
+          play_count?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string
+          html_storage_path?: string
+          submitted_by?: string
+          status?: string
+          play_count?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_house_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -467,6 +508,18 @@ export type Database = {
           p_trigger?: string
         }
         Returns: Json
+      }
+      increment_game_play_count: {
+        Args: {
+          p_game_id: string
+        }
+        Returns: undefined
+      }
+      notify_admins_new_game: {
+        Args: {
+          p_actor_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

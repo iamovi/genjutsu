@@ -39,7 +39,8 @@
     "navigate": "NAVEGAR",
     "account": "CUENTA",
     "discovery": "DESCUBRIR",
-    "signOut": "Salir"
+    "signOut": "Salir",
+    "gameHouse": "Game House"
   },
   "sidebar": {
     "whoToFollow": "A quién seguir",

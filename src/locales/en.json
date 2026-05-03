@@ -40,7 +40,8 @@
     "navigate": "NAVIGATE",
     "account": "ACCOUNT",
     "discovery": "DISCOVERY",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "gameHouse": "Game House"
   },
   "sidebar": {
     "whoToFollow": "Who to follow",

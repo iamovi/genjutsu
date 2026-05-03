@@ -39,7 +39,8 @@
     "navigate": "NAVEGAR",
     "account": "CONTA",
     "discovery": "DESCOBRIR",
-    "signOut": "Sair"
+    "signOut": "Sair",
+    "gameHouse": "Game House"
   },
   "sidebar": {
     "whoToFollow": "Quem seguir",

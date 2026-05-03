@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import { Helmet } from "react-helmet-async";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { getNow } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,7 +19,11 @@ import {
   AlertTriangle,
   Search,
   LayoutDashboard,
-  Clock
+  Clock,
+  Gamepad2,
+  CheckCircle,
+  XCircle,
+  Eye
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -65,7 +70,21 @@ interface ModerationUser {
   ban_scopes: string[] | null;
 }
 
+interface PendingGame {
+  id: string;
+  title: string;
+  description: string;
+  html_storage_path: string;
+  submitted_by: string;
+  created_at: string;
+  profiles: {
+    username: string;
+    display_name: string;
+  };
+}
+
 const AdminPage = () => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [userSearchText, setUserSearchText] = useState("");
   const [blockContent, setBlockContent] = useState(true);
@@ -160,6 +179,23 @@ const AdminPage = () => {
     },
   });
 
+  const { data: pendingGames = [], isLoading: gamesLoading } = useQuery<PendingGame[]>({
+    queryKey: ["admin-pending-games"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("game_house")
+        .select(`
+          id, title, description, html_storage_path, submitted_by, created_at,
+          profiles!game_house_submitted_by_fkey ( username, display_name )
+        `)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as unknown as PendingGame[];
+    },
+  });
+
   // Mutations (Logic preserved)
   const deletePostMutation = useMutation({
     mutationFn: async (postId: string) => {
@@ -235,6 +271,63 @@ const AdminPage = () => {
       toast.success("User unbanned.");
     },
     onError: () => toast.error("Failed to unban user."),
+  });
+
+  const approveGameMutation = useMutation({
+    mutationFn: async (game: PendingGame) => {
+      const { error } = await supabase
+        .from("game_house")
+        .update({ status: "approved" })
+        .eq("id", game.id);
+      if (error) throw error;
+
+      if (user) {
+        // Send notification to the user
+        void (supabase as any).from("notifications").insert({
+          user_id: game.submitted_by,
+          actor_id: user.id,
+          type: "game_approved"
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-pending-games"] });
+      toast.success("Game approved and is now live!");
+    },
+    onError: () => toast.error("Failed to approve game."),
+  });
+
+  const rejectGameMutation = useMutation({
+    mutationFn: async (game: PendingGame) => {
+      // Delete from storage first
+      const { error: storageError } = await supabase.storage
+        .from("game-house")
+        .remove([game.html_storage_path]);
+      
+      if (storageError) console.error("Storage cleanup failed:", storageError);
+
+      // Delete the record
+      const { error } = await supabase
+        .from("game_house")
+        .delete()
+        .eq("id", game.id);
+      
+      if (error) throw error;
+
+      if (user) {
+        // Send notification to the user
+        void (supabase as any).from("notifications").insert({
+          user_id: game.submitted_by,
+          actor_id: user.id,
+          type: "game_rejected"
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-pending-games"] });
+      toast.success("Game rejected and deleted.");
+    },
+    onError: () => toast.error("Failed to reject game."),
   });
 
   // Confirmation Handlers
@@ -514,6 +607,11 @@ const AdminPage = () => {
                 <Ban className="w-3 h-3 mr-2" />
                 Banned Users
                 {bannedUsers.length > 0 && <Badge variant="destructive" className="ml-2 rounded-none px-1 py-0 h-3.5 sm:h-4 text-[8px] sm:text-[9px] min-w-4 flex items-center justify-center">{bannedUsers.length}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="game-house" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 pb-2 h-auto text-[10px] sm:text-[11px] uppercase font-black tracking-widest transition-all hover:text-primary">
+                <Gamepad2 className="w-3 h-3 mr-2" />
+                Game House
+                {pendingGames.length > 0 && <Badge className="ml-2 rounded-none px-1 py-0 h-3.5 sm:h-4 text-[8px] sm:text-[9px] min-w-4 flex items-center justify-center">{pendingGames.length}</Badge>}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -983,6 +1081,115 @@ const AdminPage = () => {
                                 <Undo2 className="h-3.5 w-3.5 mr-2" />
                                 Pardon Subject
                               </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          {/* Game House Tab */}
+          <TabsContent value="game-house" className="space-y-4 m-0 transition-all animate-in fade-in duration-500">
+            <Card className="rounded-none border-border bg-secondary/10 overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between border-b border-border py-4">
+                <div className="space-y-0.5">
+                  <CardTitle className="text-xs uppercase font-black tracking-widest flex items-center gap-2">
+                    Pending Game Submissions
+                  </CardTitle>
+                  <CardDescription className="text-[10px] font-medium">Review and moderate community games before they go live.</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {/* Mobile View */}
+                <div className="md:hidden divide-y divide-border">
+                  {gamesLoading ? (
+                    <div className="p-10 text-center text-[10px] uppercase font-black opacity-30 italic">Retrieving stream...</div>
+                  ) : pendingGames.length === 0 ? (
+                    <div className="p-10 text-center text-[10px] uppercase font-black opacity-30 italic">No pending games.</div>
+                  ) : (
+                    pendingGames.map((game) => (
+                      <div key={game.id} className="p-4 space-y-3 bg-secondary/10">
+                        <div className="flex justify-between items-start">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black uppercase italic tracking-tight line-clamp-1">{game.title}</span>
+                            <span className="text-[10px] text-primary font-bold">@{game.profiles?.username}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[9px] font-bold opacity-60">
+                            <Clock className="w-2.5 h-2.5 text-primary" />
+                            {new Date(game.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <p className="text-[11px] font-medium leading-relaxed opacity-80 line-clamp-2">{game.description}</p>
+                        <div className="flex flex-col gap-2 pt-2">
+                          <Button size="sm" variant="outline" className="h-8 rounded-[3px] text-[10px] font-black uppercase italic" onClick={() => window.open(`/game-house/play/${game.id}`, '_blank')}>
+                            <Eye className="w-3.5 h-3.5 mr-2" /> Preview
+                          </Button>
+                          <div className="flex gap-2">
+                            <Button size="sm" className="flex-1 h-8 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[3px] text-[10px] font-black uppercase italic" onClick={() => approveGameMutation.mutate(game)} disabled={approveGameMutation.isPending}>
+                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> Approve
+                            </Button>
+                            <Button size="sm" variant="destructive" className="flex-1 h-8 rounded-[3px] text-[10px] font-black uppercase italic" onClick={() => { if(window.confirm('Reject and delete game?')) rejectGameMutation.mutate(game) }} disabled={rejectGameMutation.isPending}>
+                              <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-secondary/20 border-b border-border">
+                      <TableRow className="border-border hover:bg-transparent">
+                        <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Game Info</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Submitter</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Date</TableHead>
+                        <TableHead className="text-right text-[10px] uppercase font-black tracking-widest text-muted-foreground py-3 h-auto">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {gamesLoading ? (
+                        <TableRow className="hover:bg-transparent"><TableCell colSpan={4} className="text-center py-10 text-[11px] uppercase font-bold opacity-50 italic">Retrieving stream...</TableCell></TableRow>
+                      ) : pendingGames.length === 0 ? (
+                        <TableRow className="hover:bg-transparent"><TableCell colSpan={4} className="text-center py-10 text-[11px] uppercase font-bold opacity-50 italic">No pending games.</TableCell></TableRow>
+                      ) : (
+                        pendingGames.map((game) => (
+                          <TableRow key={game.id} className="border-border group transition-colors hover:bg-secondary/10">
+                            <TableCell className="py-4">
+                              <div className="flex flex-col">
+                                <span className="text-xs font-black uppercase italic tracking-tight">{game.title}</span>
+                                <span className="text-[10px] font-medium leading-relaxed max-w-xs line-clamp-1 opacity-80">{game.description}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <div className="flex flex-col">
+                                <span className="text-xs font-black uppercase italic tracking-tight">{game.profiles?.display_name}</span>
+                                <span className="text-[10px] text-primary font-bold">@{game.profiles?.username}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground">
+                                <Clock className="w-3 h-3 text-primary" />
+                                {new Date(game.created_at).toLocaleDateString()}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right py-4">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button size="sm" variant="outline" className="h-8 rounded-[3px] text-[10px] font-black uppercase italic transition-all hover:bg-primary/10" onClick={() => window.open(`/game-house/play/${game.id}`, '_blank')}>
+                                  <Eye className="w-3.5 h-3.5 mr-1" /> Preview
+                                </Button>
+                                <Button size="sm" className="h-8 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[3px] text-[10px] font-black uppercase italic transition-all" onClick={() => approveGameMutation.mutate(game)} disabled={approveGameMutation.isPending}>
+                                  <CheckCircle className="w-3.5 h-3.5 mr-1" /> Approve
+                                </Button>
+                                <Button size="sm" variant="destructive" className="h-8 rounded-[3px] text-[10px] font-black uppercase italic transition-all" onClick={() => { if(window.confirm('Reject and delete game?')) rejectGameMutation.mutate(game) }} disabled={rejectGameMutation.isPending}>
+                                  <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))

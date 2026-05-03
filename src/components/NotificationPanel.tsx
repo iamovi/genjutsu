@@ -1,4 +1,4 @@
-import { Heart, HeartOff, MessageSquare, MessageCircleOff, UserPlus, UserMinus, Check, Bell, AtSign } from "lucide-react";
+import { Heart, HeartOff, MessageSquare, MessageCircleOff, UserPlus, UserMinus, Check, Bell, AtSign, Gamepad2, CheckCircle, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { NotificationWithActor } from "@/hooks/useNotifications";
@@ -28,6 +28,12 @@ function getNotificationIcon(type: string) {
             return <UserMinus size={14} className="text-destructive" />;
         case "mention":
             return <AtSign size={14} className="text-purple-500" />;
+        case "game_submission":
+            return <Gamepad2 size={14} className="text-primary" />;
+        case "game_approved":
+            return <CheckCircle size={14} className="text-green-500" />;
+        case "game_rejected":
+            return <XCircle size={14} className="text-destructive" />;
         default:
             return <Bell size={14} />;
     }
@@ -49,6 +55,12 @@ function getNotificationText(type: string, actorName: string) {
             return <><strong>{actorName}</strong> stopped following you</>;
         case "mention":
             return <><strong>{actorName}</strong> mentioned you in a void</>;
+        case "game_submission":
+            return <><strong>{actorName}</strong> submitted a new game for review</>;
+        case "game_approved":
+            return <><strong>{actorName}</strong> approved your game submission</>;
+        case "game_rejected":
+            return <><strong>{actorName}</strong> rejected your game submission</>;
         default:
             return <><strong>{actorName}</strong> interacted with you</>;
     }
@@ -70,6 +82,12 @@ const NotificationPanel = ({
 
         if (notification.type === "follow" && notification.actor_profile) {
             navigate(`/u/${notification.actor_profile.username}`);
+        } else if (notification.type === "game_submission") {
+            navigate("/admin");
+        } else if (notification.type === "game_approved") {
+            navigate("/game-house");
+        } else if (notification.type === "game_rejected") {
+            navigate("/game-house/submit");
         } else if (notification.post_id) {
             navigate(`/post/${notification.post_id}`);
         }

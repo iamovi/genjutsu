@@ -39,7 +39,8 @@
     "navigate": "PUMUNTA",
     "account": "ACCOUNT",
     "discovery": "PAGTUKLAS",
-    "signOut": "Mag-sign Out"
+    "signOut": "Mag-sign Out",
+    "gameHouse": "Game House"
   },
   "sidebar": {
     "whoToFollow": "Sino ang i-follow",

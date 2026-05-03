@@ -48,18 +48,18 @@ const TriviaBattle = ({ isHost, peerState, onSendState, onLeaveGame, myName, pee
   const answer = (a: number) => {
     if (myAns !== null) return;
     setMyAns(a);
-    if (a === qs[qi].correct) setScores(s => ({ ...s, me: s.me + 1 }));
+    if (qs && qi >= 0 && qi < qs.length && a === qs[qi].correct) setScores(s => ({ ...s, me: s.me + 1 }));
     sendRef.current({ t: 'answer', a });
   };
 
   const nextQ = () => {
     const nqi = qi + 1;
-    if (nqi >= qs.length) { setPhase('final'); return; }
+    if (!qs || nqi >= qs.length) { setPhase('final'); return; }
     setQi(nqi); setPhase('question'); setTimer(Q_TIME); setMyAns(null); setPeerAns(null);
     sendRef.current({ t: 'next', qi: nqi });
   };
 
-  const q = qs[qi];
+  const q = qs && qi >= 0 && qi < qs.length ? qs[qi] : null;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-full p-4 gap-4">

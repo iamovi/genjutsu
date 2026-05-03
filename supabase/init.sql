@@ -195,10 +195,22 @@ CREATE TABLE public.notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   actor_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('like', 'unlike', 'comment', 'uncomment', 'follow', 'unfollow', 'mention')),
+  type TEXT NOT NULL CHECK (type IN ('like', 'unlike', 'comment', 'uncomment', 'follow', 'unfollow', 'mention', 'game_submission', 'game_approved', 'game_rejected')),
   post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE,
   comment_id UUID REFERENCES public.comments(id) ON DELETE CASCADE,
   is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Game House
+CREATE TABLE public.game_house (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  html_storage_path TEXT NOT NULL,
+  submitted_by UUID NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  play_count INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -225,6 +237,7 @@ ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_action_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.game_house ENABLE ROW LEVEL SECURITY;
 
 -- Admin Users
 CREATE POLICY "Users can view their own admin status"
@@ -315,6 +328,20 @@ CREATE POLICY "Users can view own notifications"
   ON public.notifications FOR SELECT USING ((select auth.uid()) = user_id);
 CREATE POLICY "Users can update own notifications"
   ON public.notifications FOR UPDATE USING ((select auth.uid()) = user_id);
+
+-- Game House Policies
+CREATE POLICY "Public can view approved games"
+  ON public.game_house FOR SELECT USING (status = 'approved');
+CREATE POLICY "Users can view their own submissions"
+  ON public.game_house FOR SELECT USING (auth.uid() = submitted_by);
+CREATE POLICY "Admins can view all submissions"
+  ON public.game_house FOR SELECT USING (public.is_admin());
+CREATE POLICY "Authenticated users can submit games"
+  ON public.game_house FOR INSERT WITH CHECK (auth.uid() = submitted_by AND status = 'pending');
+CREATE POLICY "Admins can update game status"
+  ON public.game_house FOR UPDATE USING (public.is_admin());
+CREATE POLICY "Admins can delete games"
+  ON public.game_house FOR DELETE USING (public.is_admin());
 
 
 -- =============================================================================
@@ -462,6 +489,11 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('profile-album', 'profile-album', true)
 ON CONFLICT (id) DO NOTHING;
 
+-- Game House bucket (Private)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('game-house', 'game-house', false)
+ON CONFLICT (id) DO NOTHING;
+
 -- post-media policies
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Public Access') THEN
@@ -562,6 +594,25 @@ DO $$ BEGIN
     CREATE POLICY "Users can delete their own profile album photos" ON storage.objects FOR DELETE TO authenticated USING (
       bucket_id = 'profile-album' AND (storage.foldername(name))[1] = auth.uid()::text
     );
+  END IF;
+END $$;
+
+-- game-house policies
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Authenticated users can upload game HTML') THEN
+    CREATE POLICY "Authenticated users can upload game HTML" ON storage.objects FOR INSERT TO authenticated WITH CHECK ( bucket_id = 'game-house' );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Users can read their own uploads') THEN
+    CREATE POLICY "Users can read their own uploads" ON storage.objects FOR SELECT USING ( bucket_id = 'game-house' AND auth.uid() = owner );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Admins can manage all game HTML') THEN
+    CREATE POLICY "Admins can manage all game HTML" ON storage.objects FOR ALL USING ( bucket_id = 'game-house' AND public.is_admin() );
   END IF;
 END $$;
 
@@ -1788,3 +1839,31 @@ EXCEPTION
         RETURN jsonb_build_object('error', 'internal_error', 'message', SQLERRM);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions, vault, net;
+
+-- =============================================================================
+-- GAME HOUSE (RPCs)
+-- =============================================================================
+
+-- RPC to increment play count securely
+CREATE OR REPLACE FUNCTION public.increment_game_play_count(p_game_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  -- Only increment if it is approved, or if admin.
+  UPDATE public.game_house
+  SET play_count = play_count + 1
+  WHERE id = p_game_id AND status = 'approved';
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public;
+
+-- RPC to notify admins when a new game is submitted
+CREATE OR REPLACE FUNCTION public.notify_admins_new_game(p_actor_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  INSERT INTO public.notifications (user_id, actor_id, type)
+  SELECT user_id, p_actor_id, 'game_submission'
+  FROM public.admin_users
+  WHERE user_id <> p_actor_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

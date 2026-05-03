@@ -1,4 +1,4 @@
-import { Home, Search, User, LogOut, Settings, Hash, X, Send, Swords, UsersRound, LogIn, Bell, Shield, Menu } from "lucide-react";
+import { Home, Search, User, LogOut, Settings, Hash, X, Send, Swords, UsersRound, LogIn, Bell, Shield, Menu, Gamepad2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -86,6 +86,7 @@ const Navbar = () => {
               { icon: Send, label: t("nav.whispers"), path: "/whispers" },
               { icon: UsersRound, label: t("nav.stranger"), path: "/stranger" },
               { icon: Swords, label: t("nav.play"), path: "/play" },
+              { icon: Gamepad2, label: t("nav.gameHouse"), path: "/game-house" },
             ].map(({ icon: Icon, label, path }) => (
               <button
                 key={path}
@@ -289,6 +290,7 @@ const Navbar = () => {
                         { icon: Send, label: t("nav.whispers"), path: "/whispers" },
                         { icon: UsersRound, label: t("nav.stranger"), path: "/stranger" },
                         { icon: Swords, label: t("nav.play"), path: "/play" },
+                        { icon: Gamepad2, label: t("nav.gameHouse"), path: "/game-house" },
                       ].map(({ icon: Icon, label, path }) => (
                         <button
                           key={path}

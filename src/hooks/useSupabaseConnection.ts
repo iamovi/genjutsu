@@ -114,7 +114,7 @@ export function useSupabaseConnection() {
                     setPeerDisconnected(false);
                 }
             })
-            .on('presence', { event: 'join' }, ({ newPresences }) => {
+            .on('presence', { event: 'join' }, async ({ newPresences }) => {
                 console.debug('[Supabase] New presence join:', newPresences);
                 // Only mark as connected if someone OTHER than us joined
                 const others = newPresences.filter(p => p.presence_ref !== undefined); // Simplified check or use state count
@@ -124,11 +124,15 @@ export function useSupabaseConnection() {
                     setPeerDisconnected(false);
                     // Send our info to the new person
                     console.debug('[Supabase] Sending player-info to new joiner');
-                    channel.send({
-                        type: 'broadcast',
-                        event: 'game-event',
-                        payload: { type: 'player-info', name: myNameRef.current }
-                    });
+                    try {
+                        await channel.send({
+                            type: 'broadcast',
+                            event: 'game-event',
+                            payload: { type: 'player-info', name: myNameRef.current }
+                        });
+                    } catch (error) {
+                        console.error('[Supabase] Failed to send player-info:', error);
+                    }
                 }
             })
             .on('presence', { event: 'leave' }, ({ leftPresences }) => {
@@ -170,7 +174,7 @@ export function useSupabaseConnection() {
             .on('broadcast', { event: 'game-event' }, ({ payload }) => {
                 handleMessage(payload);
             })
-            .on('presence', { event: 'sync' }, () => {
+            .on('presence', { event: 'sync' }, async () => {
                 const state = channel.presenceState();
                 console.debug('[Supabase] Presence sync:', state);
                 if (Object.keys(state).length >= 2) {
@@ -178,11 +182,15 @@ export function useSupabaseConnection() {
                     setPeerDisconnected(false);
                     // Send our info
                     console.debug('[Supabase] Sending player-info after sync');
-                    channel.send({
-                        type: 'broadcast',
-                        event: 'game-event',
-                        payload: { type: 'player-info', name: myNameRef.current }
-                    });
+                    try {
+                        await channel.send({
+                            type: 'broadcast',
+                            event: 'game-event',
+                            payload: { type: 'player-info', name: myNameRef.current }
+                        });
+                    } catch (error) {
+                        console.error('[Supabase] Failed to send player-info after sync:', error);
+                    }
                 }
             })
             .on('presence', { event: 'leave' }, ({ leftPresences }) => {

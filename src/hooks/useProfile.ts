@@ -20,10 +20,11 @@ export function useProfile() {
   const { data: profile, isLoading: loading } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
+      if (!user) return null;
       const { data } = await supabase
         .from("profiles")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .single();
       return data as Profile | null;
     },

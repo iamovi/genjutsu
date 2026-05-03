@@ -30,8 +30,8 @@ const getValidMoves = (index: number, pieces: Piece[], kings: KingMap, player: P
   const moves: { to: number; captured?: number }[] = [];
   const dirs: number[][] = [];
 
-  if (player === 1 || kings[index]) dirs.push([-1, -1], [-1, 1]);
-  if (player === 2 || kings[index]) dirs.push([1, -1], [1, 1]);
+  if (player === 1 || (kings && kings[index])) dirs.push([-1, -1], [-1, 1]);
+  if (player === 2 || (kings && kings[index])) dirs.push([1, -1], [1, 1]);
 
   for (const [dr, dc] of dirs) {
     const nr = r + dr, nc = c + dc;

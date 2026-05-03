@@ -345,6 +345,15 @@ Deno.serve(async (req) => {
         case "mention":
           notifBody = `${actorName} mentioned you in a void`;
           break;
+        case "game_submission":
+          notifBody = `${actorName} submitted a new game for review`;
+          break;
+        case "game_approved":
+          notifBody = `${actorName} approved your game submission`;
+          break;
+        case "game_rejected":
+          notifBody = `${actorName} rejected your game submission`;
+          break;
         case "whisper": {
           const cleanMessage = String(messageContent).trim();
           const preview = cleanMessage.length > 100
@@ -374,6 +383,12 @@ Deno.serve(async (req) => {
         } else {
           notifUrl = `https://genjutsu-social.vercel.app/whispers`;
         }
+      } else if (notificationType === "game_submission") {
+        notifUrl = `https://genjutsu-social.vercel.app/admin`;
+      } else if (notificationType === "game_approved") {
+        notifUrl = `https://genjutsu-social.vercel.app/game-house`;
+      } else if (notificationType === "game_rejected") {
+        notifUrl = `https://genjutsu-social.vercel.app/game-house/submit`;
       } else if (notificationType === "follow" || notificationType === "unfollow") {
         if (actorUsername) {
           notifUrl = `https://genjutsu-social.vercel.app/u/${actorUsername}`;
