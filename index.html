@@ -11,7 +11,7 @@
       let theme = null;
       try {
         theme = localStorage.getItem('vite-ui-theme');
-      } catch (e) {}
+      } catch (e) { /* ignore */ }
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       if (theme === 'dark' || (!theme && systemDark)) {
         document.documentElement.classList.add('dark');
