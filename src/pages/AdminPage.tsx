@@ -282,12 +282,19 @@ const AdminPage = () => {
       if (error) throw error;
 
       if (user) {
-        // Send notification to the user
-        void (supabase as any).from("notifications").insert({
-          user_id: game.submitted_by,
-          actor_id: user.id,
-          type: "game_approved"
-        });
+        // Send notification to the user with proper error handling
+        try {
+          const { error: notifyError } = await (supabase as any).from("notifications").insert({
+            user_id: game.submitted_by,
+            actor_id: user.id,
+            type: "game_approved"
+          });
+          if (notifyError) {
+            console.error("Failed to send approval notification:", notifyError);
+          }
+        } catch (err) {
+          console.error("Error sending approval notification:", err);
+        }
       }
     },
     onSuccess: () => {
@@ -315,12 +322,19 @@ const AdminPage = () => {
       if (error) throw error;
 
       if (user) {
-        // Send notification to the user
-        void (supabase as any).from("notifications").insert({
-          user_id: game.submitted_by,
-          actor_id: user.id,
-          type: "game_rejected"
-        });
+        // Send notification to the user with proper error handling
+        try {
+          const { error: notifyError } = await (supabase as any).from("notifications").insert({
+            user_id: game.submitted_by,
+            actor_id: user.id,
+            type: "game_rejected"
+          });
+          if (notifyError) {
+            console.error("Failed to send rejection notification:", notifyError);
+          }
+        } catch (err) {
+          console.error("Error sending rejection notification:", err);
+        }
       }
     },
     onSuccess: () => {

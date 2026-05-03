@@ -73,8 +73,15 @@ export default function GameHouseSubmit() {
 
       if (dbError) throw dbError;
 
-      // 4. Notify admins (fire and forget)
-      void (supabase as any).rpc("notify_admins_new_game", { p_actor_id: user.id });
+      // 4. Notify admins with proper error handling
+      try {
+        const { error: notifyError } = await (supabase as any).rpc("notify_admins_new_game", { p_actor_id: user.id });
+        if (notifyError) {
+          console.error("Failed to notify admins:", notifyError);
+        }
+      } catch (err) {
+        console.error("Error notifying admins:", err);
+      }
 
       toast.success("Game submitted successfully! It is now waiting for admin approval.");
       navigate("/game-house");
