@@ -79,7 +79,7 @@ const Navbar = () => {
             <span className="font-black text-lg tracking-tight text-primary">genjutsu</span>
           </button>
 
-          <nav className="hidden md:flex items-center gap-1.5 rounded-[3px] border-2 border-border bg-card/80 px-1.5 py-1 gum-shadow-sm md:justify-self-center">
+          <nav className="hidden md:flex items-center gap-1 rounded-[3px] border-2 border-border bg-secondary/30 p-1 md:justify-self-center shadow-sm">
             {[
               { icon: Home, label: t("nav.feed"), path: "/" },
               { icon: Search, label: t("nav.search"), path: "/search" },
@@ -91,9 +91,9 @@ const Navbar = () => {
               <button
                 key={path}
                 onClick={() => navigate(path)}
-                className={`relative h-9 flex items-center gap-2 px-3.5 rounded-[3px] text-sm font-medium transition-all border-2 ${location.pathname === path
-                  ? "bg-primary text-primary-foreground border-border gum-shadow-sm"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                className={`relative h-8 flex items-center gap-1.5 px-3 rounded-[2px] text-sm font-bold transition-all border-2 ${location.pathname === path
+                  ? "bg-background text-foreground border-border shadow-[1px_1px_0_theme(colors.border)]"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-background/50"
                   }`}
               >
                 <Icon size={16} />
@@ -119,13 +119,24 @@ const Navbar = () => {
               <Search size={16} />
             </button>
 
+            {/* Mobile: Whispers button */}
+            <button
+              onClick={() => navigate("/whispers")}
+              className="md:hidden relative p-1.5 sm:p-2 rounded-[3px] hover:bg-secondary text-muted-foreground transition-colors gum-border"
+              title={t("nav.whispers")}
+            >
+              <Send size={16} />
+              {hasUnreadWhispers && (
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary animate-pulse border-2 border-background" />
+              )}
+            </button>
+
             {/* Notification Bell */}
             {user && (
               <div className="relative" ref={notifRef}>
                 <button
                   onClick={() => setIsNotifOpen(!isNotifOpen)}
-                  className={`relative p-1.5 sm:p-2 rounded-[3px] hover:bg-secondary transition-colors gum-border ${isNotifOpen ? "bg-secondary text-foreground" : "text-muted-foreground"
-                    }`}
+                  className={`relative p-1.5 sm:p-2 rounded-[3px] transition-all md:border-2 md:hover:bg-secondary/50 ${isNotifOpen ? "bg-secondary text-foreground md:border-border md:shadow-[2px_2px_0_theme(colors.border)]" : "text-muted-foreground md:border-transparent md:hover:border-border"} max-md:gum-border max-md:hover:bg-secondary`}
                   title="Notifications"
                 >
                   <Bell size={16} />
@@ -162,7 +173,7 @@ const Navbar = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1 sm:gap-2 group rounded-[3px] md:gum-border md:px-2 md:py-1 md:bg-card/80 md:hover:bg-secondary/70 transition-colors">
+                  <button className="flex items-center gap-1 sm:gap-2 group rounded-[3px] border-2 border-transparent md:hover:border-border md:px-2 md:py-1 md:hover:bg-secondary/30 transition-all">
                     <div className="hidden md:flex flex-col items-end">
                       <span className="text-sm font-bold group-hover:underline leading-none">{profile?.display_name}</span>
                       <span className="text-[10px] text-muted-foreground leading-none mt-1">@{profile?.username}</span>
@@ -287,7 +298,6 @@ const Navbar = () => {
                     <div className="space-y-0.5">
                       {[
                         { icon: Home, label: t("nav.feed"), path: "/" },
-                        { icon: Send, label: t("nav.whispers"), path: "/whispers" },
                         { icon: UsersRound, label: t("nav.stranger"), path: "/stranger" },
                         { icon: Swords, label: t("nav.play"), path: "/play" },
                         { icon: Gamepad2, label: t("nav.gameHouse"), path: "/game-house" },
@@ -304,9 +314,6 @@ const Navbar = () => {
                         >
                           <div className="relative">
                             <Icon size={16} className={location.pathname === path ? "text-primary" : "text-muted-foreground"} />
-                            {path === "/whispers" && hasUnreadWhispers && (
-                              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary animate-pulse" />
-                            )}
                           </div>
                           {label}
                         </button>

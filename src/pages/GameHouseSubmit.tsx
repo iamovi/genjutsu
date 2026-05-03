@@ -112,7 +112,7 @@ export default function GameHouseSubmit() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
         <div className="mb-4">
           <button
-            onClick={() => navigate("/game-house")}
+            onClick={() => navigate(-1)}
             className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground gum-btn px-2.5 sm:px-3 py-1.5 border border-border bg-background hover:bg-secondary rounded-[3px] transition-all w-fit shadow-[2px_2px_0_theme(colors.border)] active:translate-y-[2px] active:shadow-none"
           >
             <ArrowLeft size={16} />
