@@ -287,7 +287,9 @@ const AdminPage = () => {
           const { error: notifyError } = await (supabase as any).from("notifications").insert({
             user_id: game.submitted_by,
             actor_id: user.id,
-            type: "game_approved"
+            type: "game_approved",
+            post_id: null,
+            comment_id: null
           });
           if (notifyError) {
             console.error("Failed to send approval notification:", notifyError);
@@ -327,7 +329,9 @@ const AdminPage = () => {
           const { error: notifyError } = await (supabase as any).from("notifications").insert({
             user_id: game.submitted_by,
             actor_id: user.id,
-            type: "game_rejected"
+            type: "game_rejected",
+            post_id: null,
+            comment_id: null
           });
           if (notifyError) {
             console.error("Failed to send rejection notification:", notifyError);
