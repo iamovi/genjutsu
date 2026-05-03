@@ -90,6 +90,14 @@ type ThemeProviderState = {
     setShadowWalk: (v: boolean) => void;
 };
 
+function safeGetItem(key: string): string | null {
+    try { return localStorage.getItem(key); } catch { return null; }
+}
+
+function safeSetItem(key: string, value: string): void {
+    try { localStorage.setItem(key, value); } catch {}
+}
+
 const initialState: ThemeProviderState = {
     theme: "system",
     preset: "default",
@@ -128,74 +136,74 @@ export function ThemeProvider({
     ...props
 }: ThemeProviderProps) {
     const [theme, setThemeState] = useState<Theme>(() => {
-        const stored = localStorage.getItem(`${storageKey}-theme`);
+        const stored = safeGetItem(`${storageKey}-theme`);
         return (stored as Theme) || defaultTheme;
     });
     const [preset, setPresetState] = useState<ThemePreset>(() => {
-        const stored = localStorage.getItem(`${storageKey}-preset`);
+        const stored = safeGetItem(`${storageKey}-preset`);
         if (stored === "minecraft" || stored === "win95" || stored === "papyrus" || stored === "hackernews" || stored === "winxp" || stored === "gameboy" || stored === "nord" || stored === "terminal") {
             return stored as ThemePreset;
         }
         return "default";
     });
     const [color, setColorState] = useState<ColorPreset>(() => {
-        return (localStorage.getItem(`${storageKey}-color`) as ColorPreset) || "purple";
+        return (safeGetItem(`${storageKey}-color`) as ColorPreset) || "purple";
     });
     const [font, setFontState] = useState<FontPreset>(() => {
-        const stored = localStorage.getItem(`${storageKey}-font`);
+        const stored = safeGetItem(`${storageKey}-font`);
         if (stored && Object.prototype.hasOwnProperty.call(fontFamilies, stored)) {
             return stored as FontPreset;
         }
         return "Reddit Mono";
     });
     const [grid, setGridState] = useState<GridPreset>(() => {
-        return (localStorage.getItem(`${storageKey}-grid`) as GridPreset) || "blueprint";
+        return (safeGetItem(`${storageKey}-grid`) as GridPreset) || "blueprint";
     });
     const [radius, setRadiusState] = useState<RadiusPreset>(() => {
-        return (localStorage.getItem(`${storageKey}-radius`) as RadiusPreset) || "default";
+        return (safeGetItem(`${storageKey}-radius`) as RadiusPreset) || "default";
     });
     const [emojiPack, setEmojiPackState] = useState<EmojiPack>(() => {
-        const stored = localStorage.getItem(`${storageKey}-emojiPack`);
+        const stored = safeGetItem(`${storageKey}-emojiPack`);
         if (stored === "native" || stored === "twemoji" || stored === "google" || stored === "openmoji") {
             return stored;
         }
         return "twemoji";
     });
     const [customColor, setCustomColorState] = useState<string>(() => {
-        return localStorage.getItem(`${storageKey}-customColor`) || "#8b5cf6";
+        return safeGetItem(`${storageKey}-customColor`) || "#8b5cf6";
     });
     const [animateColor, setAnimateColorState] = useState<boolean>(() => {
-        return localStorage.getItem(`${storageKey}-animateColor`) === "true";
+        return safeGetItem(`${storageKey}-animateColor`) === "true";
     });
     const [cursorTrail, setCursorTrailState] = useState<boolean>(() => {
-        return localStorage.getItem(`${storageKey}-cursorTrail`) === "true";
+        return safeGetItem(`${storageKey}-cursorTrail`) === "true";
     });
     const [dataSaver, setDataSaverState] = useState<boolean>(() => {
-        return localStorage.getItem(`${storageKey}-dataSaver`) === "true";
+        return safeGetItem(`${storageKey}-dataSaver`) === "true";
     });
     const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => {
-        return localStorage.getItem(`${storageKey}-soundEnabled`) === "true";
+        return safeGetItem(`${storageKey}-soundEnabled`) === "true";
     });
     const [shadowWalk, setShadowWalkState] = useState<boolean>(() => {
-        return localStorage.getItem(`${storageKey}-shadowWalk`) === "true";
+        return safeGetItem(`${storageKey}-shadowWalk`) === "true";
     });
 
     const hueRef = useRef<number>(0);
     const rafRef = useRef<number | null>(null);
 
-    const setTheme = (val: Theme) => { localStorage.setItem(`${storageKey}-theme`, val); setThemeState(val); };
-    const setPreset = (val: ThemePreset) => { localStorage.setItem(`${storageKey}-preset`, val); setPresetState(val); };
-    const setColor = (val: ColorPreset) => { localStorage.setItem(`${storageKey}-color`, val); setColorState(val); };
-    const setCustomColor = (hex: string) => { localStorage.setItem(`${storageKey}-customColor`, hex); setCustomColorState(hex); };
-    const setFont = (val: FontPreset) => { localStorage.setItem(`${storageKey}-font`, val); setFontState(val); };
-    const setGrid = (val: GridPreset) => { localStorage.setItem(`${storageKey}-grid`, val); setGridState(val); };
-    const setRadius = (val: RadiusPreset) => { localStorage.setItem(`${storageKey}-radius`, val); setRadiusState(val); };
-    const setEmojiPack = (val: EmojiPack) => { localStorage.setItem(`${storageKey}-emojiPack`, val); setEmojiPackState(val); };
-    const setAnimateColor = (val: boolean) => { localStorage.setItem(`${storageKey}-animateColor`, String(val)); setAnimateColorState(val); };
-    const setCursorTrail = (val: boolean) => { localStorage.setItem(`${storageKey}-cursorTrail`, String(val)); setCursorTrailState(val); };
-    const setDataSaver = (val: boolean) => { localStorage.setItem(`${storageKey}-dataSaver`, String(val)); setDataSaverState(val); };
-    const setSoundEnabled = (val: boolean) => { localStorage.setItem(`${storageKey}-soundEnabled`, String(val)); setSoundEnabledState(val); };
-    const setShadowWalk = (val: boolean) => { localStorage.setItem(`${storageKey}-shadowWalk`, String(val)); setShadowWalkState(val); document.documentElement.setAttribute('data-shadow-walk', String(val)); };
+    const setTheme = (val: Theme) => { safeSetItem(`${storageKey}-theme`, val); setThemeState(val); };
+    const setPreset = (val: ThemePreset) => { safeSetItem(`${storageKey}-preset`, val); setPresetState(val); };
+    const setColor = (val: ColorPreset) => { safeSetItem(`${storageKey}-color`, val); setColorState(val); };
+    const setCustomColor = (hex: string) => { safeSetItem(`${storageKey}-customColor`, hex); setCustomColorState(hex); };
+    const setFont = (val: FontPreset) => { safeSetItem(`${storageKey}-font`, val); setFontState(val); };
+    const setGrid = (val: GridPreset) => { safeSetItem(`${storageKey}-grid`, val); setGridState(val); };
+    const setRadius = (val: RadiusPreset) => { safeSetItem(`${storageKey}-radius`, val); setRadiusState(val); };
+    const setEmojiPack = (val: EmojiPack) => { safeSetItem(`${storageKey}-emojiPack`, val); setEmojiPackState(val); };
+    const setAnimateColor = (val: boolean) => { safeSetItem(`${storageKey}-animateColor`, String(val)); setAnimateColorState(val); };
+    const setCursorTrail = (val: boolean) => { safeSetItem(`${storageKey}-cursorTrail`, String(val)); setCursorTrailState(val); };
+    const setDataSaver = (val: boolean) => { safeSetItem(`${storageKey}-dataSaver`, String(val)); setDataSaverState(val); };
+    const setSoundEnabled = (val: boolean) => { safeSetItem(`${storageKey}-soundEnabled`, String(val)); setSoundEnabledState(val); };
+    const setShadowWalk = (val: boolean) => { safeSetItem(`${storageKey}-shadowWalk`, String(val)); setShadowWalkState(val); document.documentElement.setAttribute('data-shadow-walk', String(val)); };
 
     // Mode + static color + radius effect
     useEffect(() => {

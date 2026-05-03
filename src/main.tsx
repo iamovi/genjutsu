@@ -34,6 +34,10 @@ loadConfig()
           "Access denied",
           "NetworkError when attempting to fetch resource.",
           "Failed to fetch",
+          "Failed to execute 'insertBefore' on 'Node'",
+          "Failed to execute 'removeChild' on 'Node'",
+          "Error invoking postMessage: Java object is gone",
+          "Failed to read the 'localStorage' property from 'Window'",
         ],
       });
     }
