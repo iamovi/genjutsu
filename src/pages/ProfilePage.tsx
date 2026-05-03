@@ -820,7 +820,7 @@ const ProfilePage = () => {
                                         <div className="flex flex-wrap gap-4 mt-6 text-sm text-muted-foreground">
                                             <div className="flex items-center gap-1.5">
                                                 <Calendar size={16} />
-                                                <span>Joined {new Date(profile.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</span>
+                                                <span>Joined {new Date(profile.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                                             </div>
                                         </div>
 
