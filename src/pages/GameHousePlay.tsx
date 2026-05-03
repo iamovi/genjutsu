@@ -12,7 +12,7 @@ import { toast } from "sonner";
 export default function GameHousePlay() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+  const [iframeHtml, setIframeHtml] = useState<string | null>(null);
 
   const { data: game, isLoading, isError } = useQuery({
     queryKey: ["game_house_play", id],
@@ -41,14 +41,15 @@ export default function GameHousePlay() {
         // Increment play count (fire and forget)
         void (supabase as any).rpc("increment_game_play_count", { p_game_id: game.id });
 
-        // Get signed URL for the storage object (valid for 1 hour)
-        const { data, error } = await supabase.storage
+        // Download the file directly as a Blob (works for both public and private buckets)
+        const { data: blob, error } = await supabase.storage
           .from("game-house")
-          .createSignedUrl(game.html_storage_path, 3600);
+          .download(game.html_storage_path);
 
         if (error) throw error;
-        if (data?.signedUrl) {
-          setIframeUrl(data.signedUrl);
+        if (blob) {
+          const htmlText = await blob.text();
+          setIframeHtml(htmlText);
         }
       } catch (err: any) {
         console.error("Failed to load game URL:", err);
@@ -143,7 +144,7 @@ export default function GameHousePlay() {
         </div>
 
         <div className="flex-1 w-full bg-black relative border-y sm:border-2 border-border sm:rounded-[3px] gum-shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-          {!iframeUrl ? (
+          {!iframeHtml ? (
             <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-20 text-white">
               <div className="flex flex-col items-center gap-4">
                 <FrogLoader size={48} />
@@ -153,7 +154,7 @@ export default function GameHousePlay() {
           ) : (
             <iframe
               id="game-iframe"
-              src={iframeUrl}
+              srcDoc={iframeHtml}
               className="w-full h-full border-none bg-white"
               title={game.title}
               sandbox="allow-scripts"

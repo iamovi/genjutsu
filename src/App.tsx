@@ -48,7 +48,7 @@ const GameHousePlay = lazy(() => import("@/pages/GameHousePlay"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 ////////////////////////////////////////////////////////////////
-const MAINTENANCE_MODE = false; 
+const MAINTENANCE_MODE = true;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 const queryClient = new QueryClient();
@@ -75,63 +75,63 @@ const App = () => {
         <SoundEngine />
         <ShadowWalkEngine />
         <AppLockGate>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter
-              future={{
-                v7_startTransition: true,
-                v7_relativeSplatPath: true,
-              }}
-            >
-              <ScrollToTop />
-              <GoogleAnalytics />
-              <AuthProvider>
-                <MfaSessionGuard />
-                <FloatingWhisperBubble />
-                <PushNotificationPrompt />
-                <Suspense
-                  fallback={
-                    <div className="flex h-screen items-center justify-center">
-                      <FrogLoader size={32} />
-                    </div>
-                  }
-                >
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<AuthPage />} />
-                    <Route path="/auth/mfa" element={<MfaChallengePage />} />
-                    <Route path="/about" element={<AboutPage />} />
-                    <Route path="/terms" element={<TermsPage />} />
-                    <Route path="/privacy" element={<PrivacyPage />} />
-                    <Route path="/post/:postId" element={<PostPage />} />
-                    <Route path="/search" element={<SearchPage />} />
-                    <Route path="/whispers" element={<WhispersPage />} />
-                    <Route path="/whispers/community" element={<CommunityChat />} />
-                    <Route path="/whisper/:username" element={<ChatPage />} />
-                    <Route path="/stranger" element={<StrangerPage />} />
-                    <Route path="/play" element={<PlayPage />} />
-                    <Route path="/game-house" element={<GameHouseGallery />} />
-                    <Route path="/game-house/submit" element={<GameHouseSubmit />} />
-                    <Route path="/game-house/play/:id" element={<GameHousePlay />} />
-                    <Route
-                      path="/admin"
-                      element={(
-                        <RequireAdmin>
-                          <AdminPage />
-                        </RequireAdmin>
-                      )}
-                    />
-                    <Route path="/u/:username" element={<ProfilePage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-              </AuthProvider>
-            </BrowserRouter>
-          </TooltipProvider>
-        </QueryClientProvider>
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true,
+                }}
+              >
+                <ScrollToTop />
+                <GoogleAnalytics />
+                <AuthProvider>
+                  <MfaSessionGuard />
+                  <FloatingWhisperBubble />
+                  <PushNotificationPrompt />
+                  <Suspense
+                    fallback={
+                      <div className="flex h-screen items-center justify-center">
+                        <FrogLoader size={32} />
+                      </div>
+                    }
+                  >
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/auth" element={<AuthPage />} />
+                      <Route path="/auth/mfa" element={<MfaChallengePage />} />
+                      <Route path="/about" element={<AboutPage />} />
+                      <Route path="/terms" element={<TermsPage />} />
+                      <Route path="/privacy" element={<PrivacyPage />} />
+                      <Route path="/post/:postId" element={<PostPage />} />
+                      <Route path="/search" element={<SearchPage />} />
+                      <Route path="/whispers" element={<WhispersPage />} />
+                      <Route path="/whispers/community" element={<CommunityChat />} />
+                      <Route path="/whisper/:username" element={<ChatPage />} />
+                      <Route path="/stranger" element={<StrangerPage />} />
+                      <Route path="/play" element={<PlayPage />} />
+                      <Route path="/game-house" element={<GameHouseGallery />} />
+                      <Route path="/game-house/submit" element={<GameHouseSubmit />} />
+                      <Route path="/game-house/play/:id" element={<GameHousePlay />} />
+                      <Route
+                        path="/admin"
+                        element={(
+                          <RequireAdmin>
+                            <AdminPage />
+                          </RequireAdmin>
+                        )}
+                      />
+                      <Route path="/u/:username" element={<ProfilePage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </AuthProvider>
+              </BrowserRouter>
+            </TooltipProvider>
+          </QueryClientProvider>
         </AppLockGate>
       </ThemeProvider>
     </HelmetProvider>

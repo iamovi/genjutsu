@@ -616,6 +616,12 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Anyone can read game HTML if they know the path') THEN
+    CREATE POLICY "Anyone can read game HTML if they know the path" ON storage.objects FOR SELECT USING ( bucket_id = 'game-house' );
+  END IF;
+END $$;
+
 
 -- =============================================================================
 -- 24-HOUR EXPIRATION (CRON JOBS)
