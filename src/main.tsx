@@ -16,6 +16,13 @@ import { loadConfig, getConfig } from "@/lib/config";
 // Force service worker registration for PWABuilder detection
 registerSW({ immediate: true });
 
+// Remove SSR bot content if a real user somehow hits the bot-render route
+// (e.g. via WhatsApp/Discord in-app browser using a bot-like user-agent)
+const ssrContent = document.getElementById("ssr-content");
+if (ssrContent) {
+  ssrContent.remove();
+}
+
 loadConfig()
   .then(() => {
     const config = getConfig();

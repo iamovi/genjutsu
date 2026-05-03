@@ -6,7 +6,7 @@
                 {
                     "type": "header",
                     "key": "user-agent",
-                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot).*"
+                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot).*"
                 }
             ],
             "destination": "/api/bot-render?route=/",
@@ -20,7 +20,7 @@
                 {
                     "type": "header",
                     "key": "user-agent",
-                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot).*"
+                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot).*"
                 }
             ],
             "destination": "/api/bot-render?route=/post/:postId"
@@ -31,7 +31,7 @@
                 {
                     "type": "header",
                     "key": "user-agent",
-                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot).*"
+                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot).*"
                 }
             ],
             "destination": "/api/bot-render?route=/u/:username"
@@ -42,7 +42,7 @@
                 {
                     "type": "header",
                     "key": "user-agent",
-                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot).*"
+                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot).*"
                 }
             ],
             "destination": "/api/bot-render?route=/about"
@@ -53,7 +53,7 @@
                 {
                     "type": "header",
                     "key": "user-agent",
-                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot).*"
+                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot).*"
                 }
             ],
             "destination": "/api/bot-render?route=/terms"
@@ -64,7 +64,7 @@
                 {
                     "type": "header",
                     "key": "user-agent",
-                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot).*"
+                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot).*"
                 }
             ],
             "destination": "/api/bot-render?route=/privacy"
@@ -75,42 +75,41 @@
                 {
                     "type": "header",
                     "key": "user-agent",
-                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot).*"
+                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot).*"
                 }
             ],
             "destination": "/api/bot-render?route=/search"
         },
         {
-            "source": "/post/:postId",
-            "destination": "/api/og?postId=:postId"
-        },
-        {
-            "source": "/(auth|about|terms|privacy|search|play|admin|settings)",
-            "destination": "/index.html"
-        },
-        {
             "source": "/stranger",
-            "destination": "/api/og?specialPage=stranger"
+            "has": [
+                {
+                    "type": "header",
+                    "key": "user-agent",
+                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot).*"
+                }
+            ],
+            "destination": "/api/bot-render?route=/stranger"
         },
         {
-            "source": "/whispers",
+            "source": "/(auth|about|terms|privacy|search|play|admin|settings|stranger|whispers|whispers/community)",
             "destination": "/index.html"
         },
         {
-            "source": "/whispers/community",
+            "source": "/post/:postId",
             "destination": "/index.html"
         },
         {
-            "source": "/api-docs",
-            "destination": "/api-docs/index.html"
+            "source": "/u/:username",
+            "destination": "/index.html"
         },
         {
             "source": "/whisper/:username",
             "destination": "/index.html"
         },
         {
-            "source": "/u/:username",
-            "destination": "/api/og?username=:username"
+            "source": "/api-docs",
+            "destination": "/api-docs/index.html"
         },
         {
             "source": "/((?!api/|assets/|.*\\..*).*)",
