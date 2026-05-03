@@ -1,4 +1,4 @@
-import { Home, Search, User, LogOut, Settings, Hash, X, Send, Swords, UsersRound, LogIn, Bell, Shield, Menu, Gamepad2 } from "lucide-react";
+import { Home, Search, User, LogOut, Settings, Palette, X, Send, Swords, UsersRound, LogIn, Bell, Shield, Menu, Gamepad2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -106,9 +106,11 @@ const Navbar = () => {
           </nav>
 
           <div className="flex items-center gap-1 sm:gap-2 md:justify-self-end">
-            <div className="hidden sm:block">
-              <ModeToggle />
-            </div>
+            {!user && (
+              <div className="hidden md:block">
+                <ModeToggle />
+              </div>
+            )}
 
             {/* Mobile: Search button */}
             <button
@@ -213,15 +215,14 @@ const Navbar = () => {
                     <Settings className="mr-2 h-4 w-4" />
                     <span>{t("nav.settings")}</span>
                   </DropdownMenuItem>
-                  <div className="sm:hidden">
-                    <DropdownMenuItem onClick={(e) => e.preventDefault()} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Hash className="mr-2 h-4 w-4" />
-                        <span>{t("nav.theme")}</span>
-                      </div>
-                      <ModeToggle />
-                    </DropdownMenuItem>
-                  </div>
+                  <DropdownMenuSeparator className="bg-border" />
+                  <DropdownMenuItem onClick={(e) => e.preventDefault()} className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Palette className="mr-2 h-4 w-4" />
+                      <span>{t("nav.theme")}</span>
+                    </div>
+                    <ModeToggle />
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
