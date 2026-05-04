@@ -155,7 +155,7 @@ export default function GameHouseEdit() {
       if (uploadError) throw uploadError;
 
       // 2. Update Database Record
-      let updatePayload: any = {};
+      const updatePayload: any = {};
 
       if (isUnapprovedNewSubmission) {
         // Update main columns directly — game stays 'pending'
