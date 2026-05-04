@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 
 import { supabase } from "@/integrations/supabase/client";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Maximize2, AlertTriangle, RotateCcw, Pencil } from "lucide-react";
@@ -15,6 +15,8 @@ export default function GameHousePlay() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isDraftPreview = searchParams.get('draft') === 'true';
   const queryClient = useQueryClient();
   const [iframeHtml, setIframeHtml] = useState<string | null>(null);
   const [iframeLoaded, setIframeLoaded] = useState(false);
@@ -30,7 +32,7 @@ export default function GameHousePlay() {
       const { data, error } = await supabase
         .from("game_house")
         .select(`
-          id, title, description, html_storage_path, status, play_count, submitted_by,
+          id, title, description, html_storage_path, status, play_count, submitted_by, draft_data,
           profiles!game_house_submitted_by_fkey(username, display_name, avatar_url)
         `)
         .eq("id", id)
@@ -45,9 +47,13 @@ export default function GameHousePlay() {
     async function loadGameUrl() {
       if (!game || !game.html_storage_path) return;
 
+      // Determine which file to load
+      const draftPath = game.draft_data?.html_storage_path;
+      const fileToLoad = (isDraftPreview && draftPath) ? draftPath : game.html_storage_path;
+
       try {
-        // Increment play count only once per page visit
-        if (!playCountedRef.current) {
+        // Increment play count only once per page visit (skip for draft previews)
+        if (!playCountedRef.current && !isDraftPreview) {
           playCountedRef.current = true;
           supabase.rpc("increment_game_play_count", { p_game_id: game.id }).then(({ error }) => {
             if (error) {
@@ -61,7 +67,7 @@ export default function GameHousePlay() {
         // Download the HTML file
         const { data: blob, error } = await supabase.storage
           .from("game-house")
-          .download(game.html_storage_path);
+          .download(fileToLoad);
 
         if (error) throw error;
         if (blob) {
@@ -107,7 +113,7 @@ export default function GameHousePlay() {
     if (game) {
       loadGameUrl();
     }
-  }, [game, queryClient]);
+  }, [game, queryClient, isDraftPreview]);
 
   // Auto-focus the iframe after it loads so keyboard input works immediately
   const handleIframeLoad = useCallback(() => {
@@ -279,6 +285,11 @@ export default function GameHousePlay() {
           )}
         </div>
         
+        {isDraftPreview && game.draft_data && (
+          <div className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-center p-2 text-xs font-bold uppercase tracking-widest">
+            Draft Preview: You are viewing the pending edit, not the live version.
+          </div>
+        )}
         {game.status !== 'approved' && (
           <div className="bg-destructive/20 text-destructive text-center p-2 text-xs font-bold uppercase tracking-widest">
             Preview Mode: This game is currently {game.status}.

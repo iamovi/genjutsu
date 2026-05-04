@@ -39,6 +39,11 @@ interface GameHouseItem {
   created_at: string;
   submitted_by: string;
   html_storage_path: string;
+  draft_data?: {
+    title: string;
+    description: string;
+    html_storage_path: string;
+  } | null;
   profiles: {
     username: string;
     display_name: string;
@@ -50,7 +55,7 @@ export default function GameHouseGallery() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [gameToDelete, setGameToDelete] = useState<{ id: string, storagePath: string } | null>(null);
+  const [gameToDelete, setGameToDelete] = useState<{ id: string, storagePath: string, draftStoragePath?: string } | null>(null);
   const [downloadingGameId, setDownloadingGameId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -60,7 +65,7 @@ export default function GameHouseGallery() {
       const { data, error } = await supabase
         .from("game_house")
         .select(`
-          id, title, description, play_count, created_at, submitted_by, html_storage_path,
+          id, title, description, play_count, created_at, submitted_by, html_storage_path, draft_data,
           profiles!game_house_submitted_by_fkey(username, display_name, avatar_url)
         `)
         .eq("status", "approved")
@@ -71,12 +76,15 @@ export default function GameHouseGallery() {
     },
   });
 
-  const handleDelete = async (gameId: string, storagePath: string) => {
+  const handleDelete = async (gameId: string, storagePath: string, draftStoragePath?: string) => {
     try {
-      // 1. Delete from storage
-      if (storagePath) {
-        const { error: storageError } = await supabase.storage.from("game-house").remove([storagePath]);
-        if (storageError) console.error("Failed to delete storage file:", storageError);
+      // 1. Delete main file from storage
+      const filesToDelete = [storagePath].filter(Boolean);
+      if (draftStoragePath) filesToDelete.push(draftStoragePath);
+
+      if (filesToDelete.length > 0) {
+        const { error: storageError } = await supabase.storage.from("game-house").remove(filesToDelete);
+        if (storageError) console.error("Failed to delete storage files:", storageError);
       }
 
       // 2. Delete from database
@@ -235,7 +243,7 @@ export default function GameHouseGallery() {
                             <Pencil className="mr-2 h-4 w-4" />
                             <span>Edit Game</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setGameToDelete({ id: game.id, storagePath: game.html_storage_path })} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
+                          <DropdownMenuItem onClick={() => setGameToDelete({ id: game.id, storagePath: game.html_storage_path, draftStoragePath: game.draft_data?.html_storage_path })} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
                             <Trash2 className="mr-2 h-4 w-4" />
                             <span>Delete</span>
                           </DropdownMenuItem>
@@ -299,7 +307,7 @@ export default function GameHouseGallery() {
               <AlertDialogCancel className="gum-btn rounded-[3px]">Cancel</AlertDialogCancel>
               <AlertDialogAction 
                 onClick={() => {
-                  if (gameToDelete) handleDelete(gameToDelete.id, gameToDelete.storagePath);
+                  if (gameToDelete) handleDelete(gameToDelete.id, gameToDelete.storagePath, gameToDelete.draftStoragePath);
                   setGameToDelete(null);
                 }} 
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gum-btn rounded-[3px]"

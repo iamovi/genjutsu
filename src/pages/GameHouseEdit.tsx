@@ -33,7 +33,7 @@ export default function GameHouseEdit() {
       
       const { data, error } = await supabase
         .from("game_house")
-        .select(`id, title, description, html_storage_path, submitted_by`)
+        .select(`id, title, description, html_storage_path, submitted_by, draft_data, status`)
         .eq("id", id)
         .single();
 
@@ -56,9 +56,11 @@ export default function GameHouseEdit() {
         return;
       }
 
-      setTitle(game.title);
-      setDescription(game.description);
-      setHtmlStoragePath(game.html_storage_path);
+      const draft = game.draft_data as any;
+      setTitle(draft?.title || game.title);
+      setDescription(draft?.description || game.description);
+      const targetStoragePath = draft?.html_storage_path || game.html_storage_path;
+      setHtmlStoragePath(targetStoragePath);
       setIsInitialized(true);
 
       // Fetch the HTML content
@@ -66,7 +68,7 @@ export default function GameHouseEdit() {
         try {
           const { data: blob, error } = await supabase.storage
             .from("game-house")
-            .download(game.html_storage_path);
+            .download(targetStoragePath);
           
           if (error) throw error;
           if (blob) {
@@ -124,25 +126,55 @@ export default function GameHouseEdit() {
 
     setIsSubmitting(true);
     try {
-      // 1. Upload/Overwrite HTML in Storage
+      const isUnapprovedNewSubmission = game?.status === 'pending' && !game?.draft_data;
+      const existingDraft = game?.draft_data as any;
+
+      let targetStoragePath = "";
+      
+      if (isUnapprovedNewSubmission) {
+        // Editing a brand new submission that hasn't been approved yet.
+        targetStoragePath = game?.html_storage_path;
+      } else if (existingDraft?.html_storage_path) {
+        // Editing a game that is already pending an edit review (overwrite the draft)
+        targetStoragePath = existingDraft.html_storage_path;
+      } else {
+        // First time editing an approved game (create new draft)
+        const draftFileId = crypto.randomUUID();
+        targetStoragePath = `${user.id}/drafts/${draftFileId}.html`;
+      }
+
+      // 1. Upload HTML to Storage
       const htmlBlob = new Blob([htmlCode], { type: "text/html" });
       const { error: uploadError } = await supabase.storage
         .from("game-house")
-        .upload(htmlStoragePath, htmlBlob, {
+        .upload(targetStoragePath, htmlBlob, {
           contentType: "text/html",
-          upsert: true // Overwrite the existing file
+          upsert: true
         });
 
       if (uploadError) throw uploadError;
 
       // 2. Update Database Record
-      const { error: dbError } = await supabase
-        .from("game_house")
-        .update({
+      let updatePayload: any = {};
+
+      if (isUnapprovedNewSubmission) {
+        // Update main columns directly — game stays 'pending'
+        updatePayload.title = title.trim();
+        updatePayload.description = description.trim();
+      } else {
+        // Approved game: keep status as 'approved', just set draft_data.
+        // The admin panel finds edits by checking draft_data IS NOT NULL.
+        // The game stays live in the gallery while the edit is pending.
+        updatePayload.draft_data = {
           title: title.trim(),
           description: description.trim(),
-          status: 'pending' // Reset status to pending for review
-        })
+          html_storage_path: targetStoragePath
+        };
+      }
+
+      const { error: dbError } = await supabase
+        .from("game_house")
+        .update(updatePayload)
         .eq("id", game?.id);
 
       if (dbError) throw dbError;

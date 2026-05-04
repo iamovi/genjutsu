@@ -211,6 +211,7 @@ CREATE TABLE public.game_house (
   submitted_by UUID NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   play_count INTEGER NOT NULL DEFAULT 0,
+  draft_data JSONB DEFAULT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -340,8 +341,12 @@ CREATE POLICY "Authenticated users can submit games"
   ON public.game_house FOR INSERT WITH CHECK (auth.uid() = submitted_by AND status = 'pending');
 CREATE POLICY "Admins can update game status"
   ON public.game_house FOR UPDATE USING (public.is_admin());
+CREATE POLICY "Users can update their own games"
+  ON public.game_house FOR UPDATE USING (auth.uid() = submitted_by);
 CREATE POLICY "Admins can delete games"
   ON public.game_house FOR DELETE USING (public.is_admin());
+CREATE POLICY "Users can delete their own games"
+  ON public.game_house FOR DELETE USING (auth.uid() = submitted_by);
 
 
 -- =============================================================================

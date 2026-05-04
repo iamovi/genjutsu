@@ -81,6 +81,11 @@ interface PendingGame {
     username: string;
     display_name: string;
   };
+  draft_data?: {
+    title: string;
+    description: string;
+    html_storage_path: string;
+  } | null;
 }
 
 const AdminPage = () => {
@@ -185,10 +190,10 @@ const AdminPage = () => {
       const { data, error } = await supabase
         .from("game_house")
         .select(`
-          id, title, description, html_storage_path, submitted_by, created_at,
+          id, title, description, html_storage_path, submitted_by, created_at, draft_data,
           profiles!game_house_submitted_by_fkey ( username, display_name )
         `)
-        .eq("status", "pending")
+        .or('status.eq.pending,draft_data.neq.null')
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -275,11 +280,28 @@ const AdminPage = () => {
 
   const approveGameMutation = useMutation({
     mutationFn: async (game: PendingGame) => {
-      const { error } = await supabase
-        .from("game_house")
-        .update({ status: "approved" })
-        .eq("id", game.id);
-      if (error) throw error;
+      if (game.draft_data) {
+        if (game.html_storage_path) {
+          await supabase.storage.from("game-house").remove([game.html_storage_path]);
+        }
+        const { error } = await supabase
+          .from("game_house")
+          .update({
+            status: "approved",
+            title: game.draft_data.title,
+            description: game.draft_data.description,
+            html_storage_path: game.draft_data.html_storage_path,
+            draft_data: null
+          })
+          .eq("id", game.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("game_house")
+          .update({ status: "approved" })
+          .eq("id", game.id);
+        if (error) throw error;
+      }
 
       if (user) {
         // Send notification to the user with proper error handling
@@ -306,20 +328,27 @@ const AdminPage = () => {
 
   const rejectGameMutation = useMutation({
     mutationFn: async (game: PendingGame) => {
-      // Delete from storage first
-      const { error: storageError } = await supabase.storage
-        .from("game-house")
-        .remove([game.html_storage_path]);
-      
-      if (storageError) console.error("Storage cleanup failed:", storageError);
+      if (game.draft_data) {
+        if (game.draft_data.html_storage_path) {
+          await supabase.storage.from("game-house").remove([game.draft_data.html_storage_path]);
+        }
+        const { error } = await supabase
+          .from("game_house")
+          .update({ status: "approved", draft_data: null })
+          .eq("id", game.id);
+        if (error) throw error;
+      } else {
+        const { error: storageError } = await supabase.storage
+          .from("game-house")
+          .remove([game.html_storage_path]);
+        if (storageError) console.error("Storage cleanup failed:", storageError);
 
-      // Delete the record
-      const { error } = await supabase
-        .from("game_house")
-        .delete()
-        .eq("id", game.id);
-      
-      if (error) throw error;
+        const { error } = await supabase
+          .from("game_house")
+          .delete()
+          .eq("id", game.id);
+        if (error) throw error;
+      }
 
       if (user) {
         // Send notification to the user with proper error handling
@@ -337,9 +366,9 @@ const AdminPage = () => {
         }
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, game) => {
       queryClient.invalidateQueries({ queryKey: ["admin-pending-games"] });
-      toast.success("Game rejected and deleted.");
+      toast.success(game.draft_data ? "Edit rejected. Original game restored." : "Game rejected and deleted.");
     },
     onError: () => toast.error("Failed to reject game."),
   });
@@ -1128,7 +1157,10 @@ const AdminPage = () => {
                       <div key={game.id} className="p-4 space-y-3 bg-secondary/10">
                         <div className="flex justify-between items-start">
                           <div className="flex flex-col">
-                            <span className="text-xs font-black uppercase italic tracking-tight line-clamp-1">{game.title}</span>
+                            <span className="text-xs font-black uppercase italic tracking-tight line-clamp-1 flex items-center gap-2">
+                              {game.draft_data ? game.draft_data.title : game.title}
+                              {game.draft_data && <span className="bg-amber-500 text-black px-1.5 py-0.5 rounded-[2px] text-[8px] tracking-widest shrink-0">EDIT</span>}
+                            </span>
                             <span className="text-[10px] text-primary font-bold">@{game.profiles?.username}</span>
                           </div>
                           <div className="flex items-center gap-1.5 text-[9px] font-bold opacity-60">
@@ -1136,9 +1168,11 @@ const AdminPage = () => {
                             {new Date(game.created_at).toLocaleDateString()}
                           </div>
                         </div>
-                        <p className="text-[11px] font-medium leading-relaxed opacity-80 line-clamp-2">{game.description}</p>
+                        <p className="text-[11px] font-medium leading-relaxed opacity-80 line-clamp-2">
+                          {game.draft_data ? game.draft_data.description : game.description}
+                        </p>
                         <div className="flex flex-col gap-2 pt-2">
-                          <Button size="sm" variant="outline" className="h-8 rounded-[3px] text-[10px] font-black uppercase italic" onClick={() => window.open(`/game-house/play/${game.id}`, '_blank')}>
+                          <Button size="sm" variant="outline" className="h-8 rounded-[3px] text-[10px] font-black uppercase italic" onClick={() => window.open(`/game-house/play/${game.id}${game.draft_data ? '?draft=true' : ''}`, '_blank')}>
                             <Eye className="w-3.5 h-3.5 mr-2" /> Preview
                           </Button>
                           <div className="flex gap-2">
@@ -1176,8 +1210,13 @@ const AdminPage = () => {
                           <TableRow key={game.id} className="border-border group transition-colors hover:bg-secondary/10">
                             <TableCell className="py-4">
                               <div className="flex flex-col">
-                                <span className="text-xs font-black uppercase italic tracking-tight">{game.title}</span>
-                                <span className="text-[10px] font-medium leading-relaxed max-w-xs line-clamp-1 opacity-80">{game.description}</span>
+                                <span className="text-xs font-black uppercase italic tracking-tight flex items-center gap-2">
+                                  {game.draft_data ? game.draft_data.title : game.title}
+                                  {game.draft_data && <span className="bg-amber-500 text-black px-1.5 py-0.5 rounded-[2px] text-[8px] tracking-widest">EDIT</span>}
+                                </span>
+                                <span className="text-[10px] font-medium leading-relaxed max-w-xs line-clamp-1 opacity-80">
+                                  {game.draft_data ? game.draft_data.description : game.description}
+                                </span>
                               </div>
                             </TableCell>
                             <TableCell className="py-4">
@@ -1194,7 +1233,7 @@ const AdminPage = () => {
                             </TableCell>
                             <TableCell className="text-right py-4">
                               <div className="flex items-center justify-end gap-2">
-                                <Button size="sm" variant="outline" className="h-8 rounded-[3px] text-[10px] font-black uppercase italic transition-all hover:bg-primary/10" onClick={() => window.open(`/game-house/play/${game.id}`, '_blank')}>
+                                <Button size="sm" variant="outline" className="h-8 rounded-[3px] text-[10px] font-black uppercase italic transition-all hover:bg-primary/10" onClick={() => window.open(`/game-house/play/${game.id}${game.draft_data ? '?draft=true' : ''}`, '_blank')}>
                                   <Eye className="w-3.5 h-3.5 mr-1" /> Preview
                                 </Button>
                                 <Button size="sm" className="h-8 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[3px] text-[10px] font-black uppercase italic transition-all" onClick={() => approveGameMutation.mutate(game)} disabled={approveGameMutation.isPending}>

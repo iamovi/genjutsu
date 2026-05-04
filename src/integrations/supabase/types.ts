@@ -432,6 +432,7 @@ export type Database = {
           submitted_by: string
           status: string
           play_count: number
+          draft_data: Json | null
           created_at: string
         }
         Insert: {
@@ -442,6 +443,7 @@ export type Database = {
           submitted_by: string
           status?: string
           play_count?: number
+          draft_data?: Json | null
           created_at?: string
         }
         Update: {
@@ -452,6 +454,7 @@ export type Database = {
           submitted_by?: string
           status?: string
           play_count?: number
+          draft_data?: Json | null
           created_at?: string
         }
         Relationships: [
