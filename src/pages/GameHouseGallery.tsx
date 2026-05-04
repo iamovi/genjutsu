@@ -104,7 +104,7 @@ export default function GameHouseGallery() {
       setDownloadingGameId(game.id);
       const { data, error } = await supabase.storage.from("game-house").download(game.html_storage_path);
       if (error) throw error;
-      
+
       const url = window.URL.createObjectURL(data);
       const a = document.createElement("a");
       a.href = url;
@@ -268,8 +268,8 @@ export default function GameHouseGallery() {
                       <Button
                         onClick={() => handleDownloadGame(game)}
                         size="sm"
-                        variant="outline"
-                        className="gum-border rounded-[3px] px-2"
+                        variant="ghost"
+                        className="rounded-[3px] px-2"
                         title="Download Source Code"
                         disabled={downloadingGameId === game.id}
                       >
@@ -285,7 +285,7 @@ export default function GameHouseGallery() {
                         className="bg-primary text-primary-foreground font-black uppercase text-[10px] rounded-[3px] tracking-wider hover:bg-primary/90"
                       >
                         <Play className="w-3 h-3 mr-1.5 fill-current" />
-                        Play Now
+                        Play
                       </Button>
                     </div>
                   </div>
@@ -305,11 +305,11 @@ export default function GameHouseGallery() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel className="gum-btn rounded-[3px]">Cancel</AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={() => {
                   if (gameToDelete) handleDelete(gameToDelete.id, gameToDelete.storagePath, gameToDelete.draftStoragePath);
                   setGameToDelete(null);
-                }} 
+                }}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gum-btn rounded-[3px]"
               >
                 Delete
