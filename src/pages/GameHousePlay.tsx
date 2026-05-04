@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Maximize2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Maximize2, AlertTriangle, RotateCcw } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { toast } from "sonner";
 
@@ -14,6 +14,10 @@ export default function GameHousePlay() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [iframeHtml, setIframeHtml] = useState<string | null>(null);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const playCountedRef = useRef(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const { data: game, isLoading, isError } = useQuery({
     queryKey: ["game_house_play", id],
@@ -39,16 +43,19 @@ export default function GameHousePlay() {
       if (!game || !game.html_storage_path) return;
 
       try {
-        // Increment play count (fire and forget, but log errors)
-        supabase.rpc("increment_game_play_count", { p_game_id: game.id }).then(({ error }) => {
-          if (error) {
-            console.error("Play count increment failed:", error);
-          } else {
-            queryClient.invalidateQueries({ queryKey: ["game_house_approved"] });
-          }
-        });
+        // Increment play count only once per page visit
+        if (!playCountedRef.current) {
+          playCountedRef.current = true;
+          supabase.rpc("increment_game_play_count", { p_game_id: game.id }).then(({ error }) => {
+            if (error) {
+              console.error("Play count increment failed:", error);
+            } else {
+              queryClient.invalidateQueries({ queryKey: ["game_house_approved"] });
+            }
+          });
+        }
 
-        // Download the file directly as a Blob (works for both public and private buckets)
+        // Download the HTML file
         const { data: blob, error } = await supabase.storage
           .from("game-house")
           .download(game.html_storage_path);
@@ -57,37 +64,39 @@ export default function GameHousePlay() {
         if (blob) {
           let htmlText = await blob.text();
           
-          // Inject responsive scaling CSS to prevent canvas cut-offs
-          const scaleCSS = `
-<style>
+          // Inject minimal sandbox helper CSS
+          // - Resets margin/padding so games fill the frame cleanly
+          // - Handles canvas scaling for canvas-based games
+          // - Preserves the game's own background, colors, fonts, and layout
+          const sandboxCSS = `
+<style data-sandbox="genjutsu">
   html, body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    overflow: hidden !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    background-color: #000 !important;
   }
+  /* Canvas games: scale to fit without cropping */
   canvas {
-    max-width: 100% !important;
-    max-height: 100% !important;
-    object-fit: contain !important;
+    display: block;
+    max-width: 100vw;
+    max-height: 100vh;
   }
 </style>
 `;
+          // Inject into <head> if present, otherwise prepend
           if (htmlText.includes('<head>')) {
-            htmlText = htmlText.replace('<head>', '<head>' + scaleCSS);
+            htmlText = htmlText.replace('<head>', '<head>' + sandboxCSS);
+          } else if (htmlText.includes('<HEAD>')) {
+            htmlText = htmlText.replace('<HEAD>', '<HEAD>' + sandboxCSS);
           } else {
-            htmlText = scaleCSS + htmlText;
+            htmlText = sandboxCSS + htmlText;
           }
 
           setIframeHtml(htmlText);
+          setLoadError(false);
         }
       } catch (err: any) {
-        console.error("Failed to load game URL:", err);
+        console.error("Failed to load game:", err);
+        setLoadError(true);
         toast.error("Could not load game files.");
       }
     }
@@ -97,8 +106,27 @@ export default function GameHousePlay() {
     }
   }, [game, queryClient]);
 
+  // Auto-focus the iframe after it loads so keyboard input works immediately
+  const handleIframeLoad = useCallback(() => {
+    setIframeLoaded(true);
+    // Focus the iframe so keyboard events (arrow keys, WASD, etc.) go to the game
+    if (iframeRef.current) {
+      iframeRef.current.focus();
+    }
+  }, []);
+
+  // Reload the game (useful if it crashes or gets stuck)
+  const reloadGame = useCallback(() => {
+    setIframeLoaded(false);
+    setIframeHtml(null);
+    setLoadError(false);
+    // Re-trigger the effect by invalidating the query
+    playCountedRef.current = true; // Don't re-increment play count on reload
+    queryClient.invalidateQueries({ queryKey: ["game_house_play", id] });
+  }, [id, queryClient]);
+
   const toggleFullscreen = () => {
-    const iframe = document.getElementById("game-iframe");
+    const iframe = iframeRef.current;
     if (iframe) {
       if (iframe.requestFullscreen) {
         iframe.requestFullscreen();
@@ -161,34 +189,70 @@ export default function GameHousePlay() {
             </p>
           </div>
 
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={toggleFullscreen}
-            className="gum-border rounded-[3px]"
-            title="Fullscreen"
-          >
-            <Maximize2 className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Fullscreen</span>
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={reloadGame}
+              className="gum-border rounded-[3px]"
+              title="Reload Game"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={toggleFullscreen}
+              className="gum-border rounded-[3px]"
+              title="Fullscreen"
+            >
+              <Maximize2 className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Fullscreen</span>
+            </Button>
+          </div>
         </div>
 
-        <div className="flex-1 w-full bg-black relative border-y sm:border-2 border-border sm:rounded-[3px] gum-shadow-sm overflow-hidden">
-          {!iframeHtml ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-20 text-white">
+        <div
+          className="flex-1 w-full relative border-y sm:border-2 border-border sm:rounded-[3px] gum-shadow-sm overflow-hidden"
+          style={{ touchAction: "none" }} // Prevent parent page scroll from interfering with in-game touch
+        >
+          {/* Loading overlay — visible until iframe signals it has loaded */}
+          {(!iframeHtml || !iframeLoaded) && !loadError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background z-20">
               <div className="flex flex-col items-center gap-4">
                 <FrogLoader size={48} />
-                <p className="text-xs uppercase font-bold tracking-widest animate-pulse">Initializing Environment...</p>
+                <p className="text-xs uppercase font-bold tracking-widest animate-pulse text-muted-foreground">Initializing Environment...</p>
               </div>
             </div>
-          ) : (
+          )}
+
+          {/* Error state */}
+          {loadError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background z-20">
+              <div className="flex flex-col items-center gap-4 text-center p-4">
+                <AlertTriangle className="w-12 h-12 text-destructive" />
+                <h3 className="text-sm font-black uppercase tracking-tight">Failed to Load Game</h3>
+                <p className="text-xs text-muted-foreground max-w-xs">The game files could not be downloaded. Check your connection and try again.</p>
+                <Button onClick={reloadGame} variant="outline" size="sm" className="gum-border rounded-[3px]">
+                  <RotateCcw className="w-3 h-3 mr-2" />
+                  Retry
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Game iframe */}
+          {iframeHtml && (
             <iframe
+              ref={iframeRef}
               id="game-iframe"
               srcDoc={iframeHtml}
-              className="absolute inset-0 w-full h-full border-none bg-white"
+              className="absolute inset-0 w-full h-full border-none"
               title={game.title}
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-same-origin allow-popups"
+              allow="autoplay; gamepad"
               allowFullScreen
+              onLoad={handleIframeLoad}
             />
           )}
         </div>

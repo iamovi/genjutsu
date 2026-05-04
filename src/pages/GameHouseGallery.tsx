@@ -51,11 +51,11 @@ export default function GameHouseGallery() {
     const query = searchQuery.toLowerCase();
     const creatorName = game.profiles?.display_name?.toLowerCase() || "";
     const creatorUsername = game.profiles?.username?.toLowerCase() || "";
-    
-    return game.title.toLowerCase().includes(query) || 
-           game.description.toLowerCase().includes(query) ||
-           creatorName.includes(query) ||
-           creatorUsername.includes(query);
+
+    return game.title.toLowerCase().includes(query) ||
+      game.description.toLowerCase().includes(query) ||
+      creatorName.includes(query) ||
+      creatorUsername.includes(query);
   });
 
   return (
@@ -98,7 +98,7 @@ export default function GameHouseGallery() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search games by title, description, or creator..."
+              placeholder="Search Games, Creator"
               className="pl-9 gum-border bg-card rounded-[3px] h-10 focus-visible:ring-0 focus-visible:ring-offset-0"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
