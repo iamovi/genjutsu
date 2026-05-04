@@ -13,7 +13,7 @@ import { Edit3, Camera, Link as LinkIcon, ChevronDown, ChevronUp, Music, Search,
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getNow } from "@/lib/utils";
+import { getNow, getSafeUrl } from "@/lib/utils";
 import DataSaverImage from "@/components/DataSaverImage";
 
 interface EditProfileDialogProps {
@@ -469,7 +469,7 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
                                     {/* Banner Preview */}
                                     <div className="h-40 sm:h-72 w-full bg-muted relative group overflow-hidden border-b-2 border-foreground/10 rounded-t-[3px]">
                                         {(bannerPreviewUrl || bannerUrl) ? (
-                                            <img src={bannerPreviewUrl || bannerUrl} alt="Banner" className="w-full h-full object-cover" />
+                                            <img src={getSafeUrl(bannerPreviewUrl || bannerUrl)} alt="Banner" className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-secondary/20">
                                                 No Banner Image
@@ -500,7 +500,7 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
                                         <div className="sm:hidden flex justify-center -mt-12 pb-4 w-full">
                                             <div className="relative group w-24 h-24 rounded-[3px] gum-border border-[4px] border-background bg-secondary overflow-hidden shadow-2xl">
                                                 {(avatarPreviewUrl || avatarUrl) ? (
-                                                    <img src={avatarPreviewUrl || avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                                    <img src={getSafeUrl(avatarPreviewUrl || avatarUrl)} alt="Avatar" className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-2xl font-bold bg-secondary">
                                                         {displayName[0]?.toUpperCase() || "?"}
@@ -530,7 +530,7 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
                                             <div className="absolute -top-16 left-8">
                                                 <div className="relative group w-40 h-40 rounded-[3px] gum-border border-[6px] border-background bg-secondary overflow-hidden shadow-2xl">
                                                     {(avatarPreviewUrl || avatarUrl) ? (
-                                                        <img src={avatarPreviewUrl || avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                                        <img src={getSafeUrl(avatarPreviewUrl || avatarUrl)} alt="Avatar" className="w-full h-full object-cover" />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center text-3xl font-bold bg-secondary">
                                                             {displayName[0]?.toUpperCase() || "?"}

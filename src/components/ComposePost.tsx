@@ -14,6 +14,7 @@ import { FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useTheme } from "./theme-provider";
+import { getSafeUrl } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -317,7 +318,7 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="relative mt-3 rounded-[3px] gum-border overflow-hidden max-h-[300px]"
               >
-                <img src={mediaPreview} alt="Preview" className="w-full h-full object-cover" />
+                <img src={getSafeUrl(mediaPreview)} alt="Preview" className="w-full h-full object-cover" />
                 <button
                   onClick={() => { setMediaFile(null); setMediaPreview(null); }}
                   className="absolute top-2 right-2 p-1 bg-background/80 hover:bg-background rounded-full gum-border transition-colors"

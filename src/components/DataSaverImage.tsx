@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ImgHTMLAttributes, type KeyboardEvent, type MouseEvent } from "react";
 import { ImageOff } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getSafeUrl } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
 
 type DataSaverImageProps = ImgHTMLAttributes<HTMLImageElement> & {
@@ -35,7 +35,7 @@ export default function DataSaverImage({
   if (!src) return null;
 
   if (!shouldGate || isUnlocked) {
-    return <img src={src} alt={alt} className={className} {...props} />;
+    return <img src={getSafeUrl(src)} alt={alt} className={className} {...props} />;
   }
 
   const unlock = (event: MouseEvent<HTMLDivElement> | KeyboardEvent<HTMLDivElement>) => {

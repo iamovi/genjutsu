@@ -33,3 +33,23 @@ export async function syncTime() {
 export function getNow() {
   return new Date(Date.now() + serverDrift);
 }
+
+export function getSafeUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  
+  // Allow blob: and data: URLs (often used for local image previews)
+  if (url.startsWith('blob:') || url.startsWith('data:')) return url;
+  
+  try {
+    // Try to parse the URL. Use origin as base to handle relative URLs safely
+    const parsed = new URL(url, window.location.origin);
+    // Only allow http and https protocols
+    if (['http:', 'https:'].includes(parsed.protocol)) {
+      return parsed.href;
+    }
+  } catch {
+    // If URL parsing fails, it's invalid, fall through to return undefined
+  }
+  
+  return undefined;
+}

@@ -130,7 +130,7 @@ function normalizePost(post, likesCounts, commentsCounts) {
  */
 async function fetchCountsForPosts(table, postIds) {
   if (!postIds.length) return Object.create(null);
-  const inClause = `(${postIds.map((id) => `"${String(id).replace(/"/g, '\\"')}"`).join(",")})`;
+  const inClause = `(${postIds.map((id) => JSON.stringify(String(id))).join(",")})`;
   const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
   url.searchParams.set("select", "post_id");
   url.searchParams.set("post_id", `in.${inClause}`);
