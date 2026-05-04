@@ -5,12 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Maximize2, AlertTriangle, RotateCcw } from "lucide-react";
+import { ArrowLeft, Maximize2, AlertTriangle, RotateCcw, Pencil } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function GameHousePlay() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [iframeHtml, setIframeHtml] = useState<string | null>(null);
@@ -27,8 +30,8 @@ export default function GameHousePlay() {
       const { data, error } = await supabase
         .from("game_house")
         .select(`
-          id, title, description, html_storage_path, status, play_count,
-          profiles!game_house_submitted_by_fkey(username, display_name)
+          id, title, description, html_storage_path, status, play_count, submitted_by,
+          profiles!game_house_submitted_by_fkey(username, display_name, avatar_url)
         `)
         .eq("id", id)
         .single();
@@ -182,14 +185,33 @@ export default function GameHousePlay() {
             <span className="hidden sm:inline">Back</span>
           </button>
 
-          <div className="text-center flex-1 sm:flex-none">
+          <div className="text-center flex-1 sm:flex-none flex flex-col items-center sm:items-start">
             <h1 className="text-base sm:text-lg font-black uppercase tracking-tight italic line-clamp-1 pr-1">{game.title}</h1>
-            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
-              By @{game.profiles?.username || game.profiles?.display_name || "unknown"}
-            </p>
+            <div className="flex items-center gap-1.5 justify-center sm:justify-start mt-0.5">
+              <Avatar className="w-4 h-4 border border-border">
+                <AvatarImage src={game.profiles?.avatar_url || ""} />
+                <AvatarFallback className="bg-secondary/50 text-[6px]">
+                  {game.profiles?.display_name?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
+                By @{game.profiles?.username || game.profiles?.display_name || "unknown"}
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-1.5">
+            {user?.id === game.submitted_by && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate(`/game-house/edit/${game.id}`)}
+                className="gum-border rounded-[3px]"
+                title="Edit Game"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            )}
             <Button 
               variant="outline" 
               size="sm"

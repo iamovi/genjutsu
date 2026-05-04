@@ -44,6 +44,7 @@ const StrangerPage = lazy(() => import("@/pages/StrangerPage"));
 const MfaChallengePage = lazy(() => import("@/pages/MfaChallengePage"));
 const GameHouseGallery = lazy(() => import("@/pages/GameHouseGallery"));
 const GameHouseSubmit = lazy(() => import("@/pages/GameHouseSubmit"));
+const GameHouseEdit = lazy(() => import("@/pages/GameHouseEdit"));
 const GameHousePlay = lazy(() => import("@/pages/GameHousePlay"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -114,6 +115,7 @@ const App = () => {
                       <Route path="/play" element={<PlayPage />} />
                       <Route path="/game-house" element={<GameHouseGallery />} />
                       <Route path="/game-house/submit" element={<GameHouseSubmit />} />
+                      <Route path="/game-house/edit/:id" element={<GameHouseEdit />} />
                       <Route path="/game-house/play/:id" element={<GameHousePlay />} />
                       <Route
                         path="/admin"

@@ -1,10 +1,10 @@
 import { Helmet } from "react-helmet-async";
 
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gamepad2, Plus, Play, User as UserIcon, ArrowLeft, Search, Calendar } from "lucide-react";
+import { Gamepad2, Plus, Play, ArrowLeft, Search, Calendar, MoreVertical, Pencil, Trash2, Download, Loader2 } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,24 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { ModeToggle } from "@/components/ModeToggle";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface GameHouseItem {
   id: string;
@@ -19,9 +37,12 @@ interface GameHouseItem {
   description: string;
   play_count: number;
   created_at: string;
+  submitted_by: string;
+  html_storage_path: string;
   profiles: {
     username: string;
     display_name: string;
+    avatar_url?: string;
   };
 }
 
@@ -29,6 +50,9 @@ export default function GameHouseGallery() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [gameToDelete, setGameToDelete] = useState<{ id: string, storagePath: string } | null>(null);
+  const [downloadingGameId, setDownloadingGameId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: games, isLoading } = useQuery({
     queryKey: ["game_house_approved"],
@@ -36,8 +60,8 @@ export default function GameHouseGallery() {
       const { data, error } = await supabase
         .from("game_house")
         .select(`
-          id, title, description, play_count, created_at,
-          profiles!game_house_submitted_by_fkey(username, display_name)
+          id, title, description, play_count, created_at, submitted_by, html_storage_path,
+          profiles!game_house_submitted_by_fkey(username, display_name, avatar_url)
         `)
         .eq("status", "approved")
         .order("created_at", { ascending: false });
@@ -46,6 +70,49 @@ export default function GameHouseGallery() {
       return data as unknown as GameHouseItem[];
     },
   });
+
+  const handleDelete = async (gameId: string, storagePath: string) => {
+    try {
+      // 1. Delete from storage
+      if (storagePath) {
+        const { error: storageError } = await supabase.storage.from("game-house").remove([storagePath]);
+        if (storageError) console.error("Failed to delete storage file:", storageError);
+      }
+
+      // 2. Delete from database
+      const { error: dbError } = await supabase.from("game_house").delete().eq("id", gameId);
+      if (dbError) throw dbError;
+
+      toast.success("Game deleted successfully.");
+      queryClient.invalidateQueries({ queryKey: ["game_house_approved"] });
+    } catch (err: any) {
+      console.error("Delete error:", err);
+      toast.error(err.message || "Failed to delete game.");
+    }
+  };
+
+  const handleDownloadGame = async (game: GameHouseItem) => {
+    try {
+      setDownloadingGameId(game.id);
+      const { data, error } = await supabase.storage.from("game-house").download(game.html_storage_path);
+      if (error) throw error;
+      
+      const url = window.URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${game.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'game'}.html`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Download started!");
+    } catch (err: any) {
+      console.error("Download failed:", err);
+      toast.error("Failed to download the game.");
+    } finally {
+      setDownloadingGameId(null);
+    }
+  };
 
   const filteredGames = games?.filter(game => {
     const query = searchQuery.toLowerCase();
@@ -135,17 +202,47 @@ export default function GameHouseGallery() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGames?.map((game) => (
               <Card key={game.id} className="rounded-[3px] gum-border bg-card hover:border-primary/50 transition-colors flex flex-col overflow-hidden group">
-                <CardHeader className="pb-3 border-b border-border bg-secondary/10">
-                  <CardTitle className="text-lg font-black uppercase tracking-tight line-clamp-1 group-hover:text-primary transition-colors">
-                    {game.title}
-                  </CardTitle>
-                  <CardDescription className="flex items-start gap-1.5 text-[10px] font-bold uppercase tracking-widest mt-2">
-                    <UserIcon className="w-3 h-3 mt-0.5 shrink-0" />
-                    <div className="flex flex-col">
-                      <span>{game.profiles?.display_name || "Unknown"}</span>
-                      {game.profiles?.username && <span className="lowercase text-muted-foreground/80">@{game.profiles.username}</span>}
+                <CardHeader className="pb-3 border-b border-border bg-secondary/10 relative">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg font-black uppercase tracking-tight line-clamp-1 group-hover:text-primary transition-colors pr-6">
+                        {game.title}
+                      </CardTitle>
+                      <CardDescription className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest mt-2">
+                        <Avatar className="w-6 h-6 border border-border">
+                          <AvatarImage src={game.profiles?.avatar_url || ""} />
+                          <AvatarFallback className="bg-secondary/50 text-[8px]">
+                            {game.profiles?.display_name?.charAt(0) || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span>{game.profiles?.display_name || "Unknown"}</span>
+                          {game.profiles?.username && <span className="lowercase text-muted-foreground/80">@{game.profiles.username}</span>}
+                        </div>
+                      </CardDescription>
                     </div>
-                  </CardDescription>
+
+                    {user?.id === game.submitted_by && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 absolute top-3 right-3 text-muted-foreground hover:text-foreground p-0">
+                            <MoreVertical className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px] gum-border rounded-[3px]">
+                          <DropdownMenuItem onClick={() => navigate(`/game-house/edit/${game.id}`)} className="cursor-pointer">
+                            <Pencil className="mr-2 h-4 w-4" />
+                            <span>Edit Game</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setGameToDelete({ id: game.id, storagePath: game.html_storage_path })} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="p-4 flex-1 flex flex-col justify-between gap-4 bg-background">
                   <p className="text-sm text-muted-foreground line-clamp-3">
@@ -159,20 +256,59 @@ export default function GameHouseGallery() {
                         {format(new Date(game.created_at), "MMM d, yyyy")}
                       </div>
                     </div>
-                    <Button
-                      onClick={() => navigate(`/game-house/play/${game.id}`)}
-                      size="sm"
-                      className="bg-primary text-primary-foreground font-black uppercase text-[10px] rounded-[3px] tracking-wider hover:bg-primary/90"
-                    >
-                      <Play className="w-3 h-3 mr-1.5 fill-current" />
-                      Play Now
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => handleDownloadGame(game)}
+                        size="sm"
+                        variant="outline"
+                        className="gum-border rounded-[3px] px-2"
+                        title="Download Source Code"
+                        disabled={downloadingGameId === game.id}
+                      >
+                        {downloadingGameId === game.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Download className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                      <Button
+                        onClick={() => navigate(`/game-house/play/${game.id}`)}
+                        size="sm"
+                        className="bg-primary text-primary-foreground font-black uppercase text-[10px] rounded-[3px] tracking-wider hover:bg-primary/90"
+                      >
+                        <Play className="w-3 h-3 mr-1.5 fill-current" />
+                        Play Now
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
+
+        <AlertDialog open={!!gameToDelete} onOpenChange={(open) => !open && setGameToDelete(null)}>
+          <AlertDialogContent className="gum-border rounded-[3px] bg-background">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-black uppercase tracking-tight text-foreground">Delete Game?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your game from the arcade and remove the source code from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="gum-btn rounded-[3px]">Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => {
+                  if (gameToDelete) handleDelete(gameToDelete.id, gameToDelete.storagePath);
+                  setGameToDelete(null);
+                }} 
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gum-btn rounded-[3px]"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
