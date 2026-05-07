@@ -5,7 +5,7 @@ import { PostWithProfile } from "@/hooks/usePosts";
 import Navbar from "@/components/Navbar";
 import PostCard from "@/components/PostCard";
 import Sidebar from "@/components/Sidebar";
-import { ArrowLeft, Send, MessageSquare, MoreHorizontal, Trash2, Languages } from "lucide-react";
+import { ArrowLeft, Send, MessageSquare, MoreHorizontal, Trash2, Languages, Reply } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -28,7 +28,8 @@ const CommentItem = ({
     openCommentMenuId, 
     setOpenCommentMenuId, 
     deletingCommentId, 
-    handleDeleteComment 
+    handleDeleteComment,
+    onReply
 }: any) => {
     const [translatedContent, setTranslatedContent] = useState<string | null>(null);
     const [isTranslating, setIsTranslating] = useState(false);
@@ -109,6 +110,18 @@ const CommentItem = ({
                         </span>
 
                         <div className="flex items-center gap-1 ml-auto shrink-0">
+                            {/* Reply Button */}
+                            {user && (
+                                <button
+                                    onClick={() => onReply(comment.profiles?.username)}
+                                    className="px-1.5 py-0.5 rounded-[3px] transition-colors flex items-center gap-1.5 border border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground hover:border-border"
+                                    title="Reply"
+                                >
+                                    <Reply size={12} />
+                                    <span className="text-[10px] font-medium hidden xs:inline">Reply</span>
+                                </button>
+                            )}
+
                             {/* Translate Button */}
                             {!isAlreadyEnglish && (
                                 <button
@@ -374,6 +387,25 @@ const PostPage = () => {
         }
     };
 
+    const handleReply = (username: string) => {
+        if (!username) return;
+        setCommentText(prev => {
+            const trimmed = prev.trim();
+            return trimmed ? `${trimmed} @${username} ` : `@${username} `;
+        });
+        if (textareaRef.current) {
+            textareaRef.current.focus();
+            // Move cursor to the end
+            setTimeout(() => {
+                if (textareaRef.current) {
+                    const len = textareaRef.current.value.length;
+                    textareaRef.current.selectionStart = len;
+                    textareaRef.current.selectionEnd = len;
+                }
+            }, 0);
+        }
+    };
+
     useEffect(() => {
         fetchPost();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -581,6 +613,7 @@ const PostPage = () => {
                                                     setOpenCommentMenuId={setOpenCommentMenuId}
                                                     deletingCommentId={deletingCommentId}
                                                     handleDeleteComment={handleDeleteComment}
+                                                    onReply={handleReply}
                                                 />
                                             ))
                                         )}

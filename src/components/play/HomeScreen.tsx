@@ -141,7 +141,7 @@ const HomeScreen = ({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex gap-2 sm:gap-3"
+              className="flex flex-col sm:flex-row gap-2 sm:gap-3"
             >
               <Button
                 onClick={handleCreate}
