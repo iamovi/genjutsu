@@ -34,6 +34,10 @@ function getNotificationIcon(type: string) {
             return <CheckCircle size={14} className="text-green-500" />;
         case "game_rejected":
             return <XCircle size={14} className="text-destructive" />;
+        case "game_like":
+            return <Heart size={14} className="text-rose-500" />;
+        case "game_comment":
+            return <MessageSquare size={14} className="text-sky-500" />;
         default:
             return <Bell size={14} />;
     }
@@ -61,6 +65,10 @@ function getNotificationText(type: string, actorName: string) {
             return <><strong>{actorName}</strong> approved your game submission</>;
         case "game_rejected":
             return <><strong>{actorName}</strong> rejected your game submission</>;
+        case "game_like":
+            return <><strong>{actorName}</strong> liked your game</>;
+        case "game_comment":
+            return <><strong>{actorName}</strong> commented on your game</>;
         default:
             return <><strong>{actorName}</strong> interacted with you</>;
     }
@@ -84,6 +92,8 @@ const NotificationPanel = ({
             navigate(`/u/${notification.actor_profile.username}`);
         } else if (notification.type === "game_submission") {
             navigate("/admin");
+        } else if ((notification.type === "game_like" || notification.type === "game_comment") && notification.game_id) {
+            navigate(`/game-house?game=${notification.game_id}&open=comments`);
         } else if (notification.type === "game_approved") {
             navigate("/game-house");
         } else if (notification.type === "game_rejected") {

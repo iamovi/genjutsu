@@ -7,9 +7,10 @@ export interface NotificationWithActor {
     id: string;
     user_id: string;
     actor_id: string;
-    type: "like" | "unlike" | "comment" | "uncomment" | "follow" | "unfollow" | "mention" | "game_submission" | "game_approved" | "game_rejected";
+    type: "like" | "unlike" | "comment" | "uncomment" | "follow" | "unfollow" | "mention" | "game_submission" | "game_approved" | "game_rejected" | "game_like" | "game_comment";
     post_id: string | null;
     comment_id: string | null;
+    game_id: string | null;
     is_read: boolean;
     created_at: string;
     actor_profile: {

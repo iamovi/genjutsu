@@ -362,6 +362,7 @@ export type Database = {
           type: string
           post_id: string | null
           comment_id: string | null
+          game_id: string | null
           is_read: boolean
           created_at: string
         }
@@ -372,6 +373,7 @@ export type Database = {
           type: string
           post_id?: string | null
           comment_id?: string | null
+          game_id?: string | null
           is_read?: boolean
           created_at?: string
         }
@@ -382,6 +384,7 @@ export type Database = {
           type?: string
           post_id?: string | null
           comment_id?: string | null
+          game_id?: string | null
           is_read?: boolean
           created_at?: string
         }
@@ -398,6 +401,13 @@ export type Database = {
             columns: ["comment_id"]
             isOneToOne: false
             referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "game_house"
             referencedColumns: ["id"]
           },
         ]
@@ -467,6 +477,77 @@ export type Database = {
           },
         ]
       }
+      game_house_comments: {
+        Row: {
+          id: string
+          game_id: string
+          user_id: string
+          content: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          game_id: string
+          user_id: string
+          content: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          game_id?: string
+          user_id?: string
+          content?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_house_comments_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "game_house"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_house_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      game_house_likes: {
+        Row: {
+          id: string
+          game_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          game_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          game_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_house_likes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "game_house"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -501,6 +582,20 @@ export type Database = {
           p_post_id: string
           p_content: string
           p_idempotency_key?: string
+        }
+        Returns: Json
+      }
+      create_game_comment: {
+        Args: {
+          p_game_id: string
+          p_content: string
+          p_idempotency_key?: string
+        }
+        Returns: Json
+      }
+      delete_game_comment: {
+        Args: {
+          p_comment_id: string
         }
         Returns: Json
       }

@@ -267,6 +267,7 @@ Deno.serve(async (req) => {
     const notificationType = body.type;
     const actorId = body.actor_id;
     const postId = body.post_id;
+    const gameId = body.game_id;
     const messageContent = body.message_content || "";
     const hasMedia = Boolean(body.has_media);
     if (!userId) {
@@ -354,6 +355,12 @@ Deno.serve(async (req) => {
         case "game_rejected":
           notifBody = `${actorName} rejected your game submission`;
           break;
+        case "game_like":
+          notifBody = `${actorName} liked your game`;
+          break;
+        case "game_comment":
+          notifBody = `${actorName} commented on your game`;
+          break;
         case "whisper": {
           const cleanMessage = String(messageContent).trim();
           const preview = cleanMessage.length > 100
@@ -389,6 +396,8 @@ Deno.serve(async (req) => {
         notifUrl = `https://genjutsu-social.vercel.app/game-house`;
       } else if (notificationType === "game_rejected") {
         notifUrl = `https://genjutsu-social.vercel.app/game-house/submit`;
+      } else if ((notificationType === "game_like" || notificationType === "game_comment") && gameId) {
+        notifUrl = `https://genjutsu-social.vercel.app/game-house?game=${gameId}&open=comments`;
       } else if (notificationType === "follow" || notificationType === "unfollow") {
         if (actorUsername) {
           notifUrl = `https://genjutsu-social.vercel.app/u/${actorUsername}`;

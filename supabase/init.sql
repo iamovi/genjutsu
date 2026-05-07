@@ -195,9 +195,10 @@ CREATE TABLE public.notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   actor_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('like', 'unlike', 'comment', 'uncomment', 'follow', 'unfollow', 'mention', 'game_submission', 'game_approved', 'game_rejected')),
+  type TEXT NOT NULL CHECK (type IN ('like', 'unlike', 'comment', 'uncomment', 'follow', 'unfollow', 'mention', 'game_submission', 'game_approved', 'game_rejected', 'game_like', 'game_comment')),
   post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE,
   comment_id UUID REFERENCES public.comments(id) ON DELETE CASCADE,
+  game_id UUID,
   is_read BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -215,10 +216,34 @@ CREATE TABLE public.game_house (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE public.game_house_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  game_id UUID NOT NULL REFERENCES public.game_house(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (user_id, game_id)
+);
+
+CREATE TABLE public.game_house_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  game_id UUID NOT NULL REFERENCES public.game_house(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.notifications
+  ADD CONSTRAINT notifications_game_id_fkey
+  FOREIGN KEY (game_id) REFERENCES public.game_house(id) ON DELETE CASCADE;
+
 CREATE INDEX idx_notifications_user ON public.notifications (user_id, created_at DESC);
 CREATE INDEX idx_notifications_unread ON public.notifications (user_id, is_read) WHERE is_read = false;
+CREATE INDEX idx_notifications_game_id ON public.notifications (game_id);
 CREATE INDEX idx_post_views_post_id ON public.post_views (post_id);
 CREATE INDEX idx_post_views_viewer_user_id ON public.post_views (viewer_user_id);
+CREATE INDEX idx_game_house_likes_game_id ON public.game_house_likes (game_id);
+CREATE INDEX idx_game_house_comments_game_id ON public.game_house_comments (game_id, created_at ASC);
 
 
 -- =============================================================================
@@ -239,6 +264,8 @@ ALTER TABLE public.community_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_action_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.game_house ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.game_house_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.game_house_comments ENABLE ROW LEVEL SECURITY;
 
 -- Admin Users
 CREATE POLICY "Users can view their own admin status"
@@ -348,6 +375,62 @@ CREATE POLICY "Admins can delete games"
 CREATE POLICY "Users can delete their own games"
   ON public.game_house FOR DELETE USING (auth.uid() = submitted_by);
 
+-- Game House Likes
+CREATE POLICY "Game likes are visible when game is visible"
+  ON public.game_house_likes FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.game_house g
+      WHERE g.id = game_id
+        AND (
+          g.status = 'approved'
+          OR g.submitted_by = auth.uid()
+          OR public.is_admin()
+        )
+    )
+  );
+CREATE POLICY "Users can like approved games"
+  ON public.game_house_likes FOR INSERT
+  WITH CHECK (
+    auth.uid() = user_id
+    AND public.is_action_allowed('social')
+    AND EXISTS (
+      SELECT 1 FROM public.game_house g
+      WHERE g.id = game_id
+        AND g.status = 'approved'
+    )
+  );
+CREATE POLICY "Users can unlike their own game likes"
+  ON public.game_house_likes FOR DELETE
+  USING (
+    auth.uid() = user_id
+    AND public.is_action_allowed('social')
+  );
+
+-- Game House Comments (INSERT blocked — must use create_game_comment() function)
+CREATE POLICY "Game comments are visible when game is visible"
+  ON public.game_house_comments FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.game_house g
+      WHERE g.id = game_id
+        AND (
+          g.status = 'approved'
+          OR g.submitted_by = auth.uid()
+          OR public.is_admin()
+        )
+    )
+  );
+CREATE POLICY "Users can update own game comments"
+  ON public.game_house_comments FOR UPDATE
+  USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own game comments"
+  ON public.game_house_comments FOR DELETE
+  USING (auth.uid() = user_id);
+CREATE POLICY "Admins can delete any game comment"
+  ON public.game_house_comments FOR DELETE
+  USING (public.is_admin());
+
 
 -- =============================================================================
 -- TRIGGERS
@@ -372,6 +455,10 @@ CREATE TRIGGER update_posts_updated_at
 
 CREATE TRIGGER update_comments_updated_at
   BEFORE UPDATE ON public.comments
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER update_game_house_comments_updated_at
+  BEFORE UPDATE ON public.game_house_comments
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Guard: Prevent direct username changes (bypass protection)
@@ -738,7 +825,7 @@ RETURNS void AS $$
 BEGIN
   DELETE FROM public.notifications
   WHERE created_at < now() - INTERVAL '24 hours'
-    AND type IN ('follow', 'unfollow', 'game_submission', 'game_approved', 'game_rejected');
+    AND type IN ('follow', 'unfollow', 'game_submission', 'game_approved', 'game_rejected', 'game_like', 'game_comment');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
@@ -1381,6 +1468,133 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+-- create_game_comment: 15s cooldown, idempotency support, respects ban scopes
+CREATE OR REPLACE FUNCTION public.create_game_comment(
+  p_game_id UUID,
+  p_content TEXT,
+  p_idempotency_key TEXT DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+  v_user_id UUID;
+  v_last_action_at TIMESTAMPTZ;
+  v_seconds_since_last NUMERIC;
+  v_cooldown_seconds INT := 15;
+  v_retry_after INT;
+  v_new_comment_id UUID;
+  v_banned_until TIMESTAMPTZ;
+  v_ban_permanent BOOLEAN := false;
+BEGIN
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('error', 'not_authenticated', 'message', 'You must be signed in');
+  END IF;
+
+  IF p_content IS NULL OR length(trim(p_content)) = 0 THEN
+    RETURN jsonb_build_object('error', 'invalid_content', 'message', 'Comment cannot be empty');
+  END IF;
+
+  -- Ban check for commenting
+  SELECT banned_until, ban_permanent
+  INTO v_banned_until, v_ban_permanent
+  FROM public.profiles
+  WHERE user_id = v_user_id;
+
+  IF NOT public.is_action_allowed('comment') THEN
+    RETURN jsonb_build_object(
+      'error', 'banned',
+      'message', CASE
+        WHEN v_ban_permanent THEN 'You are permanently banned from commenting'
+        ELSE 'You are temporarily banned from commenting'
+      END,
+      'banned_until', v_banned_until,
+      'ban_permanent', v_ban_permanent
+    );
+  END IF;
+
+  IF p_idempotency_key IS NOT NULL THEN
+    IF EXISTS (
+      SELECT 1 FROM public.user_action_log
+      WHERE user_id = v_user_id AND idempotency_key = p_idempotency_key
+    ) THEN
+      RETURN jsonb_build_object('success', true, 'deduplicated', true);
+    END IF;
+  END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtext('comment:' || v_user_id::text));
+
+  SELECT MAX(created_at) INTO v_last_action_at
+  FROM public.user_action_log
+  WHERE user_id = v_user_id AND action_type = 'comment';
+
+  IF v_last_action_at IS NOT NULL THEN
+    v_seconds_since_last := EXTRACT(EPOCH FROM (now() - v_last_action_at));
+    IF v_seconds_since_last < v_cooldown_seconds THEN
+      v_retry_after := CEIL(v_cooldown_seconds - v_seconds_since_last)::INT;
+      RETURN jsonb_build_object(
+        'error', 'cooldown_active',
+        'message', 'Please wait before commenting again',
+        'retry_after', v_retry_after
+      );
+    END IF;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.game_house
+    WHERE id = p_game_id AND status = 'approved'
+  ) THEN
+    RETURN jsonb_build_object('error', 'game_not_found', 'message', 'Game not found');
+  END IF;
+
+  INSERT INTO public.game_house_comments (game_id, user_id, content)
+  VALUES (p_game_id, v_user_id, trim(p_content))
+  RETURNING id INTO v_new_comment_id;
+
+  INSERT INTO public.user_action_log (user_id, action_type, idempotency_key)
+  VALUES (v_user_id, 'comment', COALESCE(p_idempotency_key, v_new_comment_id::text));
+
+  RETURN jsonb_build_object('success', true, 'comment_id', v_new_comment_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- delete_game_comment: server-side game comment deletion (bypasses RLS, checks ownership/admin)
+CREATE OR REPLACE FUNCTION public.delete_game_comment(p_comment_id UUID)
+RETURNS JSONB AS $$
+DECLARE
+  v_user_id UUID;
+  v_comment_owner UUID;
+  v_game_id UUID;
+  v_game_owner UUID;
+BEGIN
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('error', 'not_authenticated', 'message', 'You must be signed in');
+  END IF;
+
+  SELECT user_id, game_id
+  INTO v_comment_owner, v_game_id
+  FROM public.game_house_comments
+  WHERE id = p_comment_id;
+
+  IF v_comment_owner IS NULL THEN
+    RETURN jsonb_build_object('error', 'not_found', 'message', 'Comment not found');
+  END IF;
+
+  SELECT submitted_by INTO v_game_owner
+  FROM public.game_house
+  WHERE id = v_game_id;
+
+  IF v_comment_owner != v_user_id AND v_game_owner != v_user_id AND NOT public.is_admin() THEN
+    RETURN jsonb_build_object('error', 'not_authorized', 'message', 'You cannot delete this comment');
+  END IF;
+
+  DELETE FROM public.game_house_comments WHERE id = p_comment_id;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
 
 -- =============================================================================
 -- NOTIFICATION TRIGGERS
@@ -1501,6 +1715,72 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
 CREATE TRIGGER on_uncomment_notify
   AFTER DELETE ON public.comments
   FOR EACH ROW EXECUTE FUNCTION public.notify_on_uncomment();
+
+-- On game like → notify game owner (skip self-like)
+CREATE OR REPLACE FUNCTION public.notify_on_game_like()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_game_owner UUID;
+BEGIN
+  SELECT submitted_by INTO v_game_owner
+  FROM public.game_house
+  WHERE id = NEW.game_id;
+
+  IF v_game_owner IS NULL OR v_game_owner = NEW.user_id THEN
+    RETURN NEW;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = NEW.user_id) THEN
+    RETURN NEW;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = v_game_owner) THEN
+    RETURN NEW;
+  END IF;
+
+  INSERT INTO public.notifications (user_id, actor_id, type, game_id)
+  VALUES (v_game_owner, NEW.user_id, 'game_like', NEW.game_id);
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
+
+CREATE TRIGGER on_game_like_notify
+  AFTER INSERT ON public.game_house_likes
+  FOR EACH ROW EXECUTE FUNCTION public.notify_on_game_like();
+
+-- On game comment → notify game owner (skip self-comment)
+CREATE OR REPLACE FUNCTION public.notify_on_game_comment()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_game_owner UUID;
+BEGIN
+  SELECT submitted_by INTO v_game_owner
+  FROM public.game_house
+  WHERE id = NEW.game_id;
+
+  IF v_game_owner IS NULL OR v_game_owner = NEW.user_id THEN
+    RETURN NEW;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = NEW.user_id) THEN
+    RETURN NEW;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = v_game_owner) THEN
+    RETURN NEW;
+  END IF;
+
+  INSERT INTO public.notifications (user_id, actor_id, type, game_id)
+  VALUES (v_game_owner, NEW.user_id, 'game_comment', NEW.game_id);
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
+
+CREATE TRIGGER on_game_comment_notify
+  AFTER INSERT ON public.game_house_comments
+  FOR EACH ROW EXECUTE FUNCTION public.notify_on_game_comment();
 
 -- On follow → notify followed user
 CREATE OR REPLACE FUNCTION public.notify_on_follow()
@@ -1700,7 +1980,8 @@ BEGIN
           'user_id', NEW.user_id,
           'type', NEW.type,
           'actor_id', NEW.actor_id,
-          'post_id', NEW.post_id
+          'post_id', NEW.post_id,
+          'game_id', NEW.game_id
         )
       );
     END IF;
