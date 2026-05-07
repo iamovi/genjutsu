@@ -120,7 +120,7 @@ export function ImagePreviewDialog({
               )}
               aria-label="Download image"
             >
-              {isDownloading ? <FrogLoader size={16} className="animate-spin" /> : <Download size={18} />}
+              {isDownloading ? <FrogLoader size={16} /> : <Download size={18} />}
             </button>
           </div>
 

@@ -8,7 +8,6 @@ import {
   Download,
   Gamepad2,
   Heart,
-  Loader2,
   MessageSquare,
   MoreVertical,
   Pencil,
@@ -567,7 +566,7 @@ export default function GameHouseGallery() {
                         disabled={downloadingGameId === game.id}
                       >
                         {downloadingGameId === game.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                          <FrogLoader size={14} className="text-muted-foreground" />
                         ) : (
                           <Download className="w-4 h-4 text-muted-foreground" />
                         )}
@@ -612,7 +611,11 @@ export default function GameHouseGallery() {
         </AlertDialog>
 
         <Sheet open={commentsOpen} onOpenChange={(open) => (open ? setCommentsOpen(true) : closeCommentsSheet())}>
-          <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col">
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-xl p-0 flex flex-col"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
             <SheetHeader className="p-4 sm:p-5 border-b border-border text-left">
               <SheetTitle className="text-base font-black uppercase tracking-tight">{activeGame?.title || "Game Comments"}</SheetTitle>
               <SheetDescription className="text-xs">Echoes from players in Game House.</SheetDescription>
@@ -660,7 +663,7 @@ export default function GameHouseGallery() {
                                 disabled={deletingCommentId === comment.id}
                                 onClick={() => handleDeleteComment(comment.id)}
                               >
-                                {deletingCommentId === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Delete"}
+                                {deletingCommentId === comment.id ? <FrogLoader size={12} /> : "Delete"}
                               </Button>
                             )}
                           </div>
@@ -679,7 +682,7 @@ export default function GameHouseGallery() {
                 value={commentText}
                 disabled={!user || submittingComment}
                 onChange={(e) => setCommentText(e.target.value)}
-                className="min-h-[90px] bg-background rounded-[3px]"
+                className="min-h-[90px] bg-background rounded-[3px] outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <div className="flex justify-end">
                 <Button
@@ -687,7 +690,7 @@ export default function GameHouseGallery() {
                   disabled={submittingComment || (!!user && !commentText.trim())}
                   className="rounded-[3px] font-bold"
                 >
-                  {submittingComment ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                  {submittingComment ? <FrogLoader size={14} className="mr-2" /> : <Send className="w-4 h-4 mr-2" />}
                   {user ? "Post" : "Sign in to Comment"}
                 </Button>
               </div>
