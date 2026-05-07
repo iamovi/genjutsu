@@ -89,7 +89,7 @@ export default function GameHouseEdit() {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col">
         <div className="flex-1 flex items-center justify-center">
-          <FrogLoader size={48} />
+          <FrogLoader size={24} />
         </div>
       </div>
     );

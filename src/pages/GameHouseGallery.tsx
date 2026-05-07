@@ -183,7 +183,7 @@ export default function GameHouseGallery() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <FrogLoader size={48} />
+            <FrogLoader size={24} />
           </div>
         ) : !games || games.length === 0 ? (
           <div className="text-center py-20 border-2 border-dashed border-border rounded-[3px] bg-secondary/10">

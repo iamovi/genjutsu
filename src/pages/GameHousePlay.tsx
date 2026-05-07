@@ -151,7 +151,7 @@ export default function GameHousePlay() {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col">
         <div className="flex-1 flex items-center justify-center">
-          <FrogLoader size={48} />
+              <FrogLoader size={24} />
         </div>
       </div>
     );
@@ -248,7 +248,7 @@ export default function GameHousePlay() {
           {(!iframeHtml || !iframeLoaded) && !loadError && (
             <div className="absolute inset-0 flex items-center justify-center bg-background z-20">
               <div className="flex flex-col items-center gap-4">
-                <FrogLoader size={48} />
+                    <FrogLoader size={24} />
                 <p className="text-xs uppercase font-bold tracking-widest animate-pulse text-muted-foreground">Initializing Environment...</p>
               </div>
             </div>
