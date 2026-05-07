@@ -357,11 +357,8 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
 
   const handleShare = async () => {
     const url = `${window.location.origin}/post/${post.id}`;
-    const title = `${post.profiles?.display_name || "Someone"} on genjutsu`;
-    const baseText = post.content?.trim() || "Check out this post on genjutsu.";
-    const text = baseText.length > 140 ? `${baseText.slice(0, 137)}...` : baseText;
 
-    const result = await shareWithFallback({ title, text, url });
+    const result = await shareWithFallback({ url });
     if (result === "copied") {
       toast.success("Link copied to clipboard!");
     } else if (result === "failed") {

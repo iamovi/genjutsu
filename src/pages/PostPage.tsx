@@ -489,11 +489,11 @@ const PostPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
                     <div className="min-w-0">
                         <button
-                            onClick={() => navigate("/")}
+                            onClick={() => window.history.state?.idx > 0 ? navigate(-1) : navigate("/")}
                             className="inline-flex items-center gap-2 px-3 py-1.5 gum-card bg-secondary text-xs font-bold hover:bg-primary hover:text-primary-foreground transition-colors w-fit mb-6"
                         >
                             <ArrowLeft size={14} />
-                            Back to Home
+                            Back
                         </button>
 
                         {loading ? (

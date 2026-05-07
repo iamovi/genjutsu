@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useNavigationType } from "react-router-dom";
 import { useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import ComposePost from "@/components/ComposePost";
@@ -26,12 +26,46 @@ const Index = () => {
     isFetchingNextPage
   } = usePosts();
   const navigate = useNavigate();
+  const navigationType = useNavigationType();
   const observerRef = useRef<HTMLDivElement>(null);
   const paginationRequestInFlightRef = useRef(false);
+  const scrollRestoredRef = useRef(false);
 
   useEffect(() => {
     paginationRequestInFlightRef.current = isFetchingNextPage;
   }, [isFetchingNextPage]);
+
+  // Save scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      sessionStorage.setItem("genjutsu_feed_scroll", window.scrollY.toString());
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Restore scroll position
+  useEffect(() => {
+    let timeout1: ReturnType<typeof setTimeout>;
+    let timeout2: ReturnType<typeof setTimeout>;
+
+    if (navigationType === "POP" && !postsLoading && posts.length > 0 && !scrollRestoredRef.current) {
+      const savedY = sessionStorage.getItem("genjutsu_feed_scroll");
+      if (savedY) {
+        const y = parseInt(savedY, 10);
+        // Restore immediately, and then again after a short delay to account for layout shifts (e.g. images)
+        window.scrollTo(0, y);
+        timeout1 = setTimeout(() => window.scrollTo(0, y), 50);
+        timeout2 = setTimeout(() => window.scrollTo(0, y), 200);
+        scrollRestoredRef.current = true;
+      }
+    }
+
+    return () => {
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+    };
+  }, [navigationType, postsLoading, posts.length]);
 
   useEffect(() => {
     if (!hasNextPage || isFetchingNextPage) return;
