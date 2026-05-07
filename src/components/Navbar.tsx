@@ -1,4 +1,4 @@
-import { Home, Search, User, LogOut, Settings, Palette, X, MessageCircle, Swords, UsersRound, LogIn, Bell, Shield, Menu, Gamepad2 } from "lucide-react";
+import { Home, Search, User, LogOut, Settings, Palette, X, MessageCircle, Swords, UsersRound, LogIn, Bell, Shield, Grip, Gamepad2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -241,7 +241,7 @@ const Navbar = () => {
               className="md:hidden p-1.5 sm:p-2 rounded-[3px] hover:bg-secondary text-muted-foreground transition-colors gum-border"
               title="Menu"
             >
-              <Menu size={16} />
+              <Grip size={16} />
             </button>
           </div>
         </div>

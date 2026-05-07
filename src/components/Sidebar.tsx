@@ -274,14 +274,14 @@ const Sidebar = ({ onAction }: SidebarProps) => {
         transition={{ delay: 0.15 }}
         className="gum-card p-4 space-y-3"
       >
-        <div className="flex justify-center items-center gap-1 text-xs font-bold uppercase tracking-wider">
+        <div className="flex flex-wrap justify-center items-center gap-x-1 gap-y-1.5 text-xs font-bold uppercase tracking-wider">
           <Link to="/about" onClick={() => onAction?.()} className="hover:text-primary transition-colors px-1">{t("sidebar.about")}</Link>
           <span className="text-muted-foreground">·</span>
           <Link to="/terms" onClick={() => onAction?.()} className="hover:text-primary transition-colors px-1">{t("sidebar.terms")}</Link>
           <span className="text-muted-foreground">·</span>
           <Link to="/privacy" onClick={() => onAction?.()} className="hover:text-primary transition-colors px-1">{t("sidebar.privacy")}</Link>
         </div>
-        <div className="flex justify-center items-center gap-2 text-[11px]">
+        <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1.5 text-[11px]">
           <a
             href={`https://github.com/iamovi/genjutsu/issues/new?template=bug_report.yml&title=${encodeURIComponent("[BUG]: ")}&environment=${encodeURIComponent(`- Page: ${window.location.href}\n- User Agent: ${navigator.userAgent}`)}`}
             target="_blank"
