@@ -13,7 +13,7 @@
 
 ---
 
-![banner](./main.png)
+<img src="./main.png" width="400" />
 
 <br />
 
@@ -38,7 +38,7 @@ every post, comment, and message automatically deletes after 24 hours. this mean
 
 ## genjutsu feed api
 
-![api preview](./api_preview.png)
+<img src="./api_preview.png" width="400" />
 
 **want to use public genjutsu feed posts in your own app or website?**
 
