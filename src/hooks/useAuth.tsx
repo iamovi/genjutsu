@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User, Session } from "@supabase/supabase-js";
+import { User, Session, UserIdentity } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { isAdminUser } from "@/lib/admin";
 
@@ -13,6 +13,10 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error: any }>;
   signInWithGitHub: () => Promise<{ error: any }>;
   signOut: (options?: { scope?: 'global' | 'local' | 'others' }) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<{ error: any }>;
+  updatePassword: (password: string) => Promise<{ data: { user: User } | null; error: any }>;
+  updateEmail: (email: string) => Promise<{ data: { user: User } | null; error: any }>;
+  getLinkedIdentities: () => Promise<{ data: { identities: UserIdentity[] } | null; error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -169,6 +173,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const requestPasswordReset = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/update-password`,
+    });
+    return { error };
+  };
+
+  const updatePassword = async (password: string) => {
+    const { data, error } = await supabase.auth.updateUser({ password });
+    return { data, error };
+  };
+
+  const updateEmail = async (email: string) => {
+    const { data, error } = await supabase.auth.updateUser(
+      { email },
+      { emailRedirectTo: `${window.location.origin}/settings?email_change=confirm` }
+    );
+    return { data, error };
+  };
+
+  const getLinkedIdentities = async () => {
+    const { data, error } = await supabase.auth.getUserIdentities();
+    return { data, error };
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -181,6 +210,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signInWithGoogle,
         signInWithGitHub,
         signOut,
+        requestPasswordReset,
+        updatePassword,
+        updateEmail,
+        getLinkedIdentities,
       }}
     >
       {children}

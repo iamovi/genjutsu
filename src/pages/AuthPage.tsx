@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Eye, EyeOff, Sparkles, ArrowLeft, Mail } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
@@ -22,6 +22,7 @@ const signInSchema = z.object({
 const AuthPage = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -31,10 +32,21 @@ const AuthPage = () => {
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const { signIn, signUp, signInWithGoogle, signInWithGitHub } = useAuth();
+  const { signIn, signUp, signInWithGoogle, signInWithGitHub, requestPasswordReset } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [googleLoading, setGoogleLoading] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("mode") === "reset") {
+      setShowEmailForm(true);
+      setForgotPasswordMode(true);
+      setIsSignUp(false);
+      setError("");
+      setSuccess("");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +55,19 @@ const AuthPage = () => {
     setSubmitting(true);
 
     try {
-      if (isSignUp) {
+      if (forgotPasswordMode) {
+        const parsed = z.string().trim().email("Invalid email address").max(255).parse(email);
+        const { error } = await requestPasswordReset(parsed);
+        if (error) {
+          if (error.message?.toLowerCase().includes("rate limit") || error.message?.toLowerCase().includes("too many requests")) {
+            setError("Password reset email limit reached. Please try again later.");
+          } else {
+            setError(error.message || "Password reset request failed");
+          }
+        } else {
+          setSuccess("If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.");
+        }
+      } else if (isSignUp) {
         const parsed = signUpSchema.parse({ email, password, username, displayName });
         const { data, error } = await signUp(parsed.email, parsed.password, parsed.username, parsed.displayName);
         if (error) {
@@ -281,7 +305,7 @@ const AuthPage = () => {
                     </div>
 
                     <button
-                      onClick={() => { setShowEmailForm(true); setError(""); setSuccess(""); }}
+                      onClick={() => { setShowEmailForm(true); setForgotPasswordMode(false); setError(""); setSuccess(""); }}
                       className="w-full gum-btn bg-background gum-border text-sm py-4 flex items-center justify-center gap-3 hover:bg-secondary hover:shadow-md transition-all active:scale-[0.98]"
                     >
                       <Mail size={20} />
@@ -299,30 +323,38 @@ const AuthPage = () => {
                   >
                     <button
                       type="button"
-                      onClick={() => { setShowEmailForm(false); setError(""); setSuccess(""); }}
+                      onClick={() => { setShowEmailForm(false); setForgotPasswordMode(false); setError(""); setSuccess(""); }}
                       className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors mb-6 group"
                     >
                       <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                       All sign in options
                     </button>
 
-                    <div className="flex p-1 bg-secondary rounded-[3px] mb-8">
-                      {["Sign In", "Sign Up"].map((tab, i) => (
-                        <button
-                          key={tab}
-                          onClick={() => { setIsSignUp(i === 1); setError(""); setSuccess(""); }}
-                          className={`flex-1 py-3 text-sm font-bold rounded-[3px] transition-all duration-300 ${(i === 0 && !isSignUp) || (i === 1 && isSignUp)
-                            ? "bg-background text-foreground shadow-md scale-[1.02]"
-                            : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          {tab}
-                        </button>
-                      ))}
-                    </div>
+                    {!forgotPasswordMode ? (
+                      <div className="flex p-1 bg-secondary rounded-[3px] mb-8">
+                        {["Sign In", "Sign Up"].map((tab, i) => (
+                          <button
+                            key={tab}
+                            type="button"
+                            onClick={() => { setIsSignUp(i === 1); setError(""); setSuccess(""); }}
+                            className={`flex-1 py-3 text-sm font-bold rounded-[3px] transition-all duration-300 ${(i === 0 && !isSignUp) || (i === 1 && isSignUp)
+                              ? "bg-background text-foreground shadow-md scale-[1.02]"
+                              : "text-muted-foreground hover:text-foreground"
+                              }`}
+                          >
+                            {tab}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mb-8 text-center space-y-2">
+                        <h2 className="text-xl font-black">Reset Password</h2>
+                        <p className="text-sm text-muted-foreground">Enter your email and we'll send you a secure reset link.</p>
+                      </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
-                      {isSignUp && (
+                      {isSignUp && !forgotPasswordMode && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
@@ -379,31 +411,42 @@ const AuthPage = () => {
                         />
                       </div>
 
-                      <div>
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-2 block">
-                          Password
-                        </label>
-                        <div className="relative">
-                          <input
-                            id="password"
-                            name="password"
-                            type={showPassword ? "text" : "password"}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full px-4 py-3 bg-secondary/30 gum-border rounded-[3px] text-sm outline-none focus:ring-2 focus:ring-primary/20 pr-12 transition-all placeholder:text-muted-foreground/30"
-                            required
-                            autoComplete={isSignUp ? "new-password" : "current-password"}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
+                      {!forgotPasswordMode && (
+                        <div>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-2 block">
+                            Password
+                          </label>
+                          <div className="relative">
+                            <input
+                              id="password"
+                              name="password"
+                              type={showPassword ? "text" : "password"}
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              placeholder="••••••••"
+                              className="w-full px-4 py-3 bg-secondary/30 gum-border rounded-[3px] text-sm outline-none focus:ring-2 focus:ring-primary/20 pr-12 transition-all placeholder:text-muted-foreground/30"
+                              required
+                              autoComplete={isSignUp ? "new-password" : "current-password"}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                          </div>
+                          {!isSignUp && (
+                            <button
+                              type="button"
+                              onClick={() => { setForgotPasswordMode(true); setError(""); setSuccess(""); }}
+                              className="mt-3 text-xs font-bold text-primary hover:underline"
+                            >
+                              Forgot password?
+                            </button>
+                          )}
                         </div>
-                      </div>
+                      )}
 
                       {error && (
                         <motion.div
@@ -435,8 +478,18 @@ const AuthPage = () => {
                             <FrogLoader size={16} />
                             Processing...
                           </span>
-                        ) : isSignUp ? "Create Account" : "Sign In"}
+                        ) : forgotPasswordMode ? "Send Reset Link" : isSignUp ? "Create Account" : "Sign In"}
                       </button>
+
+                      {forgotPasswordMode && (
+                        <button
+                          type="button"
+                          onClick={() => { setForgotPasswordMode(false); setError(""); setSuccess(""); navigate("/auth", { replace: true }); }}
+                          className="w-full text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          Back to sign in
+                        </button>
+                      )}
                     </form>
                   </motion.div>
                 )}

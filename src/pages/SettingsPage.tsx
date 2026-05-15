@@ -52,7 +52,7 @@ const buildQrImageSrc = (qrCode: string) => {
 };
 
 const SettingsPage = () => {
-    const { user, signOut, isAdmin } = useAuth();
+    const { user, signOut, isAdmin, updateEmail, updatePassword, getLinkedIdentities } = useAuth();
     const { profile, changeUsername, getNextUsernameChangeDate, deleteAccount } = useProfile();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
@@ -66,6 +66,16 @@ const SettingsPage = () => {
     const [mfaAalLevel, setMfaAalLevel] = useState<"aal1" | "aal2" | null>(null);
     const [mfaSetup, setMfaSetup] = useState<MfaSetupState | null>(null);
     const [mfaCode, setMfaCode] = useState("");
+
+    const [newEmail, setNewEmail] = useState("");
+    const [emailActionLoading, setEmailActionLoading] = useState(false);
+    const [authSecurityLoading, setAuthSecurityLoading] = useState(false);
+    const [authSecurityError, setAuthSecurityError] = useState<string | null>(null);
+    const [linkedProviders, setLinkedProviders] = useState<string[]>([]);
+    const [accountPassword, setAccountPassword] = useState("");
+    const [accountPasswordConfirm, setAccountPasswordConfirm] = useState("");
+    const [showAccountPassword, setShowAccountPassword] = useState(false);
+    const [passwordActionLoading, setPasswordActionLoading] = useState(false);
 
     const [newUsername, setNewUsername] = useState("");
     const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -143,6 +153,10 @@ const SettingsPage = () => {
             setNewUsername(profile.username);
         }
     }, [profile?.username]);
+
+    useEffect(() => {
+        setNewEmail(user?.email ?? "");
+    }, [user?.email]);
 
     // Handle session expiration or manual logout
     useEffect(() => {
@@ -336,11 +350,30 @@ const SettingsPage = () => {
         }
     }, [user]);
 
+    const loadAuthSecurityStatus = useCallback(async () => {
+        if (!user) return;
+
+        setAuthSecurityLoading(true);
+        setAuthSecurityError(null);
+        try {
+            const { data, error } = await getLinkedIdentities();
+            if (error) throw error;
+            setLinkedProviders([...(new Set((data?.identities ?? []).map((identity) => identity.provider)))]);
+        } catch (error: any) {
+            console.error("Failed to load linked sign-in methods:", error);
+            setAuthSecurityError("Couldn't load linked sign-in methods.");
+            setLinkedProviders([]);
+        } finally {
+            setAuthSecurityLoading(false);
+        }
+    }, [getLinkedIdentities, user]);
+
     useEffect(() => {
         if (activeTab === "security") {
             void loadMfaStatus();
+            void loadAuthSecurityStatus();
         }
-    }, [activeTab, loadMfaStatus]);
+    }, [activeTab, loadMfaStatus, loadAuthSecurityStatus]);
 
     const handleStartMfaSetup = async () => {
         if (!mfaStatusReady || mfaStatusLoading || mfaActionLoading || !!mfaSetup) return;
@@ -453,6 +486,82 @@ const SettingsPage = () => {
             setMfaActionLoading(false);
         }
     };
+
+
+    const validateEmail = (value: string): string | null => {
+        const normalized = value.trim();
+        if (!normalized) return "Email is required";
+        if (normalized.length > 255) return "Email must be 255 characters or less";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return "Enter a valid email address";
+        if (user?.email && normalized.toLowerCase() === user.email.toLowerCase()) return "Enter a different email address";
+        return null;
+    };
+
+    const validateAccountPassword = (): string | null => {
+        if (accountPassword.length < 6) return "Password must be at least 6 characters";
+        if (accountPassword.length > 72) return "Password must be 72 characters or less";
+        if (accountPassword !== accountPasswordConfirm) return "Passwords do not match";
+        return null;
+    };
+
+    const handleUpdateEmail = async () => {
+        const validationError = validateEmail(newEmail);
+        if (validationError) {
+            toast.error(validationError);
+            return;
+        }
+
+        setEmailActionLoading(true);
+        const { error } = await updateEmail(newEmail.trim());
+        setEmailActionLoading(false);
+
+        if (error) {
+            const message = String(error.message || "").toLowerCase();
+            if (message.includes("rate limit") || message.includes("too many requests")) {
+                toast.error("Email change limit reached. Please try again later.");
+            } else if (message.includes("already") || message.includes("exists")) {
+                toast.error("That email is already in use. Try a different address.");
+            } else {
+                toast.error(error.message || "Couldn't start email change.");
+            }
+            return;
+        }
+
+        toast.success("Confirmation email sent. Check your new email, and your current email too if secure email change is enabled.");
+    };
+
+    const handleUpdateAccountPassword = async () => {
+        const validationError = validateAccountPassword();
+        if (validationError) {
+            toast.error(validationError);
+            return;
+        }
+
+        setPasswordActionLoading(true);
+        const { error } = await updatePassword(accountPassword);
+        setPasswordActionLoading(false);
+
+        if (error) {
+            const message = String(error.message || "").toLowerCase();
+            if (message.includes("rate limit") || message.includes("too many requests")) {
+                toast.error("Password update limit reached. Please try again later.");
+            } else if (message.includes("reauth") || message.includes("nonce") || message.includes("session")) {
+                toast.error("Please sign in again, then retry the password update.");
+            } else {
+                toast.error(error.message || "Couldn't update password.");
+            }
+            return;
+        }
+
+        setAccountPassword("");
+        setAccountPasswordConfirm("");
+        toast.success(hasEmailIdentity ? "Password updated." : "Password added. You can now sign in with email and password.");
+        await loadAuthSecurityStatus();
+    };
+
+    const metadataProviders = Array.isArray(user.app_metadata?.providers) ? user.app_metadata.providers as string[] : [];
+    const hasEmailIdentity = linkedProviders.includes("email") || user.app_metadata?.provider === "email" || metadataProviders.includes("email");
+    const oauthProviders = (linkedProviders.length > 0 ? linkedProviders : metadataProviders).filter((provider) => provider === "google" || provider === "github");
 
     if (!user) {
         return null;
@@ -1133,6 +1242,147 @@ const SettingsPage = () => {
                                                     <KeyRound className="text-primary" />
                                                     Security
                                                 </h2>
+
+                                                {/* Account Email */}
+                                                <div className="bg-secondary/30 p-4 rounded-[3px] border border-border space-y-4">
+                                                    <div>
+                                                        <h3 className="font-bold mb-1 flex items-center gap-2">
+                                                            <AtSign size={18} className="text-primary" />
+                                                            Email Address
+                                                        </h3>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Change the email used for sign-in and account notifications. Supabase will send confirmation email before applying the change.
+                                                        </p>
+                                                    </div>
+                                                    <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                                                        <div>
+                                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-2 block">
+                                                                Current email
+                                                            </label>
+                                                            <input
+                                                                type="email"
+                                                                value={newEmail}
+                                                                onChange={(e) => setNewEmail(e.target.value)}
+                                                                className="w-full px-4 py-3 bg-background gum-border rounded-[3px] text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/30"
+                                                                placeholder={user.email ?? "you@dev.com"}
+                                                                autoComplete="email"
+                                                            />
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleUpdateEmail}
+                                                            disabled={emailActionLoading || !newEmail.trim() || newEmail.trim().toLowerCase() === (user.email ?? "").toLowerCase()}
+                                                            className="gum-btn bg-primary text-primary-foreground px-4 py-3 text-sm font-bold disabled:opacity-50"
+                                                        >
+                                                            {emailActionLoading ? <FrogLoader size={16} className="" /> : "Change Email"}
+                                                        </button>
+                                                    </div>
+                                                    <p className="text-[11px] text-muted-foreground">
+                                                        If secure email change is enabled, you must confirm from both your current and new inbox.
+                                                    </p>
+                                                </div>
+
+                                                {/* Password Sign-in */}
+                                                <div className="bg-secondary/30 p-4 rounded-[3px] border border-border space-y-4">
+                                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                                        <div>
+                                                            <h3 className="font-bold mb-1 flex items-center gap-2">
+                                                                <KeyRound size={18} className={hasEmailIdentity ? "text-primary" : "text-muted-foreground"} />
+                                                                {hasEmailIdentity ? "Change Password" : "Add Password"}
+                                                            </h3>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {hasEmailIdentity
+                                                                    ? "Update your email/password sign-in password."
+                                                                    : "You joined with Google or GitHub. Add a password to also sign in with email."}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {authSecurityLoading ? (
+                                                                <span className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                                                                    <FrogLoader size={14} className="" /> Loading methods
+                                                                </span>
+                                                            ) : linkedProviders.length > 0 ? (
+                                                                linkedProviders.map((provider) => (
+                                                                    <span key={provider} className="rounded-[3px] border border-border bg-background px-2 py-1 text-[10px] font-black uppercase tracking-widest">
+                                                                        {provider}
+                                                                    </span>
+                                                                ))
+                                                            ) : (
+                                                                <span className="rounded-[3px] border border-border bg-background px-2 py-1 text-[10px] font-black uppercase tracking-widest">
+                                                                    {user.app_metadata?.provider ?? "auth"}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {authSecurityError && (
+                                                        <div className="flex items-center justify-between gap-3 rounded-[3px] border border-destructive/30 bg-destructive/10 px-3 py-2">
+                                                            <p className="text-xs font-medium text-destructive">{authSecurityError}</p>
+                                                            <button
+                                                                onClick={() => void loadAuthSecurityStatus()}
+                                                                className="gum-btn bg-background px-3 py-1.5 text-xs font-bold"
+                                                                disabled={authSecurityLoading}
+                                                            >
+                                                                Retry
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    {!hasEmailIdentity && oauthProviders.length > 0 && (
+                                                        <div className="rounded-[3px] border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-bold text-foreground">
+                                                            Adding a password keeps your {oauthProviders.join("/")} sign-in connected and adds email/password as another option.
+                                                        </div>
+                                                    )}
+
+                                                    <div className="grid gap-3 sm:grid-cols-2">
+                                                        <div>
+                                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-2 block">
+                                                                New password
+                                                            </label>
+                                                            <div className="relative">
+                                                                <input
+                                                                    type={showAccountPassword ? "text" : "password"}
+                                                                    value={accountPassword}
+                                                                    onChange={(e) => setAccountPassword(e.target.value)}
+                                                                    className="w-full px-4 py-3 bg-background gum-border rounded-[3px] text-sm outline-none focus:ring-2 focus:ring-primary/20 pr-12 transition-all placeholder:text-muted-foreground/30"
+                                                                    placeholder="••••••••"
+                                                                    autoComplete="new-password"
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setShowAccountPassword(!showAccountPassword)}
+                                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                                                >
+                                                                    {showAccountPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-2 block">
+                                                                Confirm password
+                                                            </label>
+                                                            <input
+                                                                type={showAccountPassword ? "text" : "password"}
+                                                                value={accountPasswordConfirm}
+                                                                onChange={(e) => setAccountPasswordConfirm(e.target.value)}
+                                                                className="w-full px-4 py-3 bg-background gum-border rounded-[3px] text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/30"
+                                                                placeholder="••••••••"
+                                                                autoComplete="new-password"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex justify-end">
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleUpdateAccountPassword}
+                                                            disabled={passwordActionLoading || !accountPassword || !accountPasswordConfirm}
+                                                            className="gum-btn bg-primary text-primary-foreground px-4 py-3 text-sm font-bold disabled:opacity-50"
+                                                        >
+                                                            {passwordActionLoading ? <FrogLoader size={16} className="" /> : hasEmailIdentity ? "Update Password" : "Add Password"}
+                                                        </button>
+                                                    </div>
+                                                </div>
 
                                                 {/* Authenticator App (2FA) */}
                                                 <div className="bg-secondary/30 p-4 rounded-[3px] border border-border space-y-4">

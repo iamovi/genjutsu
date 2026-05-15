@@ -42,6 +42,7 @@ const AdminPage = lazy(() => import("@/pages/AdminPage"));
 const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 const StrangerPage = lazy(() => import("@/pages/StrangerPage"));
 const MfaChallengePage = lazy(() => import("@/pages/MfaChallengePage"));
+const UpdatePasswordPage = lazy(() => import("@/pages/UpdatePasswordPage"));
 const GameHouseGallery = lazy(() => import("@/pages/GameHouseGallery"));
 const GameHouseSubmit = lazy(() => import("@/pages/GameHouseSubmit"));
 const GameHouseEdit = lazy(() => import("@/pages/GameHouseEdit"));
@@ -103,6 +104,7 @@ const App = () => {
                       <Route path="/" element={<Index />} />
                       <Route path="/auth" element={<AuthPage />} />
                       <Route path="/auth/mfa" element={<MfaChallengePage />} />
+                      <Route path="/auth/update-password" element={<UpdatePasswordPage />} />
                       <Route path="/about" element={<AboutPage />} />
                       <Route path="/terms" element={<TermsPage />} />
                       <Route path="/privacy" element={<PrivacyPage />} />
