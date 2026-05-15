@@ -1,6 +1,6 @@
 export const config = { runtime: "edge" };
 
-const APP_URL = "https://genjutsu-social.vercel.app";
+const APP_URL = "https://genjutsu.xyz";
 const CONFIG_WORKER_URL = process.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.workers.dev/config";
 
 let SUPABASE_URL = process.env.VITE_SUPABASE_URL || "";

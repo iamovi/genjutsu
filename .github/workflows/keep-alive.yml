@@ -13,4 +13,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ping app
-        run: curl https://genjutsu-social.vercel.app
+        run: curl https://genjutsu.xyz

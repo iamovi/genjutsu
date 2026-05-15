@@ -2,7 +2,7 @@ export const config = { runtime: 'edge' };
 
 let SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 let SUPABASE_PUBLISHABLE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-const APP_URL = 'https://genjutsu-social.vercel.app';
+const APP_URL = 'https://genjutsu.xyz';
 
 // Helper to prevent XSS in injected content
 function escapeHtml(str) {
@@ -21,7 +21,7 @@ export default async function handler(req) {
         try {
             const configRes = await fetch(workerUrl, {
                 headers: {
-                    'Origin': 'https://genjutsu-social.vercel.app'
+                    'Origin': 'https://genjutsu.xyz'
                 }
             });
             if (configRes.ok) {

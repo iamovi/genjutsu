@@ -2,7 +2,7 @@
 
 export const config = { runtime: "edge" };
 
-const APP_URL = "https://genjutsu-social.vercel.app";
+const APP_URL = "https://genjutsu.xyz";
 const MAX_LIMIT = 50;
 const DEFAULT_LIMIT = 10;
 const DEFAULT_PAGE = 1;

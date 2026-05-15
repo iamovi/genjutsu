@@ -19,7 +19,7 @@ export default async function handler(req) {
 
   const payload = {
     name: "genjutsu",
-    website: "https://genjutsu-social.vercel.app",
+    website: "https://genjutsu.xyz",
     summary:
       "Genjutsu is an ephemeral social platform for developers where posts and whispers expire after 24 hours.",
     features: [
@@ -30,15 +30,15 @@ export default async function handler(req) {
       "Push notifications for social and whisper events",
     ],
     routes: {
-      home: "https://genjutsu-social.vercel.app/",
-      about: "https://genjutsu-social.vercel.app/about",
-      terms: "https://genjutsu-social.vercel.app/terms",
-      privacy: "https://genjutsu-social.vercel.app/privacy",
-      search: "https://genjutsu-social.vercel.app/search",
+      home: "https://genjutsu.xyz/",
+      about: "https://genjutsu.xyz/about",
+      terms: "https://genjutsu.xyz/terms",
+      privacy: "https://genjutsu.xyz/privacy",
+      search: "https://genjutsu.xyz/search",
     },
     machine_readable: {
-      llms_txt: "https://genjutsu-social.vercel.app/llms.txt",
-      sitemap: "https://genjutsu-social.vercel.app/sitemap.xml",
+      llms_txt: "https://genjutsu.xyz/llms.txt",
+      sitemap: "https://genjutsu.xyz/sitemap.xml",
     },
     updated_at: new Date().toISOString(),
   };
