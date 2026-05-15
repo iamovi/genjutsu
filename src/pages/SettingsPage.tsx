@@ -602,7 +602,7 @@ const SettingsPage = () => {
                                             <div className="pt-6 border-t border-border">
                                                 <h2 className="text-lg font-bold mb-1">{t("settings.changeUsername")}</h2>
                                                 <p className="text-sm text-muted-foreground mb-4">
-                                                    {t("settings.changeUsernameDesc")} <span className="font-mono text-foreground">genjutsu-social.vercel.app/u/{newUsername || "..."}</span>
+                                                    {t("settings.changeUsernameDesc")} <span className="font-mono text-foreground">genjutsu.xyz/u/{newUsername || "..."}</span>
                                                 </p>
                                                 {isOnCooldown && (
                                                     <div className="p-3 mb-4 bg-destructive/10 border border-destructive/20 rounded-[3px] text-sm">

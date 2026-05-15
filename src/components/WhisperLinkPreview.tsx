@@ -61,7 +61,7 @@ export default function WhisperLinkPreview({ content, isMe }: WhisperLinkPreview
       if (!firstUrl) return null;
       const encoded = encodeURIComponent(firstUrl);
       const localEndpoint = `/api/link-preview?url=${encoded}`;
-      const prodEndpoint = `https://genjutsu-social.vercel.app/api/link-preview?url=${encoded}`;
+      const prodEndpoint = `https://genjutsu.xyz/api/link-preview?url=${encoded}`;
       const endpoints = import.meta.env.DEV ? [localEndpoint, prodEndpoint] : [localEndpoint];
 
       for (const endpoint of endpoints) {

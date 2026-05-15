@@ -3,14 +3,14 @@
 Genjutsu is a social platform for developers where most user-generated content is ephemeral and expires after 24 hours.
 
 ## Canonical Site
-- https://genjutsu-social.vercel.app/
+- https://genjutsu.xyz/
 
 ## Public Pages
-- Home: https://genjutsu-social.vercel.app/
-- About: https://genjutsu-social.vercel.app/about
-- Terms: https://genjutsu-social.vercel.app/terms
-- Privacy: https://genjutsu-social.vercel.app/privacy
-- Search: https://genjutsu-social.vercel.app/search
+- Home: https://genjutsu.xyz/
+- About: https://genjutsu.xyz/about
+- Terms: https://genjutsu.xyz/terms
+- Privacy: https://genjutsu.xyz/privacy
+- Search: https://genjutsu.xyz/search
 
 ## Core Product Notes
 - Feed posts disappear after 24 hours.
@@ -20,7 +20,7 @@ Genjutsu is a social platform for developers where most user-generated content i
 - User profiles, likes, comments, and follows are available with moderation controls.
 
 ## Structured Machine Endpoint
-- https://genjutsu-social.vercel.app/api/llm-content
+- https://genjutsu.xyz/api/llm-content
 
 ## Sitemap
-- https://genjutsu-social.vercel.app/sitemap.xml
+- https://genjutsu.xyz/sitemap.xml

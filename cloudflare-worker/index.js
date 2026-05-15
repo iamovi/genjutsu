@@ -1,5 +1,6 @@
 const ALLOWED_ORIGINS = [
   "https://genjutsu-social.vercel.app",
+  "https://genjutsu.xyz",
 ];
 
 export default {

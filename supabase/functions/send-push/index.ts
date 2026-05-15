@@ -310,7 +310,7 @@ Deno.serve(async (req) => {
 
     // Build detailed notification message
     let notifBody = "You got a new notification — open app to see";
-    let notifUrl = "https://genjutsu-social.vercel.app";
+    let notifUrl = "https://genjutsu.xyz";
     let notifTag: string | undefined;
 
     if (actorId && notificationType) {
@@ -386,31 +386,31 @@ Deno.serve(async (req) => {
       // Set click URL based on notification type
       if (notificationType === "whisper") {
         if (actorUsername) {
-          notifUrl = `https://genjutsu-social.vercel.app/whisper/${actorUsername}`;
+          notifUrl = `https://genjutsu.xyz/whisper/${actorUsername}`;
         } else {
-          notifUrl = `https://genjutsu-social.vercel.app/whispers`;
+          notifUrl = `https://genjutsu.xyz/whispers`;
         }
       } else if (notificationType === "game_submission") {
-        notifUrl = `https://genjutsu-social.vercel.app/admin`;
+        notifUrl = `https://genjutsu.xyz/admin`;
       } else if (notificationType === "game_approved") {
-        notifUrl = `https://genjutsu-social.vercel.app/game-house`;
+        notifUrl = `https://genjutsu.xyz/game-house`;
       } else if (notificationType === "game_rejected") {
-        notifUrl = `https://genjutsu-social.vercel.app/game-house/submit`;
+        notifUrl = `https://genjutsu.xyz/game-house/submit`;
       } else if ((notificationType === "game_like" || notificationType === "game_comment") && gameId) {
-        notifUrl = `https://genjutsu-social.vercel.app/game-house?game=${gameId}&open=comments`;
+        notifUrl = `https://genjutsu.xyz/game-house?game=${gameId}&open=comments`;
       } else if (notificationType === "follow" || notificationType === "unfollow") {
         if (actorUsername) {
-          notifUrl = `https://genjutsu-social.vercel.app/u/${actorUsername}`;
+          notifUrl = `https://genjutsu.xyz/u/${actorUsername}`;
         }
       } else if (postId) {
-        notifUrl = `https://genjutsu-social.vercel.app/post/${postId}`;
+        notifUrl = `https://genjutsu.xyz/post/${postId}`;
       }
     }
 
     const pushPayload = {
       title: "genjutsu",
       body: notifBody,
-      icon: "https://genjutsu-social.vercel.app/icon-192x192.png",
+      icon: "https://genjutsu.xyz/icon-192x192.png",
       url: notifUrl,
       tag: notifTag,
       renotify: true,
