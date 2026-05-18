@@ -4,7 +4,6 @@ import { Eye, EyeOff, KeyRound, ArrowLeft } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 
@@ -20,7 +19,7 @@ const passwordSchema = z
 
 const UpdatePasswordPage = () => {
   const navigate = useNavigate();
-  const { updatePassword } = useAuth();
+  const { updatePassword, isRecoverySession, loading } = useAuth();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -30,27 +29,14 @@ const UpdatePasswordPage = () => {
   const [hasRecoverySession, setHasRecoverySession] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
+    if (loading) return;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      setHasRecoverySession(!!session);
-      setCheckingSession(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
-      if (event === "PASSWORD_RECOVERY" || session) {
-        setHasRecoverySession(true);
-      }
-      setCheckingSession(false);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+    // Only allow password updates if we strictly confirmed a recovery session.
+    // This prevents logged-in users from inadvertently changing their current session's
+    // password when opening an invalid or unrelated reset link.
+    setHasRecoverySession(isRecoverySession);
+    setCheckingSession(false);
+  }, [loading, isRecoverySession]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

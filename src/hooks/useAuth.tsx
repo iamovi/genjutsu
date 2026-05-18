@@ -17,6 +17,7 @@ interface AuthContextType {
   updatePassword: (password: string) => Promise<{ data: { user: User } | null; error: any }>;
   updateEmail: (email: string) => Promise<{ data: { user: User } | null; error: any }>;
   getLinkedIdentities: () => Promise<{ data: { identities: UserIdentity[] } | null; error: any }>;
+  isRecoverySession: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isRecoverySession, setIsRecoverySession] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -97,6 +99,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (mounted) {
+          if (event === "PASSWORD_RECOVERY") {
+            setIsRecoverySession(true);
+          } else if (event === "SIGNED_OUT") {
+            setIsRecoverySession(false);
+          }
           handleAuthChange(session?.user ?? null, session);
         }
       }
@@ -214,6 +221,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         updatePassword,
         updateEmail,
         getLinkedIdentities,
+        isRecoverySession,
       }}
     >
       {children}

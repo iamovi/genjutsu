@@ -65,7 +65,7 @@ const AuthPage = () => {
             setError(error.message || "Password reset request failed");
           }
         } else {
-          setSuccess("If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.");
+          setSuccess("If an account exists for this email, a password reset link has been sent. Check your inbox (and spam). For your security, this link will expire soon.");
         }
       } else if (isSignUp) {
         const parsed = signUpSchema.parse({ email, password, username, displayName });
@@ -349,7 +349,7 @@ const AuthPage = () => {
                     ) : (
                       <div className="mb-8 text-center space-y-2">
                         <h2 className="text-xl font-black">Reset Password</h2>
-                        <p className="text-sm text-muted-foreground">Enter your email and we'll send you a secure reset link.</p>
+                        <p className="text-sm text-muted-foreground">Enter your email and we'll send you a secure reset link. For your protection, links expire after a short time.</p>
                       </div>
                     )}
 
