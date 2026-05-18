@@ -67,6 +67,25 @@ export function useStrangerMatch() {
     const client = new Ably.Realtime(clientOptions);
     ablyRef.current = client;
 
+    const handleConnectionState = (stateChange: Ably.ConnectionStateChange) => {
+      if (!mountedRef.current) return;
+
+      const nonFatalStates: ReadonlyArray<string> = ['connecting', 'connected'];
+      if (nonFatalStates.includes(stateChange.current)) return;
+
+      // `disconnected` is usually transient; avoid tearing down active UI state too early.
+      if (stateChange.current === 'failed' || stateChange.current === 'suspended') {
+        safeSetStatus('idle');
+        safeSetIsStrangerTyping(false);
+        safeSetMessages((prev) => {
+          const alreadyShown = prev.some((m) => m.id === 'conn_err');
+          if (alreadyShown) return prev;
+          return [...prev, { id: 'conn_err', text: 'Connection unavailable. Please try again.', sender: 'system', timestamp: Date.now() }];
+        });
+      }
+    };
+    client.connection.on(handleConnectionState);
+
     // Join global channel just to track active users on the page
     const globalChannel = client.channels.get('genjutsu_stranger_global');
     globalChannel.presence.enter().catch(() => {});
@@ -88,12 +107,13 @@ export function useStrangerMatch() {
       try {
         globalChannel.presence.leave().catch(() => {});
         globalChannel.presence.unsubscribe();
+        client.connection.off(handleConnectionState);
         client.close();
       } catch (e) {
         // Silently handle — connection may already be dead on slow networks
       }
     };
-  }, [safeSetMessages, safeSetOnlineCount]);
+  }, [safeSetMessages, safeSetOnlineCount, safeSetStatus, safeSetIsStrangerTyping]);
 
   const startSearch = async () => {
     if (!ablyRef.current || isActionPending.current) return;
@@ -223,7 +243,9 @@ export function useStrangerMatch() {
 
   const sendMessage = (text: string) => {
      if (chatChannelRef.current && status === 'matched') {
-         chatChannelRef.current.publish('message', { text });
+         chatChannelRef.current.publish('message', { text }).catch(() => {
+             safeSetMessages((prev) => [...prev, { id: 'send_fail_' + Date.now(), text: 'Message failed to send. Check connection.', sender: 'system', timestamp: Date.now() }]);
+         });
          safeSetMessages(prev => [...prev, { id: Math.random().toString(), text, sender: 'me', timestamp: Date.now() }]);
      }
   };

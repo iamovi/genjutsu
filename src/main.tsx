@@ -13,8 +13,65 @@ import "./index.css";
 import "./i18n";
 import { loadConfig, getConfig } from "@/lib/config";
 
+function sanitizeMalformedUrlEncoding() {
+  const { pathname, search, hash } = window.location;
+  const raw = `${pathname}${search}${hash}`;
+
+  const isDecodable = (value: string) => {
+    try {
+      decodeURI(value);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const escapeBarePercents = (value: string) => value.replace(/%(?![0-9A-Fa-f]{2})/g, "%25");
+
+  const applyReplacement = (next: string) => {
+    if (next === raw) return;
+    try {
+      window.history.replaceState(window.history.state, "", next);
+    } catch {
+      // Ignore; failing to replace URL is better than crashing startup.
+    }
+  };
+
+  if (isDecodable(raw)) {
+    return;
+  }
+
+  // First pass: only escape clearly malformed '%' sequences.
+  const minimallyFixed = escapeBarePercents(raw);
+  if (isDecodable(minimallyFixed)) {
+    applyReplacement(minimallyFixed);
+    return;
+  }
+
+  // Fallback: if decoding is still broken, escape all percents to avoid router crash loops.
+  const fullyEscaped = raw.replace(/%/g, "%25");
+  applyReplacement(fullyEscaped);
+}
+
+function shouldDropSentryNoise(message: string): boolean {
+  return (
+    /Large Render Blocking Asset/i.test(message) ||
+    /Lock "lock:.*auth-token" was released/i.test(message) ||
+    /Lock broken by another request with the 'steal' option/i.test(message)
+  );
+}
+
+function getSentryEventMessages(event: any): string[] {
+  const values = event.exception?.values ?? [];
+  return [event.message, ...values.map((v) => `${v.type ?? ""} ${v.value ?? ""}`)].filter(
+    (message): message is string => Boolean(message)
+  );
+}
+
 // Force service worker registration for PWABuilder detection
 registerSW({ immediate: true });
+
+sanitizeMalformedUrlEncoding();
 
 // Remove SSR bot content if a real user somehow hits the bot-render route
 // (e.g. via WhatsApp/Discord in-app browser using a bot-like user-agent)
@@ -41,11 +98,20 @@ loadConfig()
           "Access denied",
           "NetworkError when attempting to fetch resource.",
           "Failed to fetch",
+          "URI malformed",
+          "Lock broken by another request with the 'steal' option.",
+          "Connection to server unavailable",
           "Failed to execute 'insertBefore' on 'Node'",
           "Failed to execute 'removeChild' on 'Node'",
           "Error invoking postMessage: Java object is gone",
           "Failed to read the 'localStorage' property from 'Window'",
+          /Lock "lock:.*auth-token" was released/i,
+          /Large Render Blocking Asset/i,
         ],
+        beforeSend(event) {
+          const shouldDrop = getSentryEventMessages(event).some((message) => shouldDropSentryNoise(message));
+          return shouldDrop ? null : event;
+        },
       });
     }
 
@@ -72,4 +138,3 @@ loadConfig()
       </div>
     `;
   });
-

@@ -559,13 +559,13 @@ const SettingsPage = () => {
         await loadAuthSecurityStatus();
     };
 
-    const metadataProviders = Array.isArray(user.app_metadata?.providers) ? user.app_metadata.providers as string[] : [];
-    const hasEmailIdentity = linkedProviders.includes("email") || user.app_metadata?.provider === "email" || metadataProviders.includes("email");
-    const oauthProviders = (linkedProviders.length > 0 ? linkedProviders : metadataProviders).filter((provider) => provider === "google" || provider === "github");
-
     if (!user) {
         return null;
     }
+
+    const metadataProviders = Array.isArray(user.app_metadata?.providers) ? user.app_metadata.providers as string[] : [];
+    const hasEmailIdentity = linkedProviders.includes("email") || user.app_metadata?.provider === "email" || metadataProviders.includes("email");
+    const oauthProviders = (linkedProviders.length > 0 ? linkedProviders : metadataProviders).filter((provider) => provider === "google" || provider === "github");
 
     const isUsernameChanged = newUsername !== (profile?.username || "");
     const cooldownUntil = getNextUsernameChangeDate();

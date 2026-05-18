@@ -26,7 +26,7 @@ import { FloatingWhisperBubble } from "@/components/FloatingWhisperBubble";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import MfaSessionGuard from "@/components/MfaSessionGuard";
 
-import Index from "@/pages/Index";
+const Index = lazy(() => import("@/pages/Index"));
 const AuthPage = lazy(() => import("@/pages/AuthPage"));
 const PostPage = lazy(() => import("@/pages/PostPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
