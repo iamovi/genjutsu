@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { Code, Zap, Shield, ArrowLeft, Ghost, Github, Paintbrush, Trash2, Gamepad2, Share2, Smartphone, MessageCircle, Clock, UsersRound, Download } from "lucide-react";
+import { Code, Zap, Shield, ArrowLeft, Ghost, Github, Paintbrush, Trash2, Gamepad2, Share2, Smartphone, MessageCircle, Clock, UsersRound, Download, Lock, Languages, Image, KeyRound, HardDrive, Library, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
@@ -83,6 +83,46 @@ const AboutPage = () => {
             icon: <UsersRound className="text-primary" size={20} />,
             title: t("about.feat12Title"),
             description: t("about.feat12Desc")
+        },
+        {
+            icon: <Library className="text-primary" size={20} />,
+            title: t("about.feat13Title", "Game House"),
+            description: t("about.feat13Desc", "A gallery of HTML5 mini-games built by the community. Play instantly or submit your own games.")
+        },
+        {
+            icon: <Lock className="text-primary" size={20} />,
+            title: t("about.feat14Title", "App Lock & PIN"),
+            description: t("about.feat14Desc", "Protect your feed, whispers, and settings with an optional secure session PIN lock.")
+        },
+        {
+            icon: <HardDrive className="text-primary" size={20} />,
+            title: t("about.feat15Title", "Data Saver Mode"),
+            description: t("about.feat15Desc", "Enable data saver to gate and load external images only on user click, saving mobile data.")
+        },
+        {
+            icon: <Languages className="text-primary" size={20} />,
+            title: t("about.feat16Title", "Multilingual Support"),
+            description: t("about.feat16Desc", "Built-in localization for over 10 languages, catering to global developers and users alike.")
+        },
+        {
+            icon: <Image className="text-primary" size={20} />,
+            title: t("about.feat17Title", "Smart Compression"),
+            description: t("about.feat17Desc", "Compresses avatars, banners, post media, and DM attachments client-side before uploading for fast loading.")
+        },
+        {
+            icon: <KeyRound className="text-primary" size={20} />,
+            title: t("about.feat18Title", "MFA Verification"),
+            description: t("about.feat18Desc", "Protect your account session using Supabase multi-factor authentication (MFA) OTP codes.")
+        },
+        {
+            icon: <HelpCircle className="text-primary" size={20} />,
+            title: t("about.feat19Title", "Anonymous Q&A"),
+            description: t("about.feat19Desc", "Receive anonymous questions from anyone via your public Q&A link and answer them directly on your public feed.")
+        },
+        {
+            icon: <Image className="text-primary" size={20} />,
+            title: t("about.feat20Title", "Profile Photo Album"),
+            description: t("about.feat20Desc", "Share images of what you're working on in your profile album, automatically disappearing after 24 hours.")
         }
     ];
 
@@ -130,32 +170,34 @@ const AboutPage = () => {
                                 </div>
                             </section>
 
-                            <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                            <section className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-12">
                                 {features.map((feature, index) => (
                                     <motion.div
                                         key={feature.title}
                                         initial={{ opacity: 0, x: index % 2 === 0 ? -10 : 10 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: index * 0.1 }}
-                                        className="gum-card p-6 border-primary/10 hover:border-primary/30 transition-colors group"
+                                        transition={{ delay: index * 0.05 }}
+                                        className="space-y-1"
                                     >
-                                        <div className="w-10 h-10 rounded-[3px] bg-secondary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                            {feature.icon}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-primary shrink-0">{feature.icon}</span>
+                                            <h3 className="font-bold text-base text-foreground">{feature.title}</h3>
                                         </div>
-                                        <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
-                                        <p className="text-sm text-foreground/70 leading-relaxed">
+                                        <p className="text-sm text-foreground/70 leading-relaxed pl-7">
                                             {feature.description}
                                         </p>
                                         {'downloadUrl' in feature && (
-                                            <a
-                                                href={feature.downloadUrl as string}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="gum-btn bg-primary text-primary-foreground text-[10px] px-3 py-1.5 flex items-center gap-1.5 w-fit mt-4 hover:opacity-90 transition-opacity"
-                                            >
-                                                <Download size={14} />
-                                                {t("about.downloadApk")}
-                                            </a>
+                                            <div className="pl-7 mt-1">
+                                                <a
+                                                    href={feature.downloadUrl as string}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1.5 text-xs text-primary font-bold hover:underline"
+                                                >
+                                                    <Download size={12} />
+                                                    {t("about.downloadApk")}
+                                                </a>
+                                            </div>
                                         )}
                                     </motion.div>
                                 ))}

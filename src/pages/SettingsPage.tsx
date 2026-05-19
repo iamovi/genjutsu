@@ -607,14 +607,14 @@ const SettingsPage = () => {
                                 {t("settings.general")}
                             </button>
                             <button
-                                onClick={() => setActiveTab("language")}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[3px] text-sm transition-all ${activeTab === "language"
+                                onClick={() => setActiveTab("notifications")}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[3px] text-sm transition-all ${activeTab === "notifications"
                                     ? "bg-primary text-primary-foreground font-bold gum-shadow-sm"
                                     : "hover:bg-secondary text-muted-foreground hover:text-foreground font-medium"
                                     }`}
                             >
-                                <Globe size={18} />
-                                {t("settings.language")}
+                                <Bell size={18} />
+                                Notifications
                             </button>
                             <button
                                 onClick={() => setActiveTab("appearance")}
@@ -657,14 +657,14 @@ const SettingsPage = () => {
                                 Security
                             </button>
                             <button
-                                onClick={() => setActiveTab("notifications")}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[3px] text-sm transition-all ${activeTab === "notifications"
+                                onClick={() => setActiveTab("language")}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[3px] text-sm transition-all ${activeTab === "language"
                                     ? "bg-primary text-primary-foreground font-bold gum-shadow-sm"
                                     : "hover:bg-secondary text-muted-foreground hover:text-foreground font-medium"
                                     }`}
                             >
-                                <Bell size={18} />
-                                Notifications
+                                <Globe size={18} />
+                                {t("settings.language")}
                             </button>
                             <button
                                 onClick={handleDangerClick}
