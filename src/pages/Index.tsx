@@ -1,5 +1,5 @@
 import { useNavigate, useNavigationType } from "react-router-dom";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Navbar from "@/components/Navbar";
 import ComposePost from "@/components/ComposePost";
 import PostCard from "@/components/PostCard";
@@ -10,6 +10,8 @@ import { FrogLoader } from "@/components/ui/FrogLoader";
 import { Helmet } from "react-helmet-async";
 import { PostSkeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
+import { supabase } from "@/integrations/supabase/client";
+import { AnimatePresence, motion } from "framer-motion";
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
@@ -23,11 +25,13 @@ const Index = () => {
     deletePost,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage
+    isFetchingNextPage,
+    refetch
   } = usePosts();
   const navigate = useNavigate();
   const navigationType = useNavigationType();
   const observerRef = useRef<HTMLDivElement>(null);
+  const [showNewPostsPill, setShowNewPostsPill] = useState(false);
   const paginationRequestInFlightRef = useRef(false);
   const scrollRestoredRef = useRef(false);
 
@@ -93,6 +97,25 @@ const Index = () => {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel(`posts-feed-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, () => {
+        if (window.scrollY > 300) setShowNewPostsPill(true);
+      })
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const handleNewPostsClick = async () => {
+    await refetch();
+    setShowNewPostsPill(false);
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -132,6 +155,20 @@ const Index = () => {
               </div>
             )}
 
+            <AnimatePresence>
+              {showNewPostsPill && (
+                <motion.button
+                  initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  onClick={() => void handleNewPostsClick()}
+                  className="sticky top-20 z-20 mb-4 mx-auto block px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-md"
+                >
+                  ↑ New posts
+                </motion.button>
+              )}
+            </AnimatePresence>
             {postsLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map(i => <PostSkeleton key={i} />)}
@@ -143,9 +180,10 @@ const Index = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                {posts.map((post) => (
+                {posts.map((post, index) => (
                   <PostCard
                     key={post.id}
+                    index={index}
                     post={post}
                     onLike={toggleLike}
                     onBookmark={toggleBookmark}

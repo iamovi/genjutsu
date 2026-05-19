@@ -11,7 +11,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/theme-provider";
 import { syncTime } from "@/lib/utils";
@@ -25,6 +25,8 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { FloatingWhisperBubble } from "@/components/FloatingWhisperBubble";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import MfaSessionGuard from "@/components/MfaSessionGuard";
+import { AnimatePresence } from "framer-motion";
+import PageWrapper from "@/components/PageWrapper";
 
 const Index = lazy(() => import("@/pages/Index"));
 const AuthPage = lazy(() => import("@/pages/AuthPage"));
@@ -56,6 +58,50 @@ const MAINTENANCE_MODE = false;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 const queryClient = new QueryClient();
+
+const AppRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageWrapper><Index /></PageWrapper>} />
+        <Route path="/auth" element={<PageWrapper><AuthPage /></PageWrapper>} />
+        <Route path="/auth/mfa" element={<PageWrapper><MfaChallengePage /></PageWrapper>} />
+        <Route path="/auth/update-password" element={<PageWrapper><UpdatePasswordPage /></PageWrapper>} />
+        <Route path="/about" element={<PageWrapper><AboutPage /></PageWrapper>} />
+        <Route path="/terms" element={<PageWrapper><TermsPage /></PageWrapper>} />
+        <Route path="/privacy" element={<PageWrapper><PrivacyPage /></PageWrapper>} />
+        <Route path="/post/:postId" element={<PageWrapper><PostPage /></PageWrapper>} />
+        <Route path="/search" element={<PageWrapper><SearchPage /></PageWrapper>} />
+        <Route path="/whispers" element={<PageWrapper><WhispersPage /></PageWrapper>} />
+        <Route path="/whispers/community" element={<PageWrapper><CommunityChat /></PageWrapper>} />
+        <Route path="/whisper/:username" element={<PageWrapper><ChatPage /></PageWrapper>} />
+        <Route path="/stranger" element={<PageWrapper><StrangerPage /></PageWrapper>} />
+        <Route path="/play" element={<PageWrapper><PlayPage /></PageWrapper>} />
+        <Route path="/game-house" element={<PageWrapper><GameHouseGallery /></PageWrapper>} />
+        <Route path="/game-house/submit" element={<PageWrapper><GameHouseSubmit /></PageWrapper>} />
+        <Route path="/game-house/edit/:id" element={<PageWrapper><GameHouseEdit /></PageWrapper>} />
+        <Route path="/game-house/play/:id" element={<PageWrapper><GameHousePlay /></PageWrapper>} />
+        <Route path="/qna/:username" element={<PageWrapper><QnaPage /></PageWrapper>} />
+        <Route path="/qna-inbox" element={<PageWrapper><QnaInbox /></PageWrapper>} />
+        <Route
+          path="/admin"
+          element={(
+            <PageWrapper>
+              <RequireAdmin>
+                <AdminPage />
+              </RequireAdmin>
+            </PageWrapper>
+          )}
+        />
+        <Route path="/u/:username" element={<PageWrapper><ProfilePage /></PageWrapper>} />
+        <Route path="/settings" element={<PageWrapper><SettingsPage /></PageWrapper>} />
+        <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 const App = () => {
   useEffect(() => {
@@ -102,39 +148,7 @@ const App = () => {
                       </div>
                     }
                   >
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/auth" element={<AuthPage />} />
-                      <Route path="/auth/mfa" element={<MfaChallengePage />} />
-                      <Route path="/auth/update-password" element={<UpdatePasswordPage />} />
-                      <Route path="/about" element={<AboutPage />} />
-                      <Route path="/terms" element={<TermsPage />} />
-                      <Route path="/privacy" element={<PrivacyPage />} />
-                      <Route path="/post/:postId" element={<PostPage />} />
-                      <Route path="/search" element={<SearchPage />} />
-                      <Route path="/whispers" element={<WhispersPage />} />
-                      <Route path="/whispers/community" element={<CommunityChat />} />
-                      <Route path="/whisper/:username" element={<ChatPage />} />
-                      <Route path="/stranger" element={<StrangerPage />} />
-                      <Route path="/play" element={<PlayPage />} />
-                      <Route path="/game-house" element={<GameHouseGallery />} />
-                      <Route path="/game-house/submit" element={<GameHouseSubmit />} />
-                      <Route path="/game-house/edit/:id" element={<GameHouseEdit />} />
-                      <Route path="/game-house/play/:id" element={<GameHousePlay />} />
-                      <Route path="/qna/:username" element={<QnaPage />} />
-                      <Route path="/qna-inbox" element={<QnaInbox />} />
-                      <Route
-                        path="/admin"
-                        element={(
-                          <RequireAdmin>
-                            <AdminPage />
-                          </RequireAdmin>
-                        )}
-                      />
-                      <Route path="/u/:username" element={<ProfilePage />} />
-                      <Route path="/settings" element={<SettingsPage />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
+                    <AppRoutes />
                   </Suspense>
                 </AuthProvider>
               </BrowserRouter>

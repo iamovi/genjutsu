@@ -7,6 +7,7 @@ import PostCard from "@/components/PostCard";
 import Sidebar from "@/components/Sidebar";
 import { ArrowLeft, Send, MessageSquare, MoreHorizontal, Trash2, Languages, Reply } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
+import { PostSkeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet-async";
@@ -529,8 +530,9 @@ const PostPage = () => {
                         </button>
 
                         {loading ? (
-                            <div className="flex justify-center py-12">
-                                <FrogLoader className="" size={24} />
+                            <div className="space-y-6">
+                                <PostSkeleton />
+                                <PostSkeleton />
                             </div>
                         ) : !post ? (
                             <div className="gum-card p-8 text-center">

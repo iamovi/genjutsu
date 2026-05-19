@@ -27,15 +27,17 @@ export default function DataSaverImage({
   );
 
   const [isUnlocked, setIsUnlocked] = useState(!shouldGate);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     setIsUnlocked(!shouldGate);
+    setIsLoaded(false);
   }, [shouldGate, src]);
 
   if (!src) return null;
 
   if (!shouldGate || isUnlocked) {
-    return <img src={getSafeUrl(src)} alt={alt} className={className} {...props} loading={props.loading || "lazy"} />;
+    return <img src={getSafeUrl(src)} alt={alt} className={cn("opacity-0 transition-opacity duration-250", isLoaded && "opacity-100", className)} {...props} loading={props.loading || "lazy"} onLoad={(event) => { setIsLoaded(true); props.onLoad?.(event); }} />;
   }
 
   const unlock = (event: MouseEvent<HTMLDivElement> | KeyboardEvent<HTMLDivElement>) => {

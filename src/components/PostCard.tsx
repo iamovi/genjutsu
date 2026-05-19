@@ -24,6 +24,7 @@ import EditPostDialog from "@/components/EditPostDialog";
 import PostLikesDialog from "@/components/PostLikesDialog";
 import DataSaverImage from "@/components/DataSaverImage";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+const MotionLink = motion(Link);
 
 const LivePreviewModal = ({ code, language, isOpen, onOpenChange }: { code: string; language: string; isOpen: boolean; onOpenChange: (open: boolean) => void }) => {
   const getSrcDoc = () => {
@@ -137,6 +138,7 @@ const CodeBlockWithPreview = ({
     );
 };
 interface PostCardProps {
+  index?: number;
   post: PostWithProfile;
   onLike: (postId: string, liked: boolean) => void;
   onBookmark: (postId: string, bookmarked: boolean) => void;
@@ -181,7 +183,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(days / 30)}mo`;
 }
 
-const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: PostCardProps) => {
+const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited, index = 0 }: PostCardProps) => {
   const { user } = useAuth();
   const { recordView } = usePostViews();
   const [showMenu, setShowMenu] = useState(false);
@@ -391,6 +393,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
       ref={articleRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index * 0.06, 0.3), duration: 0.24, ease: "easeOut" }}
       className="gum-card p-5 mb-4"
     >
       <div className="flex gap-3">
@@ -399,7 +402,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
           className="w-10 h-10 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden hover:opacity-80 transition-opacity"
         >
           {post.profiles?.avatar_url ? (
-            <img src={post.profiles.avatar_url} alt={post.profiles.username} className="w-full h-full object-cover" loading="lazy" />
+            <img src={post.profiles.avatar_url} alt={post.profiles.username} className="w-full h-full object-cover opacity-0 transition-opacity duration-250" loading="lazy" onLoad={(event) => event.currentTarget.classList.replace("opacity-0", "opacity-100")} />
           ) : initials}
         </button>
         <div className="flex-1 min-w-0">
@@ -669,15 +672,16 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
                 {post.likes_count}
               </button>
             </div>
-            <Link
+            <MotionLink
               to={`/post/${post.id}`}
               className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+              whileTap={{ scale: 0.9 }}
             >
               <MessageSquare size={15} />
               {post.comments_count}
-            </Link>
+            </MotionLink>
             {!isOwner && (
-              <button
+              <motion.button
                 onClick={() => {
                   if (!user) {
                     toast.error("Please sign in to send messages");
@@ -687,16 +691,18 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
                 }}
                 className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
                 title="Whisper to author"
+                whileTap={{ scale: 0.9 }}
               >
                 <Send size={15} />
-              </button>
+              </motion.button>
             )}
-            <button
+            <motion.button
               onClick={() => onBookmark(post.id, post.user_bookmarked)}
               className={`shrink-0 flex items-center gap-1.5 text-xs font-medium transition-colors ${post.user_bookmarked ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500"}`}
+              whileTap={{ scale: 0.9 }}
             >
               <Bookmark size={15} fill={post.user_bookmarked ? "currentColor" : "none"} />
-            </button>
+            </motion.button>
 
             {/* Translation Button */}
             {!isAlreadyEnglish && (
@@ -717,13 +723,14 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
               </button>
             )}
 
-            <button
+            <motion.button
               onClick={handleShare}
               className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
               title="Share post"
+              whileTap={{ scale: 0.9 }}
             >
               <Share size={15} />
-            </button>
+            </motion.button>
           </div>
           <PostLikesDialog
             postId={post.id}
