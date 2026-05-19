@@ -361,6 +361,9 @@ Deno.serve(async (req) => {
         case "game_comment":
           notifBody = `${actorName} commented on your game`;
           break;
+        case "qna_question":
+          notifBody = `Someone asked you an anonymous question`;
+          break;
         case "whisper": {
           const cleanMessage = String(messageContent).trim();
           const preview = cleanMessage.length > 100
@@ -396,6 +399,8 @@ Deno.serve(async (req) => {
         notifUrl = `https://genjutsu.xyz/game-house`;
       } else if (notificationType === "game_rejected") {
         notifUrl = `https://genjutsu.xyz/game-house/submit`;
+      } else if (notificationType === "qna_question") {
+        notifUrl = `https://genjutsu.xyz/qna-inbox`;
       } else if ((notificationType === "game_like" || notificationType === "game_comment") && gameId) {
         notifUrl = `https://genjutsu.xyz/game-house?game=${gameId}&open=comments`;
       } else if (notificationType === "follow" || notificationType === "unfollow") {

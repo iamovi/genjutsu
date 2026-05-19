@@ -1,4 +1,4 @@
-import { Heart, HeartOff, MessageSquare, MessageCircleOff, UserPlus, UserMinus, Check, Bell, AtSign, Gamepad2, CheckCircle, XCircle } from "lucide-react";
+import { Heart, HeartOff, MessageSquare, MessageCircleOff, UserPlus, UserMinus, Check, Bell, AtSign, Gamepad2, CheckCircle, XCircle, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { NotificationWithActor } from "@/hooks/useNotifications";
@@ -38,6 +38,8 @@ function getNotificationIcon(type: string) {
             return <Heart size={14} className="text-rose-500" />;
         case "game_comment":
             return <MessageSquare size={14} className="text-sky-500" />;
+        case "qna_question":
+            return <MessageCircle size={14} className="text-pink-500" />;
         default:
             return <Bell size={14} />;
     }
@@ -69,6 +71,8 @@ function getNotificationText(type: string, actorName: string) {
             return <><strong>{actorName}</strong> liked your game</>;
         case "game_comment":
             return <><strong>{actorName}</strong> commented on your game</>;
+        case "qna_question":
+            return <>Someone asked you an anonymous question</>;
         default:
             return <><strong>{actorName}</strong> interacted with you</>;
     }
@@ -98,6 +102,8 @@ const NotificationPanel = ({
             navigate("/game-house");
         } else if (notification.type === "game_rejected") {
             navigate("/game-house/submit");
+        } else if (notification.type === "qna_question") {
+            navigate("/qna-inbox");
         } else if (notification.post_id) {
             navigate(`/post/${notification.post_id}`);
         }
@@ -145,7 +151,9 @@ const NotificationPanel = ({
                             >
                                 {/* Avatar */}
                                 <div className="w-8 h-8 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-xs overflow-hidden shrink-0 mt-0.5">
-                                    {notification.actor_profile?.avatar_url ? (
+                                    {notification.type === "qna_question" ? (
+                                        "?"
+                                    ) : notification.actor_profile?.avatar_url ? (
                                         <img
                                             src={notification.actor_profile.avatar_url}
                                             alt={notification.actor_profile.username}

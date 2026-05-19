@@ -207,7 +207,7 @@ CREATE TABLE public.notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   actor_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('like', 'unlike', 'comment', 'uncomment', 'follow', 'unfollow', 'mention', 'game_submission', 'game_approved', 'game_rejected', 'game_like', 'game_comment')),
+  type TEXT NOT NULL CHECK (type IN ('like', 'unlike', 'comment', 'uncomment', 'follow', 'unfollow', 'mention', 'game_submission', 'game_approved', 'game_rejected', 'game_like', 'game_comment', 'qna_question')),
   post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE,
   comment_id UUID REFERENCES public.comments(id) ON DELETE CASCADE,
   game_id UUID,
@@ -487,6 +487,20 @@ CREATE TRIGGER update_comments_updated_at
 CREATE TRIGGER update_game_house_comments_updated_at
   BEFORE UPDATE ON public.game_house_comments
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- QnA Notifications
+CREATE OR REPLACE FUNCTION public.handle_new_qna_question()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.notifications (user_id, actor_id, type)
+  VALUES (NEW.target_user_id, NEW.target_user_id, 'qna_question');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_qna_question_created
+  AFTER INSERT ON public.qna_questions
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_qna_question();
 
 -- Guard: Prevent direct username changes (bypass protection)
 CREATE OR REPLACE FUNCTION public.prevent_direct_username_change()
@@ -846,13 +860,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Delete expired follow/unfollow and game notifications
+-- Delete all notifications older than 24 hours
 CREATE OR REPLACE FUNCTION public.delete_expired_follow_notifications()
 RETURNS void AS $$
 BEGIN
   DELETE FROM public.notifications
-  WHERE created_at < now() - INTERVAL '24 hours'
-    AND type IN ('follow', 'unfollow', 'game_submission', 'game_approved', 'game_rejected', 'game_like', 'game_comment');
+  WHERE created_at < now() - INTERVAL '24 hours';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
