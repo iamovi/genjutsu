@@ -292,6 +292,25 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
   const isLongPost = rawContent.length > 300;
   const displayContent = isLongPost && !isTextExpanded ? rawContent.slice(0, 300) + '…' : rawContent;
 
+  const qnaMatch = useMemo(() => {
+    if (post.is_readme) return null;
+    const match = rawContent.match(/^Q:\s*"([\s\S]+?)"\s*\nsent with genjutsu QnA\s*\n\s*\n\s*A:\s*([\s\S]*)$/);
+    return match;
+  }, [rawContent, post.is_readme]);
+
+  const displayAnswer = useMemo(() => {
+    if (!qnaMatch) return "";
+    const answer = qnaMatch[2];
+    if (isLongPost && !isTextExpanded) {
+      const questionLen = qnaMatch[1].length + 50;
+      const maxAnswerLen = Math.max(50, 300 - questionLen);
+      if (answer.length > maxAnswerLen) {
+        return answer.slice(0, maxAnswerLen) + "…";
+      }
+    }
+    return answer;
+  }, [qnaMatch, isLongPost, isTextExpanded]);
+
   const codeLines = post.code?.split('\n') || [];
   const isLongCode = codeLines.length > 10;
   const truncatedCode = isLongCode ? codeLines.slice(0, 10).join('\n') + '\n…' : post.code;
@@ -483,6 +502,38 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
                   {isTextExpanded ? 'See Less' : 'See More'}
                 </button>
               )}
+            </div>
+          ) : qnaMatch ? (
+            <div className="mt-2 flex flex-col gap-3">
+              <div className="bg-secondary/45 border border-border/80 rounded-[3px] p-3.5 gum-shadow-sm relative overflow-hidden">
+                <div className="text-[10px] font-black uppercase tracking-wider text-primary mb-1">
+                  Question (Anonymous)
+                </div>
+                <p className="text-sm font-bold italic leading-relaxed text-foreground whitespace-pre-wrap break-words">
+                  "{qnaMatch[1]}"
+                </p>
+                <div className="text-[9px] font-semibold text-muted-foreground mt-2 uppercase tracking-widest">
+                  sent with genjutsu QnA
+                </div>
+              </div>
+
+              <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                <div className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-1">
+                  Answer
+                </div>
+                <p>
+                  {linkify(displayAnswer)}
+                </p>
+
+                {isLongPost && (
+                  <button
+                    onClick={() => setIsTextExpanded(!isTextExpanded)}
+                    className="text-primary font-semibold mt-1 hover:underline focus:outline-none text-sm"
+                  >
+                    {isTextExpanded ? 'See Less' : 'See More'}
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words">

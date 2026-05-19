@@ -69,9 +69,10 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
   useEffect(() => {
     const state = location.state as { qnaQuestion?: string } | null;
     if (state?.qnaQuestion) {
-      setContent(`"${state.qnaQuestion}"
+      setContent(`Q: "${state.qnaQuestion}"
+sent with genjutsu QnA
 
-`);
+A: `);
       // Clear the state so it doesn't re-trigger on re-render
       window.history.replaceState({}, document.title);
       // Focus the textarea
