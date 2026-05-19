@@ -216,7 +216,7 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
       // Clean content only for normal posts to remove extracted hashtags and collapse spaces
       const postContent = isReadme
         ? content
-        : content.replace(/#[\p{L}\p{N}_]+/gu, "").replace(/\s+/g, " ").trim();
+        : content.replace(/#[\p{L}\p{N}_]+/gu, "").trim();
 
       await onPost(postContent || content, code, codeLanguage, tags, mediaUrl, isReadme);
 

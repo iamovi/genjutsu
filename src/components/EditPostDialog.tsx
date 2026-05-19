@@ -54,7 +54,7 @@ function extractTags(text: string): string[] {
 
 function cleanPostContent(content: string, isReadme: boolean): string {
   if (isReadme) return content;
-  return content.replace(/#[\p{L}\p{N}_]+/gu, "").replace(/\s+/g, " ").trim();
+  return content.replace(/#[\p{L}\p{N}_]+/gu, "").trim();
 }
 
 export default function EditPostDialog({ open, onOpenChange, post, onEdited }: EditPostDialogProps) {
