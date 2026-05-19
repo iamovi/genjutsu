@@ -88,7 +88,7 @@ export async function fetchGroqReply(message: string, userName: string = "a user
             }
 
             bodyPayload = {
-                model: "llama-3.1-8b-instant",
+                model: "llama-3.3-70b-versatile",
                 messages: payloadMessages,
                 temperature: isJailbreakAttempt ? 0.8 : 0.7,
                 max_tokens: 400,
