@@ -89,7 +89,7 @@ const CommentItem = ({
                     className="w-8 h-8 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden hover:opacity-80 transition-opacity"
                 >
                     {comment.profiles?.avatar_url ? (
-                        <img src={comment.profiles.avatar_url} alt={comment.profiles.username} className="w-full h-full object-cover" />
+                        <img src={comment.profiles.avatar_url} alt={comment.profiles.username} className="w-full h-full object-cover" loading="lazy" />
                     ) : comment.profiles?.display_name?.[0] || "?"}
                 </button>
                 <div className="flex-1 min-w-0">

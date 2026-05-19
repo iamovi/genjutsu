@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { compressImage } from "@/lib/imageCompression";
 import { useParams, useNavigate } from "react-router-dom";
 import { useWhispers, Whisper } from "@/hooks/useWhispers";
 import { supabase } from "@/integrations/supabase/client";
@@ -123,12 +124,13 @@ const ChatPage = () => {
     const uploadSelectedImage = async (): Promise<{ publicUrl: string; filePath: string } | null> => {
         if (!selectedImageFile || !user) return null;
 
-        const fileExt = selectedImageFile.name.split(".").pop() || "jpg";
+        const compressedFile = await compressImage(selectedImageFile);
+        const fileExt = compressedFile.name.split(".").pop() || "jpg";
         const filePath = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
             .from("whisper-media")
-            .upload(filePath, selectedImageFile);
+            .upload(filePath, compressedFile);
 
         if (uploadError) {
             throw uploadError;
@@ -275,7 +277,7 @@ const ChatPage = () => {
                             >
                                 <div className="w-10 h-10 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
                                     {targetProfile.avatar_url ? (
-                                        <img src={targetProfile.avatar_url} alt={targetProfile.username} className="w-full h-full object-cover" />
+                                        <img src={targetProfile.avatar_url} alt={targetProfile.username} className="w-full h-full object-cover" loading="lazy" />
                                     ) : targetProfile.display_name[0].toUpperCase()}
                                 </div>
                                 <div className="min-w-0">

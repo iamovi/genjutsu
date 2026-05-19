@@ -701,7 +701,7 @@ const SettingsPage = () => {
                                                     </div>
                                                     <div className="w-12 h-12 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-lg overflow-hidden">
                                                         {profile?.avatar_url ? (
-                                                            <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+                                                            <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" loading="lazy" />
                                                         ) : (profile?.display_name?.[0] || "?")}
                                                     </div>
                                                 </div>

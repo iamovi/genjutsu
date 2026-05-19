@@ -238,7 +238,7 @@ const AboutPage = () => {
                                                 <a key={c.id || c.login} href={c.html_url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 group p-2 rounded-[3px] hover:bg-secondary/50 transition-colors">
                                                     <div className="relative">
                                                         {i === 0 && <div className="absolute -top-2 -right-3 z-10 bg-primary text-primary-foreground px-1 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-[2px] whitespace-nowrap">{t("about.authorLabel")}</div>}
-                                                        <img src={c.avatar_url} alt={c.login} className="w-14 h-14 rounded-[3px] gum-border object-cover group-hover:opacity-80 transition-opacity" />
+                                                        <img src={c.avatar_url} alt={c.login} className="w-14 h-14 rounded-[3px] gum-border object-cover group-hover:opacity-80 transition-opacity" loading="lazy" />
                                                     </div>
                                                     <span className="text-xs font-mono font-bold uppercase tracking-tight text-center truncate w-full group-hover:text-primary transition-colors">{c.login}</span>
                                                     <span className="text-[10px] font-mono text-muted-foreground">{c.contributions ?? 1} {c.contributions !== 1 ? t("about.commits") : t("about.commit")}</span>

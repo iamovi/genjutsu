@@ -92,7 +92,7 @@ const WhispersPage = () => {
                                     >
                                         <div className="w-12 h-12 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden">
                                             {conv.avatar_url ? (
-                                                <img src={conv.avatar_url} alt={conv.username} className="w-full h-full object-cover" />
+                                                <img src={conv.avatar_url} alt={conv.username} className="w-full h-full object-cover" loading="lazy" />
                                             ) : conv.display_name[0].toUpperCase()}
                                         </div>
                                         <div className="flex-1 min-w-0">

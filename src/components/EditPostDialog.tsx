@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { compressImage } from "@/lib/imageCompression";
 import { Code, FileText, ImageIcon, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { FrogLoader } from "@/components/ui/FrogLoader";
@@ -120,12 +121,13 @@ export default function EditPostDialog({ open, onOpenChange, post, onEdited }: E
   };
 
   const uploadPostMedia = async (file: File): Promise<{ publicUrl: string; storagePath: string } | null> => {
-    const ext = file.name.split(".").pop() || "png";
+    const compressedFile = await compressImage(file);
+    const ext = compressedFile.name.split(".").pop() || "png";
     const filePath = `${Math.random()}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from("post-media")
-      .upload(filePath, file);
+      .upload(filePath, compressedFile);
 
     if (uploadError) return null;
 

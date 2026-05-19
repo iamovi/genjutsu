@@ -182,7 +182,7 @@ const Navbar = () => {
                     </div>
                     <div className="w-8 h-8 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-xs overflow-hidden transition-transform group-hover:scale-105 group-active:scale-95">
                       {profile?.avatar_url ? (
-                        <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+                        <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" loading="lazy" />
                       ) : initials}
                     </div>
                   </button>
@@ -288,7 +288,7 @@ const Navbar = () => {
                     >
                       <div className="w-10 h-10 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-sm overflow-hidden shrink-0">
                         {profile?.avatar_url ? (
-                          <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+                          <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" loading="lazy" />
                         ) : initials}
                       </div>
                       <div className="text-left">

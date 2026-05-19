@@ -35,7 +35,7 @@ export default function DataSaverImage({
   if (!src) return null;
 
   if (!shouldGate || isUnlocked) {
-    return <img src={getSafeUrl(src)} alt={alt} className={className} {...props} />;
+    return <img src={getSafeUrl(src)} alt={alt} className={className} {...props} loading={props.loading || "lazy"} />;
   }
 
   const unlock = (event: MouseEvent<HTMLDivElement> | KeyboardEvent<HTMLDivElement>) => {

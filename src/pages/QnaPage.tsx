@@ -111,7 +111,7 @@ export default function QnaPage() {
         >
           <div className="w-20 h-20 rounded-[3px] gum-border bg-secondary flex items-center justify-center text-2xl font-bold mx-auto mb-4 overflow-hidden">
             {profile.avatar_url ? (
-              <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+              <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" loading="lazy" />
             ) : initials}
           </div>
           <h1 className="text-xl font-black tracking-tight">{profile.display_name}</h1>

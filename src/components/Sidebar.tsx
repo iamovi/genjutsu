@@ -202,7 +202,7 @@ const Sidebar = ({ onAction }: SidebarProps) => {
                           className="w-9 h-9 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-[10px] shrink-0 overflow-hidden hover:opacity-80 transition-opacity"
                         >
                           {dev.avatar_url ? (
-                            <img src={dev.avatar_url} alt={dev.username} className="w-full h-full object-cover" />
+                            <img src={dev.avatar_url} alt={dev.username} className="w-full h-full object-cover" loading="lazy" />
                           ) : (
                             dev.display_name.substring(0, 2).toUpperCase()
                           )}

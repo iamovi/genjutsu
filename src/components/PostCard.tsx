@@ -380,7 +380,7 @@ const PostCard = memo(({ post, onLike, onBookmark, onDelete, onPostEdited }: Pos
           className="w-10 h-10 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden hover:opacity-80 transition-opacity"
         >
           {post.profiles?.avatar_url ? (
-            <img src={post.profiles.avatar_url} alt={post.profiles.username} className="w-full h-full object-cover" />
+            <img src={post.profiles.avatar_url} alt={post.profiles.username} className="w-full h-full object-cover" loading="lazy" />
           ) : initials}
         </button>
         <div className="flex-1 min-w-0">

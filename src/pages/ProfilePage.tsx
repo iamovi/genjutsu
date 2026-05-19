@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { compressImage } from "@/lib/imageCompression";
 import { useEffect, useState, useRef, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PostWithProfile } from "@/hooks/usePosts";
@@ -378,14 +379,15 @@ const ProfilePage = () => {
             return;
         }
 
-        const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const compressedFile = await compressImage(file);
+        const fileExt = compressedFile.name.split(".").pop()?.toLowerCase() || "jpg";
         const filePath = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
 
         setAlbumUploading(true);
         try {
             const { error: uploadError } = await supabase.storage
                 .from("profile-album")
-                .upload(filePath, file);
+                .upload(filePath, compressedFile);
             if (uploadError) throw uploadError;
 
             const { data: publicData } = supabase.storage.from("profile-album").getPublicUrl(filePath);
@@ -632,7 +634,7 @@ const ProfilePage = () => {
                                                 className={`w-24 h-24 rounded-[3px] gum-border bg-secondary flex items-center justify-center text-3xl font-bold gum-shadow overflow-hidden transition-opacity outline-none ${profile.avatar_url ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
                                             >
                                                 {profile.avatar_url ? (
-                                                    <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+                                                    <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" loading="lazy" />
                                                 ) : initials}
                                             </div>
                                             {profile.avatar_url && (

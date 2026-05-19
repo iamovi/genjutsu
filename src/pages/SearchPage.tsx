@@ -302,7 +302,7 @@ const SearchPage = () => {
                                                 >
                                                     <div className="w-12 h-12 rounded-[3px] gum-border bg-secondary overflow-hidden shrink-0">
                                                         {profile.avatar_url ? (
-                                                            <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+                                                            <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" loading="lazy" />
                                                         ) : (
                                                             <div className="w-full h-full flex items-center justify-center font-bold text-lg">
                                                                 {profile.display_name[0].toUpperCase()}

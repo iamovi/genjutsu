@@ -178,7 +178,7 @@ export default function PostLikesDialog({ postId, isOpen, onOpenChange }: PostLi
                   >
                     <div className="w-10 h-10 rounded-[3px] gum-border bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
                       {liker.avatar_url ? (
-                        <img src={liker.avatar_url} alt={liker.username} className="w-full h-full object-cover" />
+                        <img src={liker.avatar_url} alt={liker.username} className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         initials
                       )}

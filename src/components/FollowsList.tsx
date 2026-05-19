@@ -181,7 +181,7 @@ const FollowsList = ({ userId, type, isOpen, onOpenChange, onAction }: FollowsLi
                                 >
                                     <div className="w-10 h-10 rounded-[3px] gum-border bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
                                         {item.avatar_url ? (
-                                            <img src={item.avatar_url} alt={item.username} className="w-full h-full object-cover" />
+                                            <img src={item.avatar_url} alt={item.username} className="w-full h-full object-cover" loading="lazy" />
                                         ) : item.display_name.substring(0, 2).toUpperCase()}
                                     </div>
                                     <div className="flex-1 min-w-0">

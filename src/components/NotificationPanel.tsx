@@ -158,6 +158,7 @@ const NotificationPanel = ({
                                             src={notification.actor_profile.avatar_url}
                                             alt={notification.actor_profile.username}
                                             className="w-full h-full object-cover"
+                                            loading="lazy"
                                         />
                                     ) : (
                                         notification.actor_profile?.display_name?.[0]?.toUpperCase() || "?"

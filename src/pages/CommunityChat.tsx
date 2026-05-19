@@ -265,7 +265,7 @@ const CommunityChat = () => {
                                             ) : isAi ? (
                                                 <Ghost size={14} />
                                             ) : msg.profile?.avatar_url ? (
-                                                <img src={msg.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                <img src={msg.profile.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" />
                                             ) : (
                                                 (msg.profile?.display_name?.[0] || "?").toUpperCase()
                                             )}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { compressImage } from "@/lib/imageCompression";
 import { useLocation } from "react-router-dom";
 import { Code, ImageIcon, Smile, Send, X } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
@@ -161,12 +162,13 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
     if (!mediaFile) return null;
 
     try {
-      const fileExt = mediaFile.name.split(".").pop();
+      const compressedFile = await compressImage(mediaFile);
+      const fileExt = compressedFile.name.split(".").pop();
       const filePath = `${Math.random()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("post-media")
-        .upload(filePath, mediaFile);
+        .upload(filePath, compressedFile);
 
       if (uploadError) {
         throw uploadError;
@@ -274,7 +276,7 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
       <div className="flex gap-3">
         <div className="w-10 h-10 rounded-[3px] gum-border bg-secondary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
           {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+            <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" loading="lazy" />
           ) : initials}
         </div>
         <div className="flex-1 min-w-0 relative">

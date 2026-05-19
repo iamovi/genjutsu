@@ -103,7 +103,7 @@ const PlayerRow = ({ player, onChallenge, isChallenging }: PlayerRowProps) => (
         <div className="relative">
             <div className="w-9 h-9 rounded-[3px] bg-secondary flex items-center justify-center font-bold text-xs overflow-hidden border-2 border-border">
                 {player.avatar_url ? (
-                    <img src={player.avatar_url} alt={player.username} className="w-full h-full object-cover" />
+                    <img src={player.avatar_url} alt={player.username} className="w-full h-full object-cover" loading="lazy" />
                 ) : (
                     player.display_name.substring(0, 2).toUpperCase()
                 )}

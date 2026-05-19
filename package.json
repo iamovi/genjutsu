@@ -50,6 +50,7 @@
     "@vercel/analytics": "^2.0.0",
     "@vercel/speed-insights": "^2.0.0",
     "ably": "^2.21.0",
+    "browser-image-compression": "^2.0.2",
     "chess.js": "^1.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

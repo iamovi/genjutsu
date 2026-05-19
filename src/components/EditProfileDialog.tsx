@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { compressImage } from "@/lib/imageCompression";
 import {
     Dialog,
     DialogContent,
@@ -294,9 +295,14 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
 
             // Helper to upload files to Supabase inline
             const uploadFile = async (file: File, bucket: 'avatars' | 'banners') => {
-                const fileExt = file.name.split('.').pop();
+                // Compress file before upload. Avatars smaller than banners.
+                const compressedFile = await compressImage(file, {
+                    maxWidthOrHeight: bucket === 'avatars' ? 400 : 1080,
+                    maxSizeMB: bucket === 'avatars' ? 0.2 : 0.5,
+                });
+                const fileExt = compressedFile.name.split('.').pop();
                 const filePath = `${user.id}/${Math.random()}.${fileExt}`;
-                const { error: uploadError } = await supabase.storage.from(bucket).upload(filePath, file);
+                const { error: uploadError } = await supabase.storage.from(bucket).upload(filePath, compressedFile);
                 if (uploadError) throw uploadError;
                 return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
             };
