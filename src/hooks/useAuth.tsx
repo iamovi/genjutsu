@@ -169,6 +169,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async (options?: { scope?: 'global' | 'local' | 'others' }) => {
     try {
+      // Clean up push notification state before signing out
+      try {
+        // Clear push-related localStorage flags
+        localStorage.removeItem("genjutsu-push-enabled");
+        // Clear the current user's push prompt dismissal so they get prompted again if they log back in
+        if (user) {
+          localStorage.removeItem(`genjutsu_push_prompt_dismissed_${user.id}`);
+        }
+
+        // Unsubscribe from browser push so it doesn't linger for the next user
+        if ("serviceWorker" in navigator && "PushManager" in window) {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+          if (subscription) {
+            await subscription.unsubscribe();
+          }
+        }
+      } catch (pushError) {
+        // Push cleanup is best-effort; don't block sign-out
+        console.warn("Push notification cleanup on sign-out failed:", pushError);
+      }
+
       await supabase.auth.signOut(options);
     } catch (error) {
       console.error("Error during signOut:", error);
