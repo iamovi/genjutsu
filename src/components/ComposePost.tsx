@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { Code, ImageIcon, Smile, Send, X } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { useMentions } from "@/hooks/useMentions";
@@ -61,6 +62,21 @@ const ComposePost = ({ onPost }: ComposePostProps) => {
     }, 1000);
     return () => clearInterval(timer);
   }, [cooldown]);
+
+  // Pre-fill from QnA Inbox answer flow
+  const location = useLocation();
+  useEffect(() => {
+    const state = location.state as { qnaQuestion?: string } | null;
+    if (state?.qnaQuestion) {
+      setContent(`"${state.qnaQuestion}"
+
+`);
+      // Clear the state so it doesn't re-trigger on re-render
+      window.history.replaceState({}, document.title);
+      // Focus the textarea
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    }
+  }, [location.state]);
 
   // Mention state
   const { suggestions, fetchSuggestions, clearSuggestions } = useMentions();

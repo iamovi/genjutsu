@@ -5,7 +5,7 @@ import { PostWithProfile } from "@/hooks/usePosts";
 import Navbar from "@/components/Navbar";
 import PostCard from "@/components/PostCard";
 import Sidebar from "@/components/Sidebar";
-import { ArrowLeft, Calendar, ImageIcon, Send, Bookmark, Github, Twitter, Facebook, Globe, Play, Pause, Ban, Share, Upload, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, ImageIcon, Send, Bookmark, Github, Twitter, Facebook, Globe, Play, Pause, Ban, Share, Upload, Trash2, MessageCircle } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -844,6 +844,17 @@ const ProfilePage = () => {
                                             >
                                                 <span className="font-bold text-foreground">{stats.followers}</span>
                                                 <span className="text-muted-foreground text-sm">Followers</span>
+                                            </button>
+                                        </div>
+
+                                        {/* Ask Me Anything link */}
+                                        <div className="mt-6">
+                                            <button
+                                                onClick={() => navigate(`/qna/${profile.username}`)}
+                                                className="gum-btn bg-secondary text-sm flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+                                            >
+                                                <MessageCircle size={16} />
+                                                Ask me anything
                                             </button>
                                         </div>
                                     </div>

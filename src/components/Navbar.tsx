@@ -1,4 +1,4 @@
-import { Home, Search, User, LogOut, Settings, Palette, X, MessageCircle, Swords, UsersRound, LogIn, Bell, Shield, LayoutGrid, Gamepad2 } from "lucide-react";
+import { Home, Search, User, LogOut, Settings, Palette, X, MessageCircle, Swords, UsersRound, LogIn, Bell, Shield, LayoutGrid, Gamepad2, Inbox } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -209,6 +209,11 @@ const Navbar = () => {
                   >
                     <User className="mr-2 h-4 w-4" />
                     <span>{profile?.username ? t("nav.profile") : 'Loading...'}</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={() => navigate("/qna-inbox")} className="cursor-pointer">
+                    <Inbox className="mr-2 h-4 w-4" />
+                    <span>QnA Inbox</span>
                   </DropdownMenuItem>
 
                   <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">

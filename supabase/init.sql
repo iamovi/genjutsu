@@ -174,6 +174,18 @@ CREATE TABLE public.community_messages (
 CREATE INDEX idx_community_messages_created 
   ON public.community_messages (created_at DESC);
 
+-- QnA Questions (Anonymous questions submitted to a user's profile)
+CREATE TABLE public.qna_questions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  target_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  question_text TEXT NOT NULL CHECK (char_length(question_text) BETWEEN 1 AND 500),
+  is_answered BOOLEAN DEFAULT FALSE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_qna_questions_target_user
+  ON public.qna_questions (target_user_id, created_at DESC);
+
 -- User Action Log (for rate limiting cooldowns)
 CREATE TABLE public.user_action_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -266,6 +278,7 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.game_house ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.game_house_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.game_house_comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.qna_questions ENABLE ROW LEVEL SECURITY;
 
 -- Admin Users
 CREATE POLICY "Users can view their own admin status"
@@ -350,6 +363,20 @@ CREATE POLICY "Authenticated users can send community messages"
   ON public.community_messages FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete own community messages"
   ON public.community_messages FOR DELETE TO authenticated USING (auth.uid() = user_id);
+
+-- QnA Questions
+CREATE POLICY "Anyone can submit a question"
+  ON public.qna_questions FOR INSERT
+  WITH CHECK (true);
+CREATE POLICY "Users can view their own questions"
+  ON public.qna_questions FOR SELECT
+  USING (auth.uid() = target_user_id);
+CREATE POLICY "Users can update their own questions"
+  ON public.qna_questions FOR UPDATE
+  USING (auth.uid() = target_user_id);
+CREATE POLICY "Users can delete their own questions"
+  ON public.qna_questions FOR DELETE
+  USING (auth.uid() = target_user_id);
 
 -- Notifications
 CREATE POLICY "Users can view own notifications"

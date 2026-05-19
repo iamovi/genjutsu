@@ -47,6 +47,8 @@ const GameHouseGallery = lazy(() => import("@/pages/GameHouseGallery"));
 const GameHouseSubmit = lazy(() => import("@/pages/GameHouseSubmit"));
 const GameHouseEdit = lazy(() => import("@/pages/GameHouseEdit"));
 const GameHousePlay = lazy(() => import("@/pages/GameHousePlay"));
+const QnaPage = lazy(() => import("@/pages/QnaPage"));
+const QnaInbox = lazy(() => import("@/pages/QnaInbox"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 ////////////////////////////////////////////////////////////////
@@ -119,6 +121,8 @@ const App = () => {
                       <Route path="/game-house/submit" element={<GameHouseSubmit />} />
                       <Route path="/game-house/edit/:id" element={<GameHouseEdit />} />
                       <Route path="/game-house/play/:id" element={<GameHousePlay />} />
+                      <Route path="/qna/:username" element={<QnaPage />} />
+                      <Route path="/qna-inbox" element={<QnaInbox />} />
                       <Route
                         path="/admin"
                         element={(
