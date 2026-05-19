@@ -396,7 +396,7 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
         }
     };
 
-    const togglePreview = (previewUrl?: string) => {
+    const togglePreview = async (previewUrl?: string) => {
         if (!previewUrl) {
             toast.error("No preview available for this song.");
             return;
@@ -420,19 +420,17 @@ const EditProfileDialog = ({ currentProfile, onUpdate }: EditProfileDialogProps)
             // Reflect intent instantly so the icon flips on first click.
             setPlayingPreview(previewUrl);
 
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise
-                    .catch((error: any) => {
-                        // Ignore stale rejections from previously replaced audio instances.
-                        if (attemptId !== previewAttemptIdRef.current) return;
-                        // Ignore aborts from quick toggle/close while play() is pending.
-                        if (error?.name !== "AbortError") {
-                            console.error("Preview playback failed:", error);
-                            toast.error("Couldn't play song preview.");
-                        }
-                        setPlayingPreview(null);
-                    });
+            try {
+                await audio.play();
+            } catch (error: any) {
+                // Ignore stale rejections from previously replaced audio instances.
+                if (attemptId !== previewAttemptIdRef.current) return;
+                // Ignore aborts from quick toggle/close while play() is pending.
+                if (error?.name !== "AbortError") {
+                    console.error("Preview playback failed:", error);
+                    toast.error("Couldn't play song preview.");
+                }
+                setPlayingPreview(null);
             }
         }
     };

@@ -107,7 +107,7 @@ const ProfilePage = () => {
         return audio;
     };
 
-    const togglePlay = () => {
+    const togglePlay = async () => {
         const audio = ensureAudio();
         if (!audio) return;
 
@@ -119,22 +119,20 @@ const ProfilePage = () => {
             const attemptId = ++playAttemptIdRef.current;
             // Reflect intent instantly so the button flips on first click.
             setIsPlaying(true);
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise
-                    .catch((error: any) => {
-                        // Ignore stale rejections from previously replaced audio instances.
-                        if (attemptId !== playAttemptIdRef.current) return;
-                        // Browsers throw AbortError when play() is interrupted by unmount/src change.
-                        if (error?.name !== "AbortError") {
-                            console.error("Audio playback failed:", error);
-                            toast.error("Couldn't play song preview.");
-                        }
-                        // Keep UI in sync with actual element state.
-                        if (audio.paused || audio.ended) {
-                            setIsPlaying(false);
-                        }
-                    });
+            try {
+                await audio.play();
+            } catch (error: any) {
+                // Ignore stale rejections from previously replaced audio instances.
+                if (attemptId !== playAttemptIdRef.current) return;
+                // Browsers throw AbortError when play() is interrupted by unmount/src change.
+                if (error?.name !== "AbortError") {
+                    console.error("Audio playback failed:", error);
+                    toast.error("Couldn't play song preview.");
+                }
+                // Keep UI in sync with actual element state.
+                if (audio.paused || audio.ended) {
+                    setIsPlaying(false);
+                }
             }
         }
     };

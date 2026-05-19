@@ -107,6 +107,7 @@ loadConfig()
           "Failed to read the 'localStorage' property from 'Window'",
           /Lock "lock:.*auth-token" was released/i,
           /Large Render Blocking Asset/i,
+          /The play\(\) request was interrupted/i,
         ],
         beforeSend(event) {
           const shouldDrop = getSentryEventMessages(event).some((message) => shouldDropSentryNoise(message));
