@@ -10,7 +10,7 @@ const ScrollToTop = () => {
         // restores the previous scroll position naturally.
         if (navigationType === "POP") return;
 
-        window.scrollTo(0, 0);
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     }, [pathname, navigationType]);
 
     return null;
