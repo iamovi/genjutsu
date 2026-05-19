@@ -346,6 +346,57 @@ async function renderPost(route) {
   };
 }
 
+async function renderQna(route) {
+  const username = route.replace(/^\/qna\//, "").split("/")[0].trim();
+  if (!username) {
+    return {
+      status: 404,
+      html: renderPage({
+        title: "Q&A not found",
+        description: "Requested Q&A route is invalid.",
+        canonical: `${APP_URL}${route}`,
+        body: "<h1>Q&A not found</h1>",
+        noindex: true,
+      }),
+    };
+  }
+
+  const pParams = new URLSearchParams({
+    select: "user_id,username,display_name,bio,avatar_url",
+    username: `eq.${username}`,
+    limit: "1",
+  });
+  const { data } = await supabaseFetch(`profiles?${pParams.toString()}`);
+  const profile = Array.isArray(data) ? data[0] : null;
+  if (!profile) {
+    return {
+      status: 404,
+      html: renderPage({
+        title: "User not found",
+        description: "This user does not exist.",
+        canonical: `${APP_URL}/qna/${encodeURIComponent(username)}`,
+        body: "<h1>User not found</h1>",
+        noindex: true,
+      }),
+    };
+  }
+
+  const displayName = profile.display_name || profile.username;
+
+  return {
+    status: 200,
+    html: renderPage({
+      title: `Ask @${profile.username} anonymously — genjutsu`,
+      description: `Send an anonymous question to ${displayName} on genjutsu. They won't know who asked.`,
+      canonical: `${APP_URL}/qna/${encodeURIComponent(profile.username)}`,
+      image: profile.avatar_url || `${APP_URL}/og-image.png`,
+      body: `<h1>Ask ${escapeHtml(displayName)} a Question</h1>
+<p>Send an anonymous question to <strong>@${escapeHtml(profile.username)}</strong> on genjutsu. They won't know who asked.</p>
+${profile.bio ? `<p>${escapeHtml(profile.bio)}</p>` : ""}`,
+    }),
+  };
+}
+
 export default async function handler(req) {
   const reqUrl = new URL(req.url);
   const route = normalizeRoute(reqUrl.searchParams.get("route") || "/");
@@ -353,6 +404,8 @@ export default async function handler(req) {
   let result;
   if (route === "/") {
     result = await renderHome();
+  } else if (route.startsWith("/qna/")) {
+    result = await renderQna(route);
   } else if (route.startsWith("/u/")) {
     result = await renderProfile(route);
   } else if (route.startsWith("/post/")) {

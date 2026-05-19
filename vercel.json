@@ -37,6 +37,17 @@
             "destination": "/api/bot-render?route=/u/:username"
         },
         {
+            "source": "/qna/:username",
+            "has": [
+                {
+                    "type": "header",
+                    "key": "user-agent",
+                    "value": ".*(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|Anthropic-AI|PerplexityBot|Google-Extended|GoogleOther|Googlebot|Bingbot|DuckAssistBot|YouBot|KagiBot|Applebot-Extended|Meta-ExternalAgent|meta-externalagent|cohere-ai|Bytespider|Amazonbot|CCBot|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Discordbot).*"
+                }
+            ],
+            "destination": "/api/bot-render?route=/qna/:username"
+        },
+        {
             "source": "/about",
             "has": [
                 {

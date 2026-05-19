@@ -90,7 +90,14 @@ export default function QnaPage() {
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
         <title>Ask @{profile.username} — genjutsu</title>
-        <meta name="description" content={`Ask @${profile.username} an anonymous question on genjutsu.`} />
+        <meta name="description" content={`Send an anonymous question to ${profile.display_name || profile.username} on genjutsu.`} />
+        <meta property="og:title" content={`Ask @${profile.username} anonymously — genjutsu`} />
+        <meta property="og:description" content={`Send an anonymous question to ${profile.display_name || profile.username} on genjutsu. They won't know who asked.`} />
+        <meta property="og:image" content={profile.avatar_url || "/fav.jpg"} />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={`Ask @${profile.username} anonymously — genjutsu`} />
+        <meta name="twitter:description" content={`Send an anonymous question to ${profile.display_name || profile.username} on genjutsu.`} />
+        <meta name="twitter:image" content={profile.avatar_url || "/fav.jpg"} />
       </Helmet>
 
       <div className="max-w-lg mx-auto px-4 py-10">
