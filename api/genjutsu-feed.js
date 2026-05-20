@@ -13,8 +13,8 @@ const DEFAULT_CACHE_CONTROL = "public, max-age=30, s-maxage=300, stale-while-rev
 // Bumped min-age from 5s → 10s so CDN absorbs more repeat requests
 const LIVE_CACHE_CONTROL = "public, max-age=10, s-maxage=55, stale-while-revalidate=60";
 
-let SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-let SUPABASE_PUBLISHABLE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 function jsonResponse(payload, status = 200, cacheControl = DEFAULT_CACHE_CONTROL) {
   return new Response(JSON.stringify(payload), {
@@ -32,19 +32,7 @@ function jsonResponse(payload, status = 200, cacheControl = DEFAULT_CACHE_CONTRO
 }
 
 async function ensureSupabaseConfig() {
-  if (SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) return true;
-
-  const workerUrl = process.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.workers.dev/config";
-  try {
-    const configRes = await fetch(workerUrl, { headers: { Origin: APP_URL } });
-    if (!configRes.ok) return false;
-    const configData = await configRes.json();
-    SUPABASE_URL = configData?.VITE_SUPABASE_URL;
-    SUPABASE_PUBLISHABLE_KEY = configData?.VITE_SUPABASE_PUBLISHABLE_KEY;
-    return Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
-  } catch {
-    return false;
-  }
+  return Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 }
 
 function supabaseReadHeaders() {

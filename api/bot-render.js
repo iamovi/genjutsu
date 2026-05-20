@@ -1,10 +1,8 @@
 export const config = { runtime: "edge" };
 
 const APP_URL = "https://genjutsu.xyz";
-const CONFIG_WORKER_URL = process.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.workers.dev/config";
-
-let SUPABASE_URL = process.env.VITE_SUPABASE_URL || "";
-let SUPABASE_PUBLISHABLE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "";
+const SUPABASE_PUBLISHABLE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
 function escapeHtml(value) {
   if (value === null || value === undefined) return "";
@@ -41,20 +39,7 @@ function extractProfile(row) {
 }
 
 async function ensureConfig() {
-  if (SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) return true;
-
-  try {
-    const res = await fetch(CONFIG_WORKER_URL, {
-      headers: { Origin: APP_URL },
-    });
-    if (!res.ok) return false;
-    const json = await res.json();
-    SUPABASE_URL = json?.VITE_SUPABASE_URL || "";
-    SUPABASE_PUBLISHABLE_KEY = json?.VITE_SUPABASE_PUBLISHABLE_KEY || "";
-    return Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
-  } catch {
-    return false;
-  }
+  return Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 }
 
 async function supabaseFetch(pathAndQuery) {
