@@ -114,26 +114,42 @@ make sure your `.gitignore` includes:
 
 the supabase migrations in `supabase/migrations/` should be committed (they're public sql), but never commit files with actual credentials.
 
-### Web Push & Edge Functions
+### Edge Functions
 
-genjutsu uses native web push notifications for social alerts and whispers.
+genjutsu uses **supabase edge functions** for all server-side logic that requires secret API keys. sensitive credentials are stored in supabase vault and are never exposed to the frontend bundle.
 
-**1. VAPID keys**
-you need a pair of VAPID keys. you can generate them using a tool like `web-push` or online.
+**1. api-proxy (AI & stranger chat)**
+
+the `api-proxy` edge function securely handles:
+- **groq AI** requests (the `@ai` feature in community chat)
+- **ably token auth** (real-time stranger chat connections)
+
+secrets required in supabase vault:
+- `GROQ_API_KEY` — your groq api key from https://console.groq.com
+- `ABLY_KEY` — your ably api key from https://ably.com
+
+```bash
+# deploy the api-proxy function (no jwt verification — allows guest access)
+supabase functions deploy api-proxy --no-verify-jwt
+```
+
+> **local development note:** when running locally (`localhost`), the app calls groq and ably directly using keys from your `.env` file. in production, all requests are routed through the edge function automatically.
+
+**2. send-push (web push notifications)**
+
+the `send-push` edge function dispatches native web push notifications for social alerts and whispers.
+
+you need a pair of VAPID keys (generate them using `web-push` or online tools):
 - add your public vapid key to `VITE_VAPID_PUBLIC_KEY` in your `.env`.
 - add both `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` as secrets in your supabase project.
 
-**2. edge function deployment**
-the push notifications are dispatched via a supabase edge function.
 ```bash
-# install supabase cli if you haven't
-npm install -g supabase
-
-# deploy the function
+# deploy the push notification function
 supabase functions deploy send-push --no-verify-jwt
 ```
 
 **3. database trigger**
+
 ensure you have run the migrations in `supabase/migrations/` (specifically the one adding `send_whisper_push_notification`). the database trigger handles the automatic call to the edge function on specific table inserts.
 
 ## code style
