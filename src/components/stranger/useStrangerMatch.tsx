@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Ably from 'ably';
 import { getConfig } from "@/lib/config";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Message {
   id: string;
@@ -57,11 +58,18 @@ export function useStrangerMatch() {
         }
         clientOptions.key = ABLY_KEY;
     } else {
-        const workerUrlPattern = import.meta.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.oviren-human.workers.dev/config";
-        const base = new URL(workerUrlPattern);
-        base.pathname = "/ably-auth";
-        base.searchParams.set("clientId", clientId);
-        clientOptions.authUrl = base.toString();
+        clientOptions.authCallback = async (tokenParams: any, callback: any) => {
+            try {
+                const { data, error } = await supabase.functions.invoke("api-proxy", {
+                    body: { action: "ably-auth", clientId }
+                });
+                if (error) throw error;
+                callback(null, data);
+            } catch (err) {
+                console.error("Ably auth proxy error:", err);
+                callback(err, null);
+            }
+        };
     }
 
     const client = new Ably.Realtime(clientOptions);

@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { getConfig } from "@/lib/config";
 
 export interface ChatHistoryMessage {
@@ -58,17 +59,13 @@ export async function fetchGroqReply(message: string, userName: string = "a user
     });
 
     try {
-        let url = "";
-        let authHeader = "";
-        let bodyPayload: any = {};
-
         if (import.meta.env.DEV) {
             // Local development: Call Groq directly using a lightweight dev mock prompt
             const apiKey = config.VITE_GROQ_API_KEY;
             if (!apiKey) return "System Error: Missing API Key.";
             
-            url = "https://api.groq.com/openai/v1/chat/completions";
-            authHeader = `Bearer ${apiKey}`;
+            const url = "https://api.groq.com/openai/v1/chat/completions";
+            const authHeader = `Bearer ${apiKey}`;
             
             let payloadMessages = [];
             if (isJailbreakAttempt) {
@@ -87,44 +84,49 @@ export async function fetchGroqReply(message: string, userName: string = "a user
                 ];
             }
 
-            bodyPayload = {
+            const bodyPayload = {
                 model: "llama-3.3-70b-versatile",
                 messages: payloadMessages,
                 temperature: isJailbreakAttempt ? 0.8 : 0.7,
                 max_tokens: 400,
             };
 
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": authHeader
+                },
+                body: JSON.stringify(bodyPayload)
+            });
+
+            if (!response.ok) {
+                console.error("Groq API error:", await response.text());
+                return "System Data Stream Interrupted. Cannot compute response.";
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content;
+
         } else {
-            // Production: Defer all logic to Cloudflare Worker
-            const workerUrl = import.meta.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.oviren-human.workers.dev/config";
-            const base = new URL(workerUrl);
-            base.pathname = "/translate";
-            url = base.toString();
+            // Production: Defer all logic to Supabase Edge Function
+            const { data, error } = await supabase.functions.invoke("api-proxy", {
+                body: {
+                    action: "translate",
+                    message: cleanMessage,
+                    userName,
+                    history: safeHistory,
+                    isJailbreakAttempt
+                }
+            });
 
-            bodyPayload = {
-                message: cleanMessage,
-                userName,
-                history: safeHistory,
-                isJailbreakAttempt
-            };
+            if (error || !data || !data.choices || !data.choices[0]) {
+                console.error("Worker API error:", error || data?.error || "Invalid response format from Groq");
+                return "System Data Stream Interrupted. Cannot compute response.";
+            }
+
+            return data.choices[0].message.content;
         }
-
-        const headers: Record<string, string> = { "Content-Type": "application/json" };
-        if (authHeader) headers["Authorization"] = authHeader;
-
-        const response = await fetch(url, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(bodyPayload)
-        });
-
-        if (!response.ok) {
-            console.error(import.meta.env.DEV ? "Groq API error:" : "Worker API error:", await response.text());
-            return "System Data Stream Interrupted. Cannot compute response.";
-        }
-
-        const data = await response.json();
-        return data.choices[0].message.content;
 
     } catch (error) {
         console.error("API critical fault:", error);
