@@ -6,6 +6,7 @@
 
 html {
   background-color: hsl(270, 10%, 99%);
+  scroll-behavior: smooth;
 }
 
 html.dark {
@@ -529,7 +530,7 @@ html.dark[data-theme-preset="win95"] {
 
   .gum-btn:active {
     box-shadow: var(--shadow-gum-active);
-    transform: translate(4px, 4px);
+    transform: translate(2px, 2px) scale(0.97);
   }
 
   html[data-theme-preset="minecraft"] .gum-card {

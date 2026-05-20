@@ -10,6 +10,7 @@ import { FrogLoader } from "@/components/ui/FrogLoader";
 import { Helmet } from "react-helmet-async";
 import { PostSkeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
+import { PageTransition } from "@/components/ui/PageTransition";
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
@@ -112,7 +113,7 @@ const Index = () => {
       </Helmet>
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+        <PageTransition className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
           <div className="min-w-0">
             {user ? (
               <ComposePost onPost={createPost} />
@@ -143,14 +144,19 @@ const Index = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                {posts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    onLike={toggleLike}
-                    onBookmark={toggleBookmark}
-                    onDelete={deletePost}
-                  />
+                {posts.map((post, index) => (
+                  <div 
+                    key={post.id} 
+                    className="animate-fade-in" 
+                    style={{ animationDelay: `${(index % 10) * 50}ms`, animationFillMode: "both" }}
+                  >
+                    <PostCard
+                      post={post}
+                      onLike={toggleLike}
+                      onBookmark={toggleBookmark}
+                      onDelete={deletePost}
+                    />
+                  </div>
                 ))}
 
                 {isFetchingNextPage && (
@@ -170,7 +176,7 @@ const Index = () => {
           <div className="hidden lg:block lg:sticky lg:top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto pr-2 custom-scrollbar">
             <Sidebar />
           </div>
-        </div>
+        </PageTransition>
       </main>
     </div>
   );

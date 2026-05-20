@@ -19,7 +19,7 @@ import { PostSkeleton } from "@/components/ui/skeleton";
 import { getNow } from "@/lib/utils";
 import { ImagePreviewDialog } from "@/components/ImagePreviewDialog";
 import DataSaverImage from "@/components/DataSaverImage";
-
+import { PageTransition } from "@/components/ui/PageTransition";
 import { useFollow } from "@/hooks/useFollow";
 import { usePostActions } from "@/hooks/usePostActions";
 import { linkify } from "@/lib/linkify";
@@ -589,7 +589,7 @@ const ProfilePage = () => {
             )}
             <Navbar />
             <main className="max-w-6xl mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
+                <PageTransition className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
                     <div className="space-y-4 min-w-0">
                         {loading ? (
                             <div className="space-y-6">
@@ -961,15 +961,20 @@ const ProfilePage = () => {
                                                 No posts yet.
                                             </div>
                                         ) : (
-                                            posts.map(post => (
-                                                <PostCard
+                                            posts.map((post, index) => (
+                                                <div
                                                     key={post.id}
-                                                    post={post}
-                                                    onLike={handleLike}
-                                                    onBookmark={handleBookmark}
-                                                    onDelete={handleDelete}
-                                                    onPostEdited={handlePostEdited}
-                                                />
+                                                    className="animate-fade-in"
+                                                    style={{ animationDelay: `${(index % 10) * 50}ms`, animationFillMode: "both" }}
+                                                >
+                                                    <PostCard
+                                                        post={post}
+                                                        onLike={handleLike}
+                                                        onBookmark={handleBookmark}
+                                                        onDelete={handleDelete}
+                                                        onPostEdited={handlePostEdited}
+                                                    />
+                                                </div>
                                             ))
                                         )
                                     ) : (
@@ -986,15 +991,20 @@ const ProfilePage = () => {
                                                 </div>
                                             </div>
                                         ) : (
-                                            bookmarks.map(post => (
-                                                <PostCard
+                                            bookmarks.map((post, index) => (
+                                                <div
                                                     key={post.id}
-                                                    post={post}
-                                                    onLike={handleLike}
-                                                    onBookmark={handleBookmark}
-                                                    onDelete={handleDelete}
-                                                    onPostEdited={handlePostEdited}
-                                                />
+                                                    className="animate-fade-in"
+                                                    style={{ animationDelay: `${(index % 10) * 50}ms`, animationFillMode: "both" }}
+                                                >
+                                                    <PostCard
+                                                        post={post}
+                                                        onLike={handleLike}
+                                                        onBookmark={handleBookmark}
+                                                        onDelete={handleDelete}
+                                                        onPostEdited={handlePostEdited}
+                                                    />
+                                                </div>
                                             ))
                                         )
                                     )}
@@ -1006,7 +1016,7 @@ const ProfilePage = () => {
                     <div className="hidden lg:block lg:sticky lg:top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto pr-2 custom-scrollbar">
                         <Sidebar />
                     </div>
-                </div>
+                </PageTransition>
             </main>
 
             <ImagePreviewDialog

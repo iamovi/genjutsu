@@ -18,6 +18,7 @@ import { getConfig } from "@/lib/config";
 import { useMentions } from "@/hooks/useMentions";
 import { AnimatePresence, motion } from "framer-motion";
 import MentionList from "@/components/MentionList";
+import { PageTransition } from "@/components/ui/PageTransition";
 
 const CommentItem = ({ 
     comment, 
@@ -518,7 +519,7 @@ const PostPage = () => {
             </Helmet>
             <Navbar />
             <main className="max-w-6xl mx-auto px-4 py-6">
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+                <PageTransition className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
                     <div className="min-w-0">
                         <button
                             onClick={() => window.history.state?.idx > 0 ? navigate(-1) : navigate("/")}
@@ -625,7 +626,7 @@ const PostPage = () => {
                     <div className="hidden lg:block lg:sticky lg:top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto pr-2 custom-scrollbar">
                         <Sidebar />
                     </div>
-                </div>
+                </PageTransition>
             </main>
         </div>
     );

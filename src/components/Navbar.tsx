@@ -69,7 +69,9 @@ const Navbar = () => {
         className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b-2 border-border"
       >
         <div className="max-w-6xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between md:grid md:grid-cols-[1fr_auto_1fr] md:gap-4">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/")}
             className="flex items-center gap-1 sm:gap-2 shrink-0 rounded-[3px] md:px-2 md:py-1 md:hover:bg-secondary/60 transition-colors md:justify-self-start"
           >
@@ -77,7 +79,7 @@ const Navbar = () => {
               <img src="/logo.png" alt="genjutsu" className="w-full h-full object-contain" />
             </div>
             <span className="font-black text-lg tracking-tight text-primary">genjutsu</span>
-          </button>
+          </motion.button>
 
           <nav className="hidden md:flex items-center gap-1 rounded-[3px] border-2 border-border bg-secondary/30 p-1 md:justify-self-center shadow-sm">
             {[
@@ -88,7 +90,9 @@ const Navbar = () => {
               { icon: Swords, label: t("nav.play"), path: "/play" },
               { icon: Gamepad2, label: t("nav.gameHouse"), path: "/game-house" },
             ].map(({ icon: Icon, label, path }) => (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 key={path}
                 onClick={() => navigate(path)}
                 className={`relative h-8 flex items-center gap-1.5 px-3 rounded-[2px] text-sm font-bold transition-all border-2 ${location.pathname === path
@@ -101,7 +105,7 @@ const Navbar = () => {
                 {path === "/whispers" && hasUnreadWhispers && (
                   <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background animate-pulse" />
                 )}
-              </button>
+              </motion.button>
             ))}
           </nav>
 
