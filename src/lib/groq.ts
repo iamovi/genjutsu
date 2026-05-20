@@ -59,7 +59,9 @@ export async function fetchGroqReply(message: string, userName: string = "a user
     });
 
     try {
-        if (import.meta.env.DEV) {
+        const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+        if (isLocalDev) {
             // Local development: Call Groq directly using a lightweight dev mock prompt
             const apiKey = config.VITE_GROQ_API_KEY;
             if (!apiKey) return "System Error: Missing API Key.";

@@ -49,7 +49,9 @@ export function useStrangerMatch() {
 
     const clientOptions: any = { clientId };
 
-    if (import.meta.env.DEV) {
+    const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+    if (isLocalDev) {
         const ABLY_KEY = config.VITE_ABLY_KEY;
         if (!ABLY_KEY) {
            console.error("VITE_ABLY_KEY is missing in local .env.");
