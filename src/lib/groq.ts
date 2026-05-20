@@ -96,7 +96,7 @@ export async function fetchGroqReply(message: string, userName: string = "a user
 
         } else {
             // Production: Defer all logic to Cloudflare Worker
-            const workerUrl = import.meta.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.workers.dev/config";
+            const workerUrl = import.meta.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.oviren-human.workers.dev/config";
             const base = new URL(workerUrl);
             base.pathname = "/translate";
             url = base.toString();

@@ -14,8 +14,8 @@ let config: Config | null = null;
 let loadPromise: Promise<Config> | null = null;
 
 // Set VITE_CONFIG_WORKER_URL in your Vercel environment variables to point at your deployed Cloudflare Worker.
-// Example: https://genjutsu-config.yourname.workers.dev/config
-const WORKER_URL = import.meta.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.workers.dev/config";
+// Example: https://genjutsu-config.oviren-human.workers.dev/config
+const WORKER_URL = import.meta.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.oviren-human.workers.dev/config";
 
 export async function loadConfig(): Promise<Config> {
   if (config) return config;

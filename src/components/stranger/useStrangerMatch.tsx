@@ -57,7 +57,7 @@ export function useStrangerMatch() {
         }
         clientOptions.key = ABLY_KEY;
     } else {
-        const workerUrlPattern = import.meta.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.workers.dev/config";
+        const workerUrlPattern = import.meta.env.VITE_CONFIG_WORKER_URL || "https://genjutsu-config.oviren-human.workers.dev/config";
         const base = new URL(workerUrlPattern);
         base.pathname = "/ably-auth";
         base.searchParams.set("clientId", clientId);
