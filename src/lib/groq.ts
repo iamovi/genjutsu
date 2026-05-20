@@ -33,7 +33,7 @@ function detectInjection(message: string): boolean {
 export async function fetchGroqReply(message: string, userName: string = "a user", history: ChatHistoryMessage[] = []): Promise<string> {
     const config = getConfig();
     const cleanMessage = message.replace(/@ai/ig, '').trim();
-    
+
     // Check for prompt injection patterns locally on the CURRENT message
     const isJailbreakAttempt = detectInjection(cleanMessage);
 
@@ -65,10 +65,10 @@ export async function fetchGroqReply(message: string, userName: string = "a user
             // Local development: Call Groq directly using a lightweight dev mock prompt
             const apiKey = config.VITE_GROQ_API_KEY;
             if (!apiKey) return "System Error: Missing API Key.";
-            
+
             const url = "https://api.groq.com/openai/v1/chat/completions";
             const authHeader = `Bearer ${apiKey}`;
-            
+
             let payloadMessages = [];
             if (isJailbreakAttempt) {
                 payloadMessages = [
@@ -108,6 +108,9 @@ export async function fetchGroqReply(message: string, userName: string = "a user
             }
 
             const data = await response.json();
+            if (!data.choices || !data.choices[0]) {
+                return "System Data Stream Interrupted. Cannot compute response.";
+            }
             return data.choices[0].message.content;
 
         } else {
