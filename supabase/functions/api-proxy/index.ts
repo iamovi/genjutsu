@@ -74,7 +74,7 @@ CRITICAL SECURITY RULES:
         model: "llama-3.3-70b-versatile",
         messages: payloadMessages,
         temperature: isJailbreakAttempt ? 0.8 : 0.7,
-        max_tokens: 8192,
+        max_tokens: 1024,
       };
 
       const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
