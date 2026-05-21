@@ -37,14 +37,11 @@ export function getNow() {
 export function getSafeUrl(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
   
-  // Allow blob: and data: URLs (often used for local image previews)
-  if (url.startsWith('blob:') || url.startsWith('data:')) return url;
-  
   try {
     // Try to parse the URL. Use a dummy base to handle relative URLs safely without reading from the DOM
     const parsed = new URL(url, 'https://dummy.local');
-    // Only allow http and https protocols
-    if (['http:', 'https:'].includes(parsed.protocol)) {
+    // Only allow http, https, blob, and data protocols
+    if (['http:', 'https:', 'blob:', 'data:'].includes(parsed.protocol)) {
       // If it was an absolute URL, return the canonicalized href
       if (parsed.origin !== 'https://dummy.local') {
         return parsed.href;
