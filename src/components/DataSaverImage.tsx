@@ -35,6 +35,7 @@ export default function DataSaverImage({
   if (!src) return null;
 
   if (!shouldGate || isUnlocked) {
+    // codeql[js/xss-through-dom] False positive: blob/data URLs in img src cannot execute scripts, and getSafeUrl validates the protocol
     return <img src={getSafeUrl(src)} alt={alt} className={className} {...props} loading={props.loading || "lazy"} />;
   }
 
