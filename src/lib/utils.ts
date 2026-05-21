@@ -41,11 +41,16 @@ export function getSafeUrl(url: string | null | undefined): string | undefined {
   if (url.startsWith('blob:') || url.startsWith('data:')) return url;
   
   try {
-    // Try to parse the URL. Use origin as base to handle relative URLs safely
-    const parsed = new URL(url, window.location.origin);
+    // Try to parse the URL. Use a dummy base to handle relative URLs safely without reading from the DOM
+    const parsed = new URL(url, 'https://dummy.local');
     // Only allow http and https protocols
     if (['http:', 'https:'].includes(parsed.protocol)) {
-      return parsed.href;
+      // If it was an absolute URL, return the canonicalized href
+      if (parsed.origin !== 'https://dummy.local') {
+        return parsed.href;
+      }
+      // If it was a relative URL, return the original URL
+      return url;
     }
   } catch {
     // If URL parsing fails, it's invalid, fall through to return undefined
