@@ -305,10 +305,8 @@ CREATE POLICY "Posts are viewable by everyone"
   ON public.posts FOR SELECT USING (true);
 CREATE POLICY "Users can update their own posts"
   ON public.posts FOR UPDATE USING ((select auth.uid()) = user_id AND public.is_action_allowed('post'));
-CREATE POLICY "Users can delete their own posts"
-  ON public.posts FOR DELETE USING ((select auth.uid()) = user_id);
-CREATE POLICY "Admins can delete any post"
-  ON public.posts FOR DELETE USING (public.is_admin());
+CREATE POLICY "Users or admins can delete posts"
+  ON public.posts FOR DELETE USING (((select auth.uid()) = user_id) OR public.is_admin());
 
 -- Likes
 CREATE POLICY "Likes are viewable by everyone"
@@ -339,10 +337,8 @@ CREATE POLICY "Comments are viewable by everyone"
   ON public.comments FOR SELECT USING (true);
 CREATE POLICY "Users can update their own comments"
   ON public.comments FOR UPDATE USING ((select auth.uid()) = user_id);
-CREATE POLICY "Users can delete their own comments"
-  ON public.comments FOR DELETE USING ((select auth.uid()) = user_id);
-CREATE POLICY "Admins can delete any comment"
-  ON public.comments FOR DELETE USING (public.is_admin());
+CREATE POLICY "Users or admins can delete comments"
+  ON public.comments FOR DELETE USING (((select auth.uid()) = user_id) OR public.is_admin());
 
 -- User Action Log
 CREATE POLICY "Users can view own action log"
@@ -360,23 +356,23 @@ CREATE POLICY "Receivers can mark messages as read"
 CREATE POLICY "Authenticated users can read community messages"
   ON public.community_messages FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Authenticated users can send community messages"
-  ON public.community_messages FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+  ON public.community_messages FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
 CREATE POLICY "Users can delete own community messages"
-  ON public.community_messages FOR DELETE TO authenticated USING (auth.uid() = user_id);
+  ON public.community_messages FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
 
 -- QnA Questions
 CREATE POLICY "Anyone can submit a question"
   ON public.qna_questions FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK ((select auth.role()) IN ('anon', 'authenticated'));
 CREATE POLICY "Users can view their own questions"
   ON public.qna_questions FOR SELECT
-  USING (auth.uid() = target_user_id);
+  USING ((select auth.uid()) = target_user_id);
 CREATE POLICY "Users can update their own questions"
   ON public.qna_questions FOR UPDATE
-  USING (auth.uid() = target_user_id);
+  USING ((select auth.uid()) = target_user_id);
 CREATE POLICY "Users can delete their own questions"
   ON public.qna_questions FOR DELETE
-  USING (auth.uid() = target_user_id);
+  USING ((select auth.uid()) = target_user_id);
 
 -- Notifications
 CREATE POLICY "Users can view own notifications"
@@ -385,22 +381,14 @@ CREATE POLICY "Users can update own notifications"
   ON public.notifications FOR UPDATE USING ((select auth.uid()) = user_id);
 
 -- Game House Policies
-CREATE POLICY "Public can view approved games"
-  ON public.game_house FOR SELECT USING (status = 'approved');
-CREATE POLICY "Users can view their own submissions"
-  ON public.game_house FOR SELECT USING (auth.uid() = submitted_by);
-CREATE POLICY "Admins can view all submissions"
-  ON public.game_house FOR SELECT USING (public.is_admin());
+CREATE POLICY "Anyone can view approved, own, or all if admin"
+  ON public.game_house FOR SELECT USING ((status = 'approved') OR ((select auth.uid()) = submitted_by) OR public.is_admin());
 CREATE POLICY "Authenticated users can submit games"
-  ON public.game_house FOR INSERT WITH CHECK (auth.uid() = submitted_by AND status = 'pending');
-CREATE POLICY "Admins can update game status"
-  ON public.game_house FOR UPDATE USING (public.is_admin());
-CREATE POLICY "Users can update their own games"
-  ON public.game_house FOR UPDATE USING (auth.uid() = submitted_by);
-CREATE POLICY "Admins can delete games"
-  ON public.game_house FOR DELETE USING (public.is_admin());
-CREATE POLICY "Users can delete their own games"
-  ON public.game_house FOR DELETE USING (auth.uid() = submitted_by);
+  ON public.game_house FOR INSERT WITH CHECK ((select auth.uid()) = submitted_by AND status = 'pending');
+CREATE POLICY "Users or admins can update games"
+  ON public.game_house FOR UPDATE USING (((select auth.uid()) = submitted_by) OR public.is_admin());
+CREATE POLICY "Users or admins can delete games"
+  ON public.game_house FOR DELETE USING (((select auth.uid()) = submitted_by) OR public.is_admin());
 
 -- Game House Likes
 CREATE POLICY "Game likes are visible when game is visible"
@@ -411,7 +399,7 @@ CREATE POLICY "Game likes are visible when game is visible"
       WHERE g.id = game_id
         AND (
           g.status = 'approved'
-          OR g.submitted_by = auth.uid()
+          OR g.submitted_by = (select auth.uid())
           OR public.is_admin()
         )
     )
@@ -419,7 +407,7 @@ CREATE POLICY "Game likes are visible when game is visible"
 CREATE POLICY "Users can like approved games"
   ON public.game_house_likes FOR INSERT
   WITH CHECK (
-    auth.uid() = user_id
+    (select auth.uid()) = user_id
     AND public.is_action_allowed('social')
     AND EXISTS (
       SELECT 1 FROM public.game_house g
@@ -430,7 +418,7 @@ CREATE POLICY "Users can like approved games"
 CREATE POLICY "Users can unlike their own game likes"
   ON public.game_house_likes FOR DELETE
   USING (
-    auth.uid() = user_id
+    (select auth.uid()) = user_id
     AND public.is_action_allowed('social')
   );
 
@@ -443,20 +431,17 @@ CREATE POLICY "Game comments are visible when game is visible"
       WHERE g.id = game_id
         AND (
           g.status = 'approved'
-          OR g.submitted_by = auth.uid()
+          OR g.submitted_by = (select auth.uid())
           OR public.is_admin()
         )
     )
   );
 CREATE POLICY "Users can update own game comments"
   ON public.game_house_comments FOR UPDATE
-  USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own game comments"
+  USING ((select auth.uid()) = user_id);
+CREATE POLICY "Users or admins can delete game comments"
   ON public.game_house_comments FOR DELETE
-  USING (auth.uid() = user_id);
-CREATE POLICY "Admins can delete any game comment"
-  ON public.game_house_comments FOR DELETE
-  USING (public.is_admin());
+  USING (((select auth.uid()) = user_id) OR public.is_admin());
 
 
 -- =============================================================================
@@ -496,7 +481,7 @@ BEGIN
   VALUES (NEW.target_user_id, NEW.target_user_id, 'qna_question');
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE TRIGGER on_qna_question_created
   AFTER INSERT ON public.qna_questions
@@ -513,7 +498,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 CREATE TRIGGER guard_username_change
   BEFORE UPDATE ON public.profiles
@@ -628,11 +613,7 @@ VALUES ('game-house', 'game-house', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- post-media policies
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Public Access') THEN
-    CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id = 'post-media' );
-  END IF;
-END $$;
+-- NOTE: No broad SELECT policy needed — public buckets serve files by URL without one.
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Authenticated users can upload') THEN
@@ -647,11 +628,7 @@ DO $$ BEGIN
 END $$;
 
 -- avatars policies
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Public Access for Avatars') THEN
-    CREATE POLICY "Public Access for Avatars" ON storage.objects FOR SELECT USING ( bucket_id = 'avatars' );
-  END IF;
-END $$;
+-- NOTE: No broad SELECT policy needed — public buckets serve files by URL without one.
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Authenticated users can upload avatars') THEN
@@ -666,11 +643,7 @@ DO $$ BEGIN
 END $$;
 
 -- banners policies
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Public Access for Banners') THEN
-    CREATE POLICY "Public Access for Banners" ON storage.objects FOR SELECT USING ( bucket_id = 'banners' );
-  END IF;
-END $$;
+-- NOTE: No broad SELECT policy needed — public buckets serve files by URL without one.
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Authenticated users can upload banners') THEN
@@ -685,11 +658,7 @@ DO $$ BEGIN
 END $$;
 
 -- whisper-media policies
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Public Access for Whisper Media') THEN
-    CREATE POLICY "Public Access for Whisper Media" ON storage.objects FOR SELECT USING ( bucket_id = 'whisper-media' );
-  END IF;
-END $$;
+-- NOTE: No broad SELECT policy needed — public buckets serve files by URL without one.
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Authenticated users can upload whisper media') THEN
@@ -708,11 +677,7 @@ DO $$ BEGIN
 END $$;
 
 -- profile-album policies
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Public Access for Profile Album') THEN
-    CREATE POLICY "Public Access for Profile Album" ON storage.objects FOR SELECT USING ( bucket_id = 'profile-album' );
-  END IF;
-END $$;
+-- NOTE: No broad SELECT policy needed — public buckets serve files by URL without one.
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'objects' AND schemaname = 'storage' AND policyname = 'Authenticated users can upload profile album photos') THEN
@@ -2213,3 +2178,86 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+
+-- =============================================================================
+-- FUNCTION EXECUTION PERMISSIONS (Security Lint Fixes)
+-- Lock down internal trigger/cron functions so they cannot be called via the API.
+-- Lock down frontend RPCs so only authenticated users can call them.
+-- =============================================================================
+
+-- Internal triggers & cron helpers: fully revoke from public, anon, authenticated
+REVOKE EXECUTE ON FUNCTION public.delete_expired_action_logs() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.delete_expired_follow_notifications() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.delete_expired_posts() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.delete_expired_whispers() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.enforce_profile_album_limit() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_mentions(text, uuid, uuid, uuid) FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_new_qna_question() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_admins_new_game(uuid) FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_comment() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_comment_mention() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_follow() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_game_comment() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_game_like() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_like() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_post_mention() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_uncomment() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_unfollow() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_on_unlike() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_user_game_status(uuid, uuid, text) FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.send_push_notification() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.send_whisper_push_notification() FROM public, anon, authenticated;
+
+-- Frontend RPCs: revoke from public & anon, grant only to authenticated
+REVOKE EXECUTE ON FUNCTION public.admin_ban_user(uuid, integer, text, text[], boolean) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.admin_ban_user(uuid, integer, text, text[], boolean) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.admin_delete_post(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.admin_delete_post(uuid) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.admin_unban_user(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.admin_unban_user(uuid) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.change_username(text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.change_username(text) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.create_comment(uuid, text, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.create_comment(uuid, text, text) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.create_game_comment(uuid, text, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.create_game_comment(uuid, text, text) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.create_post(text, text, text[], text, boolean, text, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.create_post(text, text, text[], text, boolean, text, text) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.delete_comment(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.delete_comment(uuid) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.delete_game_comment(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.delete_game_comment(uuid) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.delete_user_account() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.delete_user_account() TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.edit_post(uuid, text, text, text[], text, boolean, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.edit_post(uuid, text, text, text[], text, boolean, text) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.get_username_cooldown() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.get_username_cooldown() TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.increment_game_play_count(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.increment_game_play_count(uuid) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.is_action_allowed(text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.is_action_allowed(text) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.is_admin() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.record_post_view(uuid, text, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.record_post_view(uuid, text, text) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.upsert_push_subscription(text, text, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.upsert_push_subscription(text, text, text) TO authenticated;
