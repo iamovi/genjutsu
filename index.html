@@ -8,13 +8,31 @@
 
   <script>
     (function () {
-      let theme = null;
-      try {
-        theme = localStorage.getItem('genjutsu-theme');
-      } catch (e) { /* ignore */ }
+      const root = document.documentElement;
+      const appearanceKey = 'genjutsu-appearance';
+      const get = (key) => {
+        try {
+          return localStorage.getItem(key);
+        } catch (e) {
+          return null;
+        }
+      };
+
+      const theme = get(`${appearanceKey}-theme`) || get('genjutsu-theme');
+      const preset = get(`${appearanceKey}-preset`);
+      const grid = get(`${appearanceKey}-grid`);
+
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (theme === 'dark' || (!theme && systemDark)) {
-        document.documentElement.classList.add('dark');
+      if (theme === 'dark' || (theme !== 'light' && !theme && systemDark) || (theme === 'system' && systemDark)) {
+        root.classList.add('dark');
+      }
+
+      if (preset) {
+        root.setAttribute('data-theme-preset', preset);
+      }
+
+      if (grid) {
+        root.setAttribute('data-grid', grid);
       }
     })();
   </script>
