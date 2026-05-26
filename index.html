@@ -28,6 +28,7 @@
   <meta name="keywords" content="genjutsu, developer social network, ephemeral chat, 24 hour posts, coding community" />
   <link rel="icon" href="/fav.jpg">
   <link rel="apple-touch-icon" href="/fav.jpg">
+  <link rel="preload" as="image" href="/frog-loader.gif" fetchpriority="high" />
   <meta name="theme-color" content="transparent" />
   <meta name="author" content="Ovi ren" />
 
@@ -58,7 +59,11 @@
           href="/api/llm-content">/api/llm-content</a>.</p>
     </main>
   </noscript>
-  <div id="root"></div>
+  <div id="root">
+    <div id="boot-loader" style="min-height:100vh;display:flex;align-items:center;justify-content:center;">
+      <img src="/frog-loader.gif" alt="Loading..." width="56" height="56" style="object-fit:contain;mix-blend-mode:multiply;" />
+    </div>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
