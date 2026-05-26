@@ -10,7 +10,7 @@
     (function () {
       let theme = null;
       try {
-        theme = localStorage.getItem('vite-ui-theme');
+        theme = localStorage.getItem('genjutsu-theme');
       } catch (e) { /* ignore */ }
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       if (theme === 'dark' || (!theme && systemDark)) {
@@ -18,6 +18,11 @@
       }
     })();
   </script>
+
+  <style>
+    html, body { margin: 0; background: #ffffff; }
+    html.dark body { background: #09090b; }
+  </style>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>genjutsu</title>
@@ -28,6 +33,7 @@
   <meta name="keywords" content="genjutsu, developer social network, ephemeral chat, 24 hour posts, coding community" />
   <link rel="icon" href="/fav.jpg">
   <link rel="apple-touch-icon" href="/fav.jpg">
+  <link rel="preload" as="image" href="/frog-loader.gif" fetchpriority="high" />
   <meta name="theme-color" content="transparent" />
   <meta name="author" content="Ovi ren" />
 
@@ -58,7 +64,11 @@
           href="/api/llm-content">/api/llm-content</a>.</p>
     </main>
   </noscript>
-  <div id="root"></div>
+  <div id="root">
+    <div id="boot-loader" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:inherit;">
+      <img src="/frog-loader.gif" alt="Loading..." width="56" height="56" style="object-fit:contain;mix-blend-mode:multiply;" />
+    </div>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
