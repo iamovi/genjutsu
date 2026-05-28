@@ -12,6 +12,7 @@ export interface Whisper {
     content: string;
     media_url: string | null;
     created_at: string;
+    is_read: boolean;
     sender_profile?: {
         username: string;
         display_name: string;
@@ -99,7 +100,7 @@ export function useWhispers(targetUserId?: string) {
             if (!user || !targetUserId) return [];
 
             const { data, error } = await sb.from("messages")
-                .select("id, content, media_url, sender_id, receiver_id, created_at")
+                .select("id, content, media_url, sender_id, receiver_id, created_at, is_read")
                 .or(`and(sender_id.eq.${user.id},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${user.id})`)
                 .gt("created_at", new Date(getNow().getTime() - 24 * 60 * 60 * 1000).toISOString())
                 .order("created_at", { ascending: true });
@@ -221,6 +222,28 @@ export function useWhispers(targetUserId?: string) {
                         if (targetUserId) {
                             queryClient.invalidateQueries({ queryKey: ["whispers", user.id, targetUserId] });
                         }
+                    }
+                )
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "UPDATE",
+                        schema: "public",
+                        table: "messages",
+                        filter: `sender_id=eq.${user.id}`,
+                    },
+                    (payload: any) => {
+                        const updatedMessage = payload.new as Whisper | undefined;
+                        if (!targetUserId || updatedMessage?.receiver_id !== targetUserId) return;
+
+                        queryClient.setQueryData<Whisper[]>(["whispers", user.id, targetUserId], (currentMessages) =>
+                            currentMessages?.map((message) =>
+                                message.id === updatedMessage.id
+                                    ? { ...message, is_read: updatedMessage.is_read }
+                                    : message
+                            )
+                        );
+                        queryClient.invalidateQueries({ queryKey: ["whispers", user.id, targetUserId] });
                     }
                 )
                 .on("broadcast", { event: "typing" }, (payload: any) => {
