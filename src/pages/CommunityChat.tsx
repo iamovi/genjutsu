@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCommunityChat, CommunityMessage, BOT_REPLY_PREFIX } from "@/hooks/useCommunityChat";
 import Navbar from "@/components/Navbar";
@@ -10,6 +10,7 @@ import { Helmet } from "react-helmet-async";
 import { linkify } from "@/lib/linkify";
 import ReactMarkdown from "react-markdown";
 import WhisperLinkPreview from "@/components/WhisperLinkPreview";
+import { WhisperSidebar } from "@/components/WhisperSidebar";
 
 function ChatInputForm({ sendMessage, isSending, user, navigate }: any) {
     const [messageText, setMessageText] = useState("");
@@ -186,6 +187,28 @@ const CommunityChat = () => {
         );
     }
 
+    const groupedMessages = useMemo(() => {
+        if (!messages) return [];
+        const groups: CommunityMessage[][] = [];
+        let currentGroup: CommunityMessage[] = [];
+
+        messages.forEach((msg, idx) => {
+            const prevMsg = messages[idx - 1];
+            const isSameSender = prevMsg && prevMsg.user_id === msg.user_id && prevMsg.is_ai_reply === msg.is_ai_reply;
+            const timeDiff = prevMsg ? (new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime()) : 0;
+            const isRecent = timeDiff < 1000 * 60 * 5; // 5 minutes
+
+            if (isSameSender && isRecent) {
+                currentGroup.push(msg);
+            } else {
+                if (currentGroup.length > 0) groups.push(currentGroup);
+                currentGroup = [msg];
+            }
+        });
+        if (currentGroup.length > 0) groups.push(currentGroup);
+        return groups;
+    }, [messages]);
+
     return (
         <div className="h-[100svh] bg-background text-foreground flex flex-col overflow-hidden">
             <Helmet>
@@ -194,162 +217,190 @@ const CommunityChat = () => {
             </Helmet>
             <div className="shrink-0">
                 <Navbar />
-                <header className="z-40 bg-background/80 backdrop-blur-md border-b-2 border-border shadow-sm">
-                    <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => {
-                                    if (window.history.length > 2) {
-                                        navigate(-1);
-                                    } else {
-                                        navigate("/whispers");
-                                    }
-                                }}
-                                className="p-2 hover:bg-secondary rounded-[3px] transition-colors"
-                            >
-                                <ArrowLeft size={18} />
-                            </button>
-                            <div className="flex items-center gap-2">
-                                <div className="w-10 h-10 rounded-[3px] gum-border bg-primary/10 flex items-center justify-center shrink-0">
-                                    <Users size={20} className="text-primary" />
-                                </div>
-                                <div className="min-w-0">
-                                    <h3 className="font-bold text-sm -mb-0.5">Community Chat</h3>
-                                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                                        {onlineCount} online
-                                    </p>
+            </div>
+
+            <main className="flex-1 max-w-6xl w-full mx-auto flex overflow-hidden">
+                <div className="hidden lg:block w-80 shrink-0">
+                    <WhisperSidebar isCommunityActive={true} />
+                </div>
+
+                <div className="flex-1 flex flex-col min-w-0 bg-secondary/5">
+                    <header className="z-40 bg-background/80 backdrop-blur-md border-b-2 border-border shadow-sm shrink-0">
+                        <div className="px-4 h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => {
+                                        if (window.history.length > 2) {
+                                            navigate(-1);
+                                        } else {
+                                            navigate("/whispers");
+                                        }
+                                    }}
+                                    className="p-2 hover:bg-secondary rounded-[3px] transition-colors lg:hidden"
+                                >
+                                    <ArrowLeft size={18} />
+                                </button>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-10 h-10 rounded-[3px] gum-border bg-primary/10 flex items-center justify-center shrink-0">
+                                        <Users size={20} className="text-primary" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h3 className="font-bold text-sm -mb-0.5">Community Chat</h3>
+                                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                                            {onlineCount} online
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </header>
-            </div>
+                    </header>
 
-            <main className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto p-4 space-y-3 scrollbar-hide flex flex-col">
-                <div className="flex-1" />
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide flex flex-col">
+                        <div className="flex-1" />
 
-                {/* System welcome message */}
-                <div className="text-center py-6">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[3px] bg-secondary/50 border-2 border-dashed border-border text-xs text-muted-foreground font-mono">
-                        Public room — messages vanish in 24h
-                    </div>
-                </div>
-
-                {messages && messages.length > 0 ? (
-                    messages.map((msg: CommunityMessage) => {
-                        const isAutomated = msg.is_ai_reply === true;
-                        const isBot = isAutomated && msg.content.startsWith(BOT_REPLY_PREFIX);
-                        const isAi = isAutomated && !isBot;
-                        const displayContent = isBot
-                            ? msg.content.slice(BOT_REPLY_PREFIX.length).trimStart()
-                            : msg.content;
-                        const isMe = msg.user_id === user?.id && !isAutomated;
-                        
-                        return (
-                            <motion.div
-                                key={msg.id}
-                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                className={`flex w-full min-w-0 ${isMe ? "justify-end" : "justify-start"}`}
-                            >
-                                <div className="flex items-end gap-2 max-w-[85%] sm:max-w-[70%] min-w-0">
-                                    {/* Avatar (only for others or AI) */}
-                                    {!isMe && (
-                                        <button
-                                            onClick={() => !isAutomated && msg.profile?.username && navigate(`/u/${msg.profile.username}`)}
-                                        className={`w-7 h-7 rounded-[3px] gum-border flex items-center justify-center font-bold text-[10px] shrink-0 overflow-hidden transition-opacity ${!isAutomated ? "bg-secondary hover:opacity-80" : "bg-primary text-primary-foreground cursor-default"}`}
-                                        >
-                                            {isBot ? (
-                                                <Bot size={14} />
-                                            ) : isAi ? (
-                                                <Ghost size={14} />
-                                            ) : msg.profile?.avatar_url ? (
-                                                <img src={msg.profile.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                                            ) : (
-                                                (msg.profile?.display_name?.[0] || "?").toUpperCase()
-                                            )}
-                                        </button>
-                                    )}
-
-                                    <div className={`px-3.5 py-2 text-sm border-2 rounded-[3px] gum-shadow-sm min-w-0 ${isMe
-                                        ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-secondary text-secondary-foreground border-border"
-                                        }`}>
-                                        {/* Username label for others */}
-                                        {!isMe && (
-                                            <button
-                                                onClick={() => !isAutomated && msg.profile && navigate(`/u/${msg.profile.username}`)}
-                                                className={`text-[10px] font-bold block mb-1.5 ${isAutomated ? "text-primary cursor-default pointer-events-none" : "opacity-70 hover:underline"}`}
-                                            >
-                                                {isBot ? "Genjutsu Bot" : isAi ? "Genjutsu AI" : msg.profile ? `@${msg.profile.username}` : "Unknown"}
-                                            </button>
-                                        )}
-                                        <div className="whitespace-pre-wrap break-words min-w-0 max-w-full">
-                                            {isAi ? (
-                                                <ReactMarkdown
-                                                    components={{
-                                                        pre: ({ children }: any) => (
-                                                            <div className="relative my-2 rounded-[3px] gum-border bg-background/50 overflow-hidden shrink-0 max-w-full">
-                                                                <div className="text-[10px] bg-secondary/80 px-2 py-1 border-b-[1px] border-border font-mono opacity-70">Code Snippet</div>
-                                                                <pre className="p-3 overflow-x-auto text-xs font-mono scrollbar-hide max-w-full">
-                                                                    {children}
-                                                                </pre>
-                                                            </div>
-                                                        ),
-                                                        code: ({ children, className }: any) => {
-                                                            const isInline = !className;
-                                                            return isInline ? (
-                                                                <code className="bg-secondary/50 px-1 py-0.5 rounded-[3px] text-[11px] font-mono">{children}</code>
-                                                            ) : (
-                                                                <code className={`${className} text-[11px]`}>{children}</code>
-                                                            );
-                                                        },
-                                                        p: ({ children }: any) => <p className="mb-2 last:mb-0 leading-relaxed text-[13px]">{children}</p>,
-                                                        ul: ({ children }: any) => <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>,
-                                                        ol: ({ children }: any) => <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>,
-                                                        li: ({ children }: any) => <li className="text-[13px]">{children}</li>,
-                                                        a: ({ children, href }: any) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">{children}</a>
-                                                    }}
-                                                >
-                                                    {displayContent}
-                                                </ReactMarkdown>
-                                            ) : (
-                                                <>
-                                                    <p>
-                                                        {linkify(displayContent, isMe)}
-                                                    </p>
-                                                    <WhisperLinkPreview content={displayContent} isMe={isMe} />
-                                                </>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className={`text-[9px] font-mono opacity-60 ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                            {isMe && (
-                                                <button
-                                                    onClick={() => deleteMessage(msg.id)}
-                                                    className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 transition-opacity"
-                                                    title="Delete message"
-                                                >
-                                                    <Trash2 size={10} className="text-primary-foreground/50 hover:text-primary-foreground" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        );
-                    })
-                ) : (
-                    <div className="py-12 text-center text-xs text-muted-foreground italic flex flex-col items-center gap-3">
-                        <div className="w-12 h-12 rounded-[3px] border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                            <Users size={16} className="opacity-40" />
+                        {/* System welcome message */}
+                        <div className="text-center py-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[3px] bg-secondary/50 border-2 border-dashed border-border text-xs text-muted-foreground font-mono">
+                                Public room — messages vanish in 24h
+                            </div>
                         </div>
-                        No one has spoken yet. Break the silence.
-                    </div>
-                )}
+
+                        {groupedMessages && groupedMessages.length > 0 ? (
+                            groupedMessages.map((group, groupIdx) => {
+                                const isAutomated = group[0].is_ai_reply === true;
+                                const isMe = group[0].user_id === user?.id && !isAutomated;
+
+                                return (
+                                    <div key={groupIdx} className={`flex flex-col gap-1 ${isMe ? "items-end" : "items-start"}`}>
+                                        {group.map((msg, idx) => {
+                                            const isBot = isAutomated && msg.content.startsWith(BOT_REPLY_PREFIX);
+                                            const isAi = isAutomated && !isBot;
+                                            const displayContent = isBot
+                                                ? msg.content.slice(BOT_REPLY_PREFIX.length).trimStart()
+                                                : msg.content;
+                                            const isFirstInGroup = idx === 0;
+                                            const isLastInGroup = idx === group.length - 1;
+
+                                            return (
+                                                <motion.div
+                                                    key={msg.id}
+                                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                    className="flex items-end gap-2 max-w-[85%] sm:max-w-[70%] min-w-0 group/msg relative"
+                                                >
+                                                    {/* Avatar (only for others or AI and only on first message of group) */}
+                                                    {!isMe && (
+                                                        <div className="w-7 shrink-0">
+                                                            {isLastInGroup && (
+                                                                <button
+                                                                    onClick={() => !isAutomated && msg.profile?.username && navigate(`/u/${msg.profile.username}`)}
+                                                                    className={`w-7 h-7 rounded-[3px] gum-border flex items-center justify-center font-bold text-[10px] overflow-hidden transition-opacity ${!isAutomated ? "bg-secondary hover:opacity-80" : "bg-primary text-primary-foreground cursor-default"}`}
+                                                                >
+                                                                    {isBot ? (
+                                                                        <Bot size={14} />
+                                                                    ) : isAi ? (
+                                                                        <Ghost size={14} />
+                                                                    ) : msg.profile?.avatar_url ? (
+                                                                        <img src={msg.profile.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                                                    ) : (
+                                                                        (msg.profile?.display_name?.[0] || "?").toUpperCase()
+                                                                    )}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    <div className={`px-3.5 py-2 text-sm border-2 gum-shadow-sm min-w-0 transition-all ${isMe
+                                                        ? "bg-primary text-primary-foreground border-primary"
+                                                        : "bg-background text-foreground border-border"
+                                                        } ${isFirstInGroup && isLastInGroup
+                                                            ? "rounded-[12px]"
+                                                            : isFirstInGroup
+                                                                ? (isMe ? "rounded-t-[12px] rounded-bl-[12px] rounded-br-[4px]" : "rounded-t-[12px] rounded-br-[12px] rounded-bl-[4px]")
+                                                                : isLastInGroup
+                                                                    ? (isMe ? "rounded-b-[12px] rounded-tl-[12px] rounded-tr-[4px]" : "rounded-b-[12px] rounded-tr-[12px] rounded-tl-[4px]")
+                                                                    : (isMe ? "rounded-l-[12px] rounded-r-[4px]" : "rounded-r-[12px] rounded-l-[4px]")
+                                                        }`}>
+                                                        {/* Username label for others - only on first message of group */}
+                                                        {!isMe && isFirstInGroup && (
+                                                            <button
+                                                                onClick={() => !isAutomated && msg.profile && navigate(`/u/${msg.profile.username}`)}
+                                                                className={`text-[10px] font-bold block mb-1.5 ${isAutomated ? "text-primary cursor-default pointer-events-none" : "opacity-70 hover:underline"}`}
+                                                            >
+                                                                {isBot ? "Genjutsu Bot" : isAi ? "Genjutsu AI" : msg.profile ? `@${msg.profile.username}` : "Unknown"}
+                                                            </button>
+                                                        )}
+                                                        <div className="whitespace-pre-wrap break-words min-w-0 max-w-full leading-relaxed">
+                                                            {isAi ? (
+                                                                <ReactMarkdown
+                                                                    components={{
+                                                                        pre: ({ children }: any) => (
+                                                                            <div className="relative my-2 rounded-[3px] gum-border bg-background/50 overflow-hidden shrink-0 max-w-full">
+                                                                                <div className="text-[10px] bg-secondary/80 px-2 py-1 border-b-[1px] border-border font-mono opacity-70">Code Snippet</div>
+                                                                                <pre className="p-3 overflow-x-auto text-xs font-mono scrollbar-hide max-w-full">
+                                                                                    {children}
+                                                                                </pre>
+                                                                            </div>
+                                                                        ),
+                                                                        code: ({ children, className }: any) => {
+                                                                            const isInline = !className;
+                                                                            return isInline ? (
+                                                                                <code className="bg-secondary/50 px-1 py-0.5 rounded-[3px] text-[11px] font-mono">{children}</code>
+                                                                            ) : (
+                                                                                <code className={`${className} text-[11px]`}>{children}</code>
+                                                                            );
+                                                                        },
+                                                                        p: ({ children }: any) => <p className="mb-2 last:mb-0 leading-relaxed text-[13px]">{children}</p>,
+                                                                        ul: ({ children }: any) => <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>,
+                                                                        ol: ({ children }: any) => <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>,
+                                                                        li: ({ children }: any) => <li className="text-[13px]">{children}</li>,
+                                                                        a: ({ children, href }: any) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">{children}</a>
+                                                                    }}
+                                                                >
+                                                                    {displayContent}
+                                                                </ReactMarkdown>
+                                                            ) : (
+                                                                <>
+                                                                    <p>
+                                                                        {linkify(displayContent, isMe)}
+                                                                    </p>
+                                                                    <WhisperLinkPreview content={displayContent} isMe={isMe} />
+                                                                </>
+                                                            )}
+                                                        </div>
+
+                                                        {isLastInGroup && (
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className={`text-[9px] font-mono opacity-60 ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </span>
+                                                                {isMe && (
+                                                                    <button
+                                                                        onClick={() => deleteMessage(msg.id)}
+                                                                        className="opacity-0 group-hover/msg:opacity-100 hover:opacity-100 focus:opacity-100 transition-opacity"
+                                                                        title="Delete message"
+                                                                    >
+                                                                        <Trash2 size={10} className="text-primary-foreground/50 hover:text-primary-foreground" />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </motion.div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="py-12 text-center text-xs text-muted-foreground italic flex flex-col items-center gap-3">
+                                <div className="w-12 h-12 rounded-[3px] border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                                    <Users size={16} className="opacity-40" />
+                                </div>
+                                No one has spoken yet. Break the silence.
+                            </div>
+                        )}
 
                 {/* AI Thinking Indicator */}
                 {isAiThinking && (
@@ -402,9 +453,11 @@ const CommunityChat = () => {
                 )}
 
                 <div ref={messagesEndRef} className="h-4" />
-            </main>
+                    </div>
 
-            <ChatInputForm sendMessage={sendMessage} isSending={isSending} user={user} navigate={navigate} />
+                    <ChatInputForm sendMessage={sendMessage} isSending={isSending} user={user} navigate={navigate} />
+                </div>
+            </main>
         </div>
     );
 };
