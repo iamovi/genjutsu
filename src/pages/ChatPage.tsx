@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useWhispers, Whisper } from "@/hooks/useWhispers";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, ImageIcon, X } from "lucide-react";
+import { ArrowLeft, Send, ImageIcon, X, CheckCheck } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -296,7 +296,7 @@ const ChatPage = () => {
                     messages.map((whisper: Whisper) => {
                         const isMe = whisper.sender_id === user?.id;
                         const hasText = typeof whisper.content === "string" && whisper.content.trim().length > 0;
-                        const readReceiptDotClass = whisper.is_read ? "bg-emerald-400" : "bg-gray-300";
+                        const readReceiptClass = whisper.is_read ? "text-emerald-400" : "text-gray-300";
                         return (
                             <motion.div
                                 key={whisper.id}
@@ -332,14 +332,13 @@ const ChatPage = () => {
                                     <span className={`text-[9px] mt-1.5 flex items-center gap-1 font-mono ${isMe ? "justify-end text-primary-foreground/70" : "text-muted-foreground"}`}>
                                         <span className="opacity-60">{new Date(whisper.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         {isMe ? (
-                                            <span
-                                                className="inline-flex items-center gap-0.5"
-                                                title={whisper.is_read ? "Viewed" : "Sent"}
+                                            <CheckCheck
+                                                size={13}
+                                                strokeWidth={3}
+                                                className={readReceiptClass}
                                                 aria-label={whisper.is_read ? "Viewed" : "Sent"}
-                                            >
-                                                <span className={`h-1.5 w-1.5 rounded-full ${readReceiptDotClass}`} />
-                                                <span className={`h-1.5 w-1.5 rounded-full ${readReceiptDotClass}`} />
-                                            </span>
+                                                role="img"
+                                            />
                                         ) : null}
                                     </span>
                                 </div>
