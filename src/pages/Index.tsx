@@ -6,7 +6,7 @@ import PostCard from "@/components/PostCard";
 import Sidebar from "@/components/Sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { usePosts } from "@/hooks/usePosts";
-import { FrogLoader } from "@/components/ui/FrogLoader";
+import { FrogLoader, FullScreenFrogLoader } from "@/components/ui/FrogLoader";
 import { Helmet } from "react-helmet-async";
 import { PostSkeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
@@ -95,11 +95,7 @@ const Index = () => {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <FrogLoader className="" size={24} />
-      </div>
-    );
+    return <FullScreenFrogLoader />;
   }
 
   return (

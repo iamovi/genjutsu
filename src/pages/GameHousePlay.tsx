@@ -6,7 +6,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Maximize2, AlertTriangle, RotateCcw, Pencil } from "lucide-react";
-import { FrogLoader } from "@/components/ui/FrogLoader";
+import { FrogLoader, FullScreenFrogLoader } from "@/components/ui/FrogLoader";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -148,13 +148,7 @@ export default function GameHousePlay() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col">
-        <div className="flex-1 flex items-center justify-center">
-              <FrogLoader size={24} />
-        </div>
-      </div>
-    );
+    return <FullScreenFrogLoader />;
   }
 
   if (isError || !game) {

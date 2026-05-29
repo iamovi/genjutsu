@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { FrogLoader } from "@/components/ui/FrogLoader";
+import { FrogLoader, FullScreenFrogLoader } from "@/components/ui/FrogLoader";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 type LocationState = {
@@ -89,11 +89,7 @@ const MfaChallengePage = () => {
   };
 
   if (loading || screenLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <FrogLoader size={24} className="" />
-      </div>
-    );
+    return <FullScreenFrogLoader />;
   }
 
   return (

@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
-import { FrogLoader } from "@/components/ui/FrogLoader";
+import { FrogLoader, FullScreenFrogLoader } from "@/components/ui/FrogLoader";
 import { Trash2, MessageSquareReply, Inbox, Link as LinkIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -103,11 +103,7 @@ export default function QnaInbox() {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <FrogLoader size={24} />
-      </div>
-    );
+    return <FullScreenFrogLoader />;
   }
 
   if (!user) {

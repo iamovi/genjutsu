@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { FrogLoader } from "@/components/ui/FrogLoader";
+import { FullScreenFrogLoader } from "@/components/ui/FrogLoader";
 
 interface RequireAdminProps {
   children: ReactNode;
@@ -12,11 +12,7 @@ const RequireAdmin = ({ children }: RequireAdminProps) => {
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <FrogLoader className="" size={24} />
-      </div>
-    );
+    return <FullScreenFrogLoader />;
   }
 
   if (!user) {

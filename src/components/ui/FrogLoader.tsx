@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 
+export const APP_LOADER_SIZE = 32;
+
 export const FrogLoader = ({ size = 24, className }: { size?: number, className?: string }) => {
   // Frogs need to be bigger than generic line-art spinners to be visible.
   // We double the visual size, but contain it in a relative wrapper of the original size
@@ -21,3 +23,9 @@ export const FrogLoader = ({ size = 24, className }: { size?: number, className?
     </span>
   );
 };
+
+export const FullScreenFrogLoader = ({ className }: { className?: string }) => (
+  <div className={cn("min-h-screen bg-background flex items-center justify-center", className)}>
+    <FrogLoader size={APP_LOADER_SIZE} />
+  </div>
+);
