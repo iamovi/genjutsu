@@ -9,9 +9,10 @@ export type ThemePreset = "default" | "minecraft" | "win95" | "papyrus" | "hacke
 
 /** Convert a hex color (#rrggbb) to an HSL string "H S% L%" suitable for CSS variables. */
 function hexToHsl(hex: string): string {
-    const r = parseInt(hex.slice(1, 3), 16) / 255;
-    const g = parseInt(hex.slice(3, 5), 16) / 255;
-    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const normalized = /^#[0-9a-f]{6}$/i.test(hex) ? hex : "#8b5cf6";
+    const r = parseInt(normalized.slice(1, 3), 16) / 255;
+    const g = parseInt(normalized.slice(3, 5), 16) / 255;
+    const b = parseInt(normalized.slice(5, 7), 16) / 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b);
     let h = 0, s = 0;
     const l = (max + min) / 2;
@@ -52,6 +53,27 @@ const fontFamilies = {
     "JetBrains Mono": "'JetBrains Mono', monospace",
     "Comic Neue": "'Comic Neue', cursive",
 };
+
+const legacyStorageKey = "genjutsu-appearance";
+const appearanceSuffixes = [
+    "theme", "preset", "color", "customColor", "font", "grid", "radius",
+    "emojiPack", "animateColor", "cursorTrail", "dataSaver", "soundEnabled", "shadowWalk",
+] as const;
+const themeValues = ["dark", "light", "system"] as const;
+const presetValues = ["default", "minecraft", "win95", "papyrus", "hackernews", "winxp", "gameboy", "nord", "terminal"] as const;
+const colorValues = ["purple", "blue", "green", "orange", "rose", "zinc", "custom"] as const;
+const fontValues = ["Reddit Mono", "Inter", "Space Grotesk", "Fira Code", "JetBrains Mono", "Comic Neue"] as const;
+const gridValues = ["blueprint", "dotted", "scanlines", "none"] as const;
+const radiusValues = ["none", "default", "md", "lg", "full"] as const;
+const emojiPackValues = ["native", "twemoji", "google", "openmoji"] as const;
+
+function oneOf<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T {
+    return value !== null && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+
+function hasStoredAppearance(storageKey: string): boolean {
+    return appearanceSuffixes.some((suffix) => safeGetItem(`${storageKey}-${suffix}`) !== null);
+}
 
 type ThemeProviderProps = {
     children: React.ReactNode;
@@ -135,57 +157,47 @@ export function ThemeProvider({
     storageKey = "genjutsu-appearance",
     ...props
 }: ThemeProviderProps) {
+    const initialStorageKey = storageKey === "genjutsu-theme" && !hasStoredAppearance(storageKey) ? legacyStorageKey : storageKey;
+    const getInitialItem = (suffix: string) => safeGetItem(`${initialStorageKey}-${suffix}`);
+
     const [theme, setThemeState] = useState<Theme>(() => {
-        const stored = safeGetItem(`${storageKey}-theme`);
-        return (stored as Theme) || defaultTheme;
+        return oneOf(getInitialItem("theme") || safeGetItem(storageKey), themeValues, defaultTheme);
     });
     const [preset, setPresetState] = useState<ThemePreset>(() => {
-        const stored = safeGetItem(`${storageKey}-preset`);
-        if (stored === "minecraft" || stored === "win95" || stored === "papyrus" || stored === "hackernews" || stored === "winxp" || stored === "gameboy" || stored === "nord" || stored === "terminal") {
-            return stored as ThemePreset;
-        }
-        return "default";
+        return oneOf(getInitialItem("preset"), presetValues, "default");
     });
     const [color, setColorState] = useState<ColorPreset>(() => {
-        return (safeGetItem(`${storageKey}-color`) as ColorPreset) || "purple";
+        return oneOf(getInitialItem("color"), colorValues, "purple");
     });
     const [font, setFontState] = useState<FontPreset>(() => {
-        const stored = safeGetItem(`${storageKey}-font`);
-        if (stored && Object.prototype.hasOwnProperty.call(fontFamilies, stored)) {
-            return stored as FontPreset;
-        }
-        return "Reddit Mono";
+        return oneOf(getInitialItem("font"), fontValues, "Reddit Mono");
     });
     const [grid, setGridState] = useState<GridPreset>(() => {
-        return (safeGetItem(`${storageKey}-grid`) as GridPreset) || "blueprint";
+        return oneOf(getInitialItem("grid"), gridValues, "blueprint");
     });
     const [radius, setRadiusState] = useState<RadiusPreset>(() => {
-        return (safeGetItem(`${storageKey}-radius`) as RadiusPreset) || "default";
+        return oneOf(getInitialItem("radius"), radiusValues, "default");
     });
     const [emojiPack, setEmojiPackState] = useState<EmojiPack>(() => {
-        const stored = safeGetItem(`${storageKey}-emojiPack`);
-        if (stored === "native" || stored === "twemoji" || stored === "google" || stored === "openmoji") {
-            return stored;
-        }
-        return "twemoji";
+        return oneOf(getInitialItem("emojiPack"), emojiPackValues, "twemoji");
     });
     const [customColor, setCustomColorState] = useState<string>(() => {
-        return safeGetItem(`${storageKey}-customColor`) || "#8b5cf6";
+        return getInitialItem("customColor") || "#8b5cf6";
     });
     const [animateColor, setAnimateColorState] = useState<boolean>(() => {
-        return safeGetItem(`${storageKey}-animateColor`) === "true";
+        return getInitialItem("animateColor") === "true";
     });
     const [cursorTrail, setCursorTrailState] = useState<boolean>(() => {
-        return safeGetItem(`${storageKey}-cursorTrail`) === "true";
+        return getInitialItem("cursorTrail") === "true";
     });
     const [dataSaver, setDataSaverState] = useState<boolean>(() => {
-        return safeGetItem(`${storageKey}-dataSaver`) === "true";
+        return getInitialItem("dataSaver") === "true";
     });
     const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => {
-        return safeGetItem(`${storageKey}-soundEnabled`) === "true";
+        return getInitialItem("soundEnabled") === "true";
     });
     const [shadowWalk, setShadowWalkState] = useState<boolean>(() => {
-        return safeGetItem(`${storageKey}-shadowWalk`) === "true";
+        return getInitialItem("shadowWalk") === "true";
     });
 
     const hueRef = useRef<number>(0);
@@ -214,6 +226,7 @@ export function ThemeProvider({
             activeTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         }
         root.classList.add(activeTheme);
+        root.style.colorScheme = activeTheme;
 
         root.setAttribute("data-theme-preset", preset);
         root.setAttribute("data-grid", grid);

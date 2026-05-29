@@ -9,7 +9,12 @@
   <script>
     (function () {
       const root = document.documentElement;
-      const storageKeys = ['genjutsu-theme', 'genjutsu-appearance'];
+      const currentStorageKey = 'genjutsu-theme';
+      const legacyStorageKey = 'genjutsu-appearance';
+      const appearanceSuffixes = [
+        'theme', 'preset', 'color', 'customColor', 'font', 'grid', 'radius',
+        'emojiPack', 'animateColor', 'cursorTrail', 'dataSaver', 'soundEnabled', 'shadowWalk'
+      ];
       const colorPresets = {
         purple: { light: '270 30% 63%', dark: '270 40% 70%', glowL: '240 10% 3%', glowD: '270 50% 75%' },
         blue: { light: '220 70% 50%', dark: '220 75% 65%', glowL: '220 70% 50%', glowD: '220 75% 65%' },
@@ -17,6 +22,14 @@
         orange: { light: '24 85% 55%', dark: '24 90% 65%', glowL: '24 85% 55%', glowD: '24 90% 65%' },
         rose: { light: '346 80% 60%', dark: '346 80% 65%', glowL: '346 80% 60%', glowD: '346 80% 65%' },
         zinc: { light: '240 5% 50%', dark: '240 5% 65%', glowL: '240 5% 50%', glowD: '240 5% 65%' },
+      };
+      const fontFamilies = {
+        'Reddit Mono': "'Reddit Mono', monospace",
+        Inter: "'Inter', sans-serif",
+        'Space Grotesk': "'Space Grotesk', sans-serif",
+        'Fira Code': "'Fira Code', monospace",
+        'JetBrains Mono': "'JetBrains Mono', monospace",
+        'Comic Neue': "'Comic Neue', cursive",
       };
       const presetBackgrounds = {
         default: { light: '270 10% 99%', dark: '240 10% 3.5%' },
@@ -30,6 +43,12 @@
         terminal: { light: '0 0% 0%', dark: '0 0% 0%' },
       };
       const radiusPresets = { none: '0px', default: '3px', md: '8px', lg: '16px', full: '2rem' };
+      const allowedThemes = ['dark', 'light', 'system'];
+      const allowedPresets = Object.keys(presetBackgrounds);
+      const allowedColors = Object.keys(colorPresets).concat('custom');
+      const allowedGrids = ['blueprint', 'dotted', 'scanlines', 'none'];
+      const allowedRadii = Object.keys(radiusPresets);
+      const allowedEmojiPacks = ['native', 'twemoji', 'google', 'openmoji'];
 
       const get = (key) => {
         try {
@@ -38,13 +57,10 @@
           return null;
         }
       };
-      const getAppearance = (suffix) => {
-        for (const key of storageKeys) {
-          const value = get(`${key}-${suffix}`);
-          if (value) return value;
-        }
-        return null;
-      };
+      const hasStoredAppearance = (key) => appearanceSuffixes.some((suffix) => get(`${key}-${suffix}`) !== null);
+      const storageKey = hasStoredAppearance(currentStorageKey) ? currentStorageKey : legacyStorageKey;
+      const getAppearance = (suffix) => get(`${storageKey}-${suffix}`);
+      const oneOf = (value, allowed, fallback) => allowed.indexOf(value) === -1 ? fallback : value;
       const hexToHsl = (hex) => {
         const normalized = /^#[0-9a-f]{6}$/i.test(hex || '') ? hex : '#8b5cf6';
         const r = parseInt(normalized.slice(1, 3), 16) / 255;
@@ -67,15 +83,17 @@
         return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
       };
 
-      const theme = getAppearance('theme') || get('genjutsu-theme');
-      const preset = getAppearance('preset') || 'default';
-      const color = getAppearance('color') || 'purple';
+      const storedTheme = getAppearance('theme') || get(currentStorageKey);
+      const theme = oneOf(storedTheme, allowedThemes, 'light');
+      const preset = oneOf(getAppearance('preset'), allowedPresets, 'default');
+      const color = oneOf(getAppearance('color'), allowedColors, 'purple');
       const customColor = getAppearance('customColor') || '#8b5cf6';
-      const grid = getAppearance('grid');
-      const radius = getAppearance('radius') || 'default';
-      const emojiPack = getAppearance('emojiPack');
-      const dataSaver = getAppearance('dataSaver');
-      const shadowWalk = getAppearance('shadowWalk');
+      const font = oneOf(getAppearance('font'), Object.keys(fontFamilies), 'Reddit Mono');
+      const grid = oneOf(getAppearance('grid'), allowedGrids, 'blueprint');
+      const radius = oneOf(getAppearance('radius'), allowedRadii, 'default');
+      const emojiPack = oneOf(getAppearance('emojiPack'), allowedEmojiPacks, 'twemoji');
+      const dataSaver = getAppearance('dataSaver') === 'true';
+      const shadowWalk = getAppearance('shadowWalk') === 'true';
 
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const activeTheme = theme === 'dark' || (theme === 'system' && systemDark)
@@ -85,13 +103,15 @@
       root.style.colorScheme = activeTheme;
 
       root.setAttribute('data-theme-preset', preset);
-      if (grid) root.setAttribute('data-grid', grid);
-      if (emojiPack) root.setAttribute('data-emoji-pack', emojiPack);
-      if (dataSaver) root.setAttribute('data-data-saver', dataSaver);
-      if (shadowWalk) root.setAttribute('data-shadow-walk', shadowWalk);
-      root.style.setProperty('--radius', radiusPresets[radius] || radiusPresets.default);
+      root.setAttribute('data-grid', grid);
+      root.setAttribute('data-emoji-pack', emojiPack);
+      root.setAttribute('data-data-saver', String(dataSaver));
+      root.setAttribute('data-shadow-walk', String(shadowWalk));
+      root.style.setProperty('--radius', radiusPresets[radius]);
+      root.style.setProperty('--font-sans', fontFamilies[font]);
+      root.style.setProperty('--font-mono', fontFamilies[font]);
 
-      const background = (presetBackgrounds[preset] || presetBackgrounds.default)[activeTheme];
+      const background = presetBackgrounds[preset][activeTheme];
       root.style.setProperty('--boot-background', `hsl(${background})`);
 
       if (color === 'custom') {
@@ -99,7 +119,7 @@
         root.style.setProperty('--primary', hsl);
         root.style.setProperty('--glow', hsl);
       } else {
-        const selectedColor = colorPresets[color] || colorPresets.purple;
+        const selectedColor = colorPresets[color];
         root.style.setProperty('--primary', selectedColor[activeTheme]);
         root.style.setProperty('--glow', activeTheme === 'dark' ? selectedColor.glowD : selectedColor.glowL);
       }
