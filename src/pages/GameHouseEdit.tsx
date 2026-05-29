@@ -11,7 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ArrowLeft, Code } from "lucide-react";
-import { FrogLoader } from "@/components/ui/FrogLoader";
+import { FrogLoader, FullScreenFrogLoader } from "@/components/ui/FrogLoader";
 import { useQuery } from "@tanstack/react-query";
 
 export default function GameHouseEdit() {
@@ -86,13 +86,7 @@ export default function GameHouseEdit() {
   }, [game, user, navigate, isInitialized]);
 
   if (!user || isLoading) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col">
-        <div className="flex-1 flex items-center justify-center">
-          <FrogLoader size={24} />
-        </div>
-      </div>
-    );
+    return <FullScreenFrogLoader />;
   }
 
   if (isError) {

@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, ArrowLeft, CheckCircle, MessageCircle } from "lucide-react";
-import { FrogLoader } from "@/components/ui/FrogLoader";
+import { FrogLoader, FullScreenFrogLoader } from "@/components/ui/FrogLoader";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function QnaPage() {
@@ -60,11 +60,7 @@ export default function QnaPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <FrogLoader size={24} />
-      </div>
-    );
+    return <FullScreenFrogLoader />;
   }
 
   if (isError || !profile) {

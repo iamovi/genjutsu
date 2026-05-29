@@ -5,7 +5,7 @@
 
 import { lazy, Suspense, useEffect } from "react";
 import { MaintenancePage } from "@/components/MaintenancePage";
-import { FrogLoader } from "@/components/ui/FrogLoader";
+import { FullScreenFrogLoader } from "@/components/ui/FrogLoader";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -96,11 +96,7 @@ const App = () => {
                   <FloatingWhisperBubble />
                   <PushNotificationPrompt />
                   <Suspense
-                    fallback={
-                      <div className="flex h-screen items-center justify-center">
-                        <FrogLoader size={32} />
-                      </div>
-                    }
+                    fallback={<FullScreenFrogLoader />}
                   >
                     <Routes>
                       <Route path="/" element={<Index />} />
