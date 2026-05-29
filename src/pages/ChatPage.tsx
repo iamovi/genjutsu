@@ -28,6 +28,7 @@ const ChatPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const dragDepthRef = useRef(0);
 
@@ -73,6 +74,16 @@ const ChatPage = () => {
     useEffect(() => {
         scrollToBottom();
     }, [messages, isOtherUserTyping]);
+
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = "auto";
+            const newHeight = Math.min(textarea.scrollHeight, 160); // Max height of 160px
+            textarea.style.height = `${newHeight}px`;
+            textarea.style.overflowY = textarea.scrollHeight > 160 ? "auto" : "hidden";
+        }
+    }, [messageText]);
 
     useEffect(() => {
         // Mobile browsers can keep accidental tap-selection during route transitions.
@@ -140,7 +151,7 @@ const ChatPage = () => {
         return { publicUrl: data.publicUrl, filePath };
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const value = e.target.value;
         setMessageText(value);
 
@@ -154,6 +165,13 @@ const ChatPage = () => {
         typingTimeoutRef.current = setTimeout(() => {
             setTyping(false);
         }, 2000);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSend(e as any);
+        }
     };
 
     const handleComposerDragEnter = (e: React.DragEvent<HTMLFormElement>) => {
@@ -436,18 +454,20 @@ const ChatPage = () => {
                             <ImageIcon size={16} />
                         </button>
 
-                        <input
-                            type="text"
+                        <textarea
+                            ref={textareaRef}
                             id="whisper-message-input"
                             name="whisper-message"
                             value={messageText}
                             onChange={handleInputChange}
+                            onKeyDown={handleKeyDown}
                             placeholder="Type a whisper... they vanish in 24h"
-                            className="flex-1 bg-secondary/50 gum-border py-2.5 px-4 outline-none focus:border-primary transition-colors text-sm"
+                            className="flex-1 bg-secondary/50 gum-border py-2.5 px-4 outline-none focus:border-primary transition-colors text-sm resize-none custom-scrollbar min-h-[44px]"
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="off"
                             spellCheck={false}
+                            rows={1}
                             enterKeyHint="send"
                         />
                         <button

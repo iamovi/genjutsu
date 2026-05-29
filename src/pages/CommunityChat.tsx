@@ -14,9 +14,19 @@ import WhisperLinkPreview from "@/components/WhisperLinkPreview";
 function ChatInputForm({ sendMessage, isSending, user, navigate }: any) {
     const [messageText, setMessageText] = useState("");
     const [showMentionMenu, setShowMentionMenu] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = "auto";
+            const newHeight = Math.min(textarea.scrollHeight, 160); // Max height of 160px
+            textarea.style.height = `${newHeight}px`;
+            textarea.style.overflowY = textarea.scrollHeight > 160 ? "auto" : "hidden";
+        }
+    }, [messageText]);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const val = e.target.value;
         setMessageText(val);
         
@@ -40,7 +50,7 @@ function ChatInputForm({ sendMessage, isSending, user, navigate }: any) {
         const baseText = messageText.replace(/@(?:ai|a|bot|bo|b)?$/i, "");
         setMessageText(baseText + mention + " ");
         setShowMentionMenu(false);
-        inputRef.current?.focus();
+        textareaRef.current?.focus();
     };
 
     const handleSend = async (e: React.FormEvent) => {
@@ -53,6 +63,13 @@ function ChatInputForm({ sendMessage, isSending, user, navigate }: any) {
             setMessageText("");
         } catch {
             // Error handled in hook
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && !e.shiftKey && !showMentionMenu) {
+            e.preventDefault();
+            handleSend(e as any);
         }
     };
 
@@ -101,21 +118,22 @@ function ChatInputForm({ sendMessage, isSending, user, navigate }: any) {
 
             {user ? (
                 <form onSubmit={handleSend} autoComplete="off" className="max-w-4xl mx-auto flex gap-3">
-                    <input
-                        type="text"
+                    <textarea
                         id="community-message-input"
                         name="community-message"
-                        ref={inputRef}
+                        ref={textareaRef}
                         value={messageText}
                         onChange={handleInputChange}
+                        onKeyDown={handleKeyDown}
                         placeholder="Say something to the community..."
                         maxLength={500}
-                        className="flex-1 bg-secondary/50 gum-border py-2.5 px-4 outline-none focus:border-primary transition-colors text-sm"
+                        className="flex-1 bg-secondary/50 gum-border py-2.5 px-4 outline-none focus:border-primary transition-colors text-sm resize-none custom-scrollbar min-h-[44px]"
                         autoComplete="off"
                         autoCorrect="off"
                         autoCapitalize="off"
                         spellCheck={false}
-                        enterKeyHint="send"
+                        rows={1}
+                            enterKeyHint="send"
                     />
                     <button
                         type="submit"

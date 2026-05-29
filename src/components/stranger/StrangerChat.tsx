@@ -7,9 +7,20 @@ import { FrogLoader } from "@/components/ui/FrogLoader";
 export const StrangerChat = () => {
   const { status, messages, sendMessage, startSearch, stopSearch, skip, strangerName, onlineCount, isStrangerTyping, sendTypingIndicator } = useStrangerMatch();
   const [text, setText] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      const newHeight = Math.min(textarea.scrollHeight, 120); // Max height of 120px
+      textarea.style.height = `${newHeight}px`;
+      textarea.style.overflowY = textarea.scrollHeight > 120 ? "auto" : "hidden";
+    }
+  }, [text]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
     
     if (status === 'matched') {
@@ -108,14 +119,21 @@ export const StrangerChat = () => {
                        <span className="hidden sm:inline">Skip</span>
                      </button>
 
-                     <input
-                       type="text"
+                     <textarea
+                       ref={textareaRef}
                        value={text}
                        onChange={handleInputChange}
-                       onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                       onKeyDown={(e) => {
+                         if (e.key === 'Enter' && !e.shiftKey) {
+                           e.preventDefault();
+                           handleSend();
+                         }
+                       }}
                        placeholder="Type a message..."
-                       className="flex-1 min-w-0 bg-background border-2 border-border rounded-[3px] px-2 sm:px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/50 transition-all font-mono"
+                       className="flex-1 min-w-0 bg-background border-2 border-border rounded-[3px] px-2 sm:px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/50 transition-all font-mono resize-none custom-scrollbar min-h-[38px]"
                        disabled={status !== 'matched'}
+                       rows={1}
+                       enterKeyHint="send"
                      />
                      
                      <button 
