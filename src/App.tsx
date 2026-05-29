@@ -4,6 +4,7 @@
 // See the LICENSE file or <https://www.gnu.org/licenses/> for details.
 
 import { lazy, Suspense, useEffect } from "react";
+import { FullScreenFrogLoader } from "@/components/ui/FrogLoader";
 import { MaintenancePage } from "@/components/MaintenancePage";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -95,7 +96,7 @@ const App = () => {
                   <FloatingWhisperBubble />
                   <PushNotificationPrompt />
                   <Suspense
-                    fallback={<div className="min-h-screen bg-background" />}
+                    fallback={<FullScreenFrogLoader />}
                   >
                     <Routes>
                       <Route path="/" element={<Index />} />
