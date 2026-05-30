@@ -127,8 +127,9 @@
   </script>
 
   <style>
-    html, body { margin: 0; background: var(--boot-background, #ffffff); }
-    html.dark body { background: var(--boot-background, #09090b); }
+    html { margin: 0; background: var(--boot-background, #ffffff); }
+    html.dark { background: var(--boot-background, #09090b); }
+    body { margin: 0; background: transparent; }
     #boot-loader { mix-blend-mode: multiply; }
     html.dark #boot-loader { mix-blend-mode: lighten; }
   </style>
@@ -174,7 +175,7 @@
     </main>
   </noscript>
   <div id="root">
-    <div id="boot-surface" style="min-height:100vh;background:inherit;display:flex;align-items:center;justify-content:center;">
+    <div id="boot-surface" style="min-height:100vh;display:flex;align-items:center;justify-content:center;">
       <img src="/frog-loader.gif" alt="Loading..." width="56" height="56" id="boot-loader" />
     </div>
   </div>
