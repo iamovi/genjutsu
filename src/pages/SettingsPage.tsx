@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
-import { LogOut, ArrowLeft, Shield, Settings, Check, AtSign, Globe, Palette, Moon, Sun, Monitor, Pipette, WandSparkles, Music, Volume2, VolumeX, Clock, Lock, Eye, EyeOff, ImageOff, KeyRound, Layout, Type, Square, Grid, Bell, BellOff, Smile } from "lucide-react";
+import { LogOut, ArrowLeft, Shield, Settings, Check, AtSign, Globe, Palette, Moon, Sun, Monitor, Pipette, WandSparkles, Sparkles, Music, Volume2, VolumeX, Clock, Lock, Eye, EyeOff, ImageOff, KeyRound, Layout, Type, Square, Grid, Bell, BellOff, Smile } from "lucide-react";
 import { FrogLoader } from "@/components/ui/FrogLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
@@ -80,7 +80,7 @@ const SettingsPage = () => {
     const [newUsername, setNewUsername] = useState("");
     const [usernameError, setUsernameError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<"general" | "language" | "appearance" | "data" | "audio" | "security" | "notifications" | "danger">("general");
+    const [activeTab, setActiveTab] = useState<"general" | "language" | "theme" | "appearance" | "data" | "audio" | "security" | "notifications" | "danger">("general");
     const [deleteConfirmation, setDeleteConfirmation] = useState("");
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -617,6 +617,16 @@ const SettingsPage = () => {
                                 Notifications
                             </button>
                             <button
+                                onClick={() => setActiveTab("theme")}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[3px] text-sm transition-all ${activeTab === "theme"
+                                    ? "bg-primary text-primary-foreground font-bold gum-shadow-sm"
+                                    : "hover:bg-secondary text-muted-foreground hover:text-foreground font-medium"
+                                    }`}
+                            >
+                                <Sparkles size={18} />
+                                {t("nav.theme", "Theme")}
+                            </button>
+                            <button
                                 onClick={() => setActiveTab("appearance")}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-[3px] text-sm transition-all ${activeTab === "appearance"
                                     ? "bg-primary text-primary-foreground font-bold gum-shadow-sm"
@@ -865,9 +875,9 @@ const SettingsPage = () => {
                                     </motion.div>
                                 )}
 
-                                {activeTab === "appearance" && (
+                                {activeTab === "theme" && (
                                     <motion.div
-                                        key="appearance"
+                                        key="theme"
                                         initial={{ opacity: 0, x: -10 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 10 }}
@@ -965,8 +975,21 @@ const SettingsPage = () => {
                                                 </div>
                                             </div>
                                             </div>
+                                        </section>
+                                    </motion.div>
+                                )}
 
-                                            <div className="pt-6 border-t border-border">
+                                {activeTab === "appearance" && (
+                                    <motion.div
+                                        key="appearance"
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 10 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="space-y-6"
+                                    >
+                                        <section className="gum-card p-6 space-y-6">
+                                            <div>
                                                 <div className="flex items-center justify-between mb-4">
                                                     <div>
                                                         <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><Pipette size={18} className="text-primary" /> Aura Color</h2>
