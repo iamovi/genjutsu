@@ -108,6 +108,11 @@
     "vitest": "^3.2.4"
   },
   "overrides": {
-    "serialize-javascript": "7.0.5"
+    "serialize-javascript": "7.0.5",
+    "esbuild": "^0.28.1"
+  },
+  "allowScripts": {
+    "@swc/core@1.15.21": true,
+    "esbuild@0.28.1": true
   }
 }
