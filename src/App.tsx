@@ -52,7 +52,7 @@ const QnaInbox = lazy(() => import("@/pages/QnaInbox"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 ////////////////////////////////////////////////////////////////
-const MAINTENANCE_MODE = false;
+const MAINTENANCE_MODE = true;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 const queryClient = new QueryClient();
