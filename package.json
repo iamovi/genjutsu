@@ -109,7 +109,9 @@
   },
   "overrides": {
     "serialize-javascript": "7.0.5",
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "source-map-js": "^1.2.2",
+    "postcss-selector-parser": "^7.1.6"
   },
   "allowScripts": {
     "@swc/core@1.15.21": true,
